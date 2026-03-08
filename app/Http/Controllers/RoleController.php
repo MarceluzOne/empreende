@@ -23,20 +23,16 @@ class RoleController extends Controller
         try {
             DB::beginTransaction();
 
-            // 1. Criar as Roles do sistema
             $admin = Role::updateOrCreate(['name' => 'admin'], ['name' => 'admin', 'label' => 'Administrador']);
             $staff = Role::updateOrCreate(['name' => 'employee'], ['name' => 'employee', 'label' => 'Funcionário']);
 
-            // 2. Processar as Tags de Reserva (Pai e Filho)
             foreach ($this->tags as $tag) {
                 if (!Str::contains($tag, '_')) {
-                    // Cria o módulo Pai (ex: rooms)
                     Permission::updateOrCreate(
                         ['name' => $tag],
                         ['name' => $tag, 'label' => ucfirst($tag)]
                     );
                 } else {
-                    // Cria a ação Filho (ex: rooms_create) vinculada ao Pai
                     $parentName = explode('_', $tag)[0];
                     $parent = Permission::where('name', $parentName)->first();
 
@@ -51,11 +47,8 @@ class RoleController extends Controller
                 }
             }
 
-            // 3. Atribuição de Poderes
-            // Admin: Pega absolutamente todas as tags
             $admin->permissions()->sync(Permission::all()->pluck('id'));
             
-            // Funcionário: Pode ver salas e gerenciar apenas os próprios agendamentos
             $staffPermissions = Permission::whereIn('name', [
                 'rooms_view', 
                 'bookings_view', 
@@ -63,7 +56,6 @@ class RoleController extends Controller
             ])->pluck('id');
             $staff->permissions()->sync($staffPermissions);
 
-            // 4. Criar o Usuário Admin Inicial
             $user = User::updateOrCreate(
                 ['email' => 'arruda16.marcelo@gmail.com'],
                 [

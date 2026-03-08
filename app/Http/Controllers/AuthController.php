@@ -19,7 +19,7 @@ class AuthController extends Controller
             'password' => ['required'],
         ], [
             'email.required' => 'O campo e-mail é obrigatório.',
-            'password.required' => 'A senha é obrigatória.'
+            'password.required' => 'A senha é obrigatória.',
         ]);
 
         if (Auth::attempt($credentials)) {
@@ -38,6 +38,7 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect('/');
     }
 }

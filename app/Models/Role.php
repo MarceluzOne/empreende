@@ -8,13 +8,11 @@ class Role extends Model
 {
     protected $fillable = ['name', 'label', 'description'];
 
-    // Relacionamento com Permissões (N:N)
     public function permissions()
     {
         return $this->belongsToMany(Permission::class);
     }
 
-    // Relacionamento com Usuários (N:N)
     public function users()
     {
         return $this->belongsToMany(User::class);

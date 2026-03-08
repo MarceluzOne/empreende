@@ -27,7 +27,7 @@ class BookingController extends Controller
 
     public function store(Request $request)
     {
-        
+
         $validated = $request->validate([
             'responsible_name' => 'required|string|max:255',
             'cpf' => 'nullable|string|max:14',
@@ -40,10 +40,9 @@ class BookingController extends Controller
             'guests_count.min' => 'O agendamento deve ter pelo menos 1 pessoa.',
         ]);
 
-        if ($validated['cpf'])
-            {
-                $validated['cpf'] = preg_replace('/[^0-9]/', '', $validated['cpf']);
-            }
+        if ($validated['cpf']) {
+            $validated['cpf'] = preg_replace('/[^0-9]/', '', $validated['cpf']);
+        }
 
         $validated['user_id'] = Auth::id();
 
@@ -63,8 +62,8 @@ class BookingController extends Controller
             'observation' => 'nullable|string',
         ]);
         if ($validated['cpf']) {
-        $validated['cpf'] = preg_replace('/[^0-9]/', '', $validated['cpf']);
-    }
+            $validated['cpf'] = preg_replace('/[^0-9]/', '', $validated['cpf']);
+        }
 
         $booking->update($validated);
 

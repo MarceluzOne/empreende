@@ -40,14 +40,11 @@ class ServiceProviderController extends Controller
             ->with('success', 'Prestador de serviço cadastrado com sucesso!');
     }
 
-    // MÉTODO EDIT: Envia o objeto para a View de edição
     public function edit(ServiceProvider $service)
     {
-        // Note que usei $service para bater com a rota resource do Laravel
         return view('services.edit', compact('service'));
     }
 
-    // MÉTODO UPDATE: Valida e atualiza os dados
     public function update(Request $request, ServiceProvider $service)
     {
         $validated = $request->validate([
@@ -72,7 +69,6 @@ class ServiceProviderController extends Controller
 
     public function show(ServiceProvider $service)
     {
-        // Mudei o parâmetro para 'service' para manter o padrão resource
         return response()->json($service);
     }
 
