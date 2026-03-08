@@ -26,7 +26,7 @@
             <i class="fas fa-chart-line mr-3 w-5 text-center group-hover:scale-110 transition"></i> Dashboard
         </a>
 
-        <a href="#" class="flex items-center p-2 text-blue-100 hover:bg-blue-800 rounded transition group">
+        <a href="{{ route('services.index') }}" class="flex items-center p-2 text-blue-100 hover:bg-blue-800 rounded transition group">
             <i class="fas fa-briefcase mr-3 w-5 text-center group-hover:scale-110 transition"></i> Cadastro de vagas
         </a>
 
