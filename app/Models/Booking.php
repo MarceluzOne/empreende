@@ -10,17 +10,21 @@ class Booking extends Model
         'responsible_name',
         'cpf',
         'booking_date',
+        'end_date', 
         'guests_count',
         'observation',
-        'user_id'
+        'user_id',
+        'resource_type',
+
     ];
 
     protected $casts = [
         'booking_date' => 'datetime',
+        'end_date' => 'datetime',
     ];
 
     public function user()
-{
-    return $this->belongsTo(User::class);
-}
+    {
+        return $this->belongsTo(User::class);
+    }
 }

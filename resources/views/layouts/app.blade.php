@@ -28,7 +28,6 @@
 
         <main class="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-8 flex flex-col">
             <div class="container mx-auto flex-grow">
-                {{-- Exibição de erros de validação (crucial para ver o erro do CPF) --}}
                 @if ($errors->any())
                     <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 shadow-sm">
                         <p class="font-bold">Ops! Verifique os dados:</p>

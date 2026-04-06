@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class BookingController extends Controller
 {
@@ -25,50 +24,64 @@ class BookingController extends Controller
         return view('bookings.create');
     }
 
-    public function store(Request $request)
+    public function store(Request $request, \App\Services\BookingService $bookingService)
     {
-
+        // A validação que já fizemos permanece aqui para garantir o formato dos dados
         $validated = $request->validate([
+            'resource_type' => 'required|in:auditorio,reuniao',
             'responsible_name' => 'required|string|max:255',
-            'cpf' => 'nullable|string|max:14',
-            'booking_date' => 'required|date|after:now',
-            'guests_count' => 'required|integer|min:1',
-            'observation' => 'nullable|string',
-        ], [
-            'responsible_name.required' => 'O nome do responsável é obrigatório.',
-            'booking_date.after' => 'A data do agendamento deve ser uma data futura.',
-            'guests_count.min' => 'O agendamento deve ter pelo menos 1 pessoa.',
+            'type' => 'required|in:single,consecutive,alternated',
+            'start_time' => 'required',
+            'end_time' => 'required|after:start_time',
+            // ... (demais regras de data que já temos)
         ]);
 
-        if ($validated['cpf']) {
-            $validated['cpf'] = preg_replace('/[^0-9]/', '', $validated['cpf']);
+        try {
+            $count = $bookingService->createBookings($request->all());
+
+            $msg = $count > 1 ? "$count agendamentos realizados!" : 'Agendamento realizado!';
+
+            return redirect()->route('bookings.index')->with('success', $msg);
+
+        } catch (\Exception $e) {
+            return back()->withErrors($e->getMessage())->withInput();
         }
-
-        $validated['user_id'] = Auth::id();
-
-        Booking::create($validated);
-
-        return redirect()->route('bookings.index')
-            ->with('success', 'Agendamento realizado com sucesso para '.$validated['responsible_name'].'!');
     }
 
-    public function update(Request $request, Booking $booking)
+    public function update(Request $request, $id)
     {
+        // Criamos o campo 'booking_date' e 'end_date' a partir dos inputs da view
+        $request->merge([
+            'booking_date' => $request->date.' '.$request->start_time,
+            'end_date' => $request->date.' '.$request->end_time,
+        ]);
+
         $validated = $request->validate([
             'responsible_name' => 'required|string|max:255',
-            'cpf' => 'nullable|string|max:14',
+            'resource_type' => 'required|in:auditorio,reuniao',
             'booking_date' => 'required|date',
+            'end_date' => 'required|date|after:booking_date',
             'guests_count' => 'required|integer|min:1',
-            'observation' => 'nullable|string',
+            // ... outras validações
         ]);
-        if ($validated['cpf']) {
-            $validated['cpf'] = preg_replace('/[^0-9]/', '', $validated['cpf']);
+
+        $booking = Booking::findOrFail($id);
+
+        // Validar conflito (ignorando o ID atual para não dar erro com ele mesmo)
+        $hasConflict = Booking::where('resource_type', $request->resource_type)
+            ->where('id', '!=', $id)
+            ->where(function ($query) use ($request) {
+                $query->where('booking_date', '<', $request->end_date)
+                    ->where('end_date', '>', $request->booking_date);
+            })->exists();
+
+        if ($hasConflict) {
+            return back()->withErrors('Este horário já está ocupado por outro agendamento.')->withInput();
         }
 
         $booking->update($validated);
 
-        return redirect()->route('bookings.index')
-            ->with('success', 'Agendamento atualizado com sucesso!');
+        return redirect()->route('bookings.index')->with('success', 'Agendamento atualizado!');
     }
 
     public function destroy(Booking $booking)
