@@ -6,6 +6,7 @@ use App\Models\Permission;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
+use URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -16,6 +17,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if (app()->environment('production')) {
+        URL::forceScheme('https');
+    }
         // 1. Super Admin Bypass (Opcional, mas recomendado para o seu e-mail)
         // Isso garante que você nunca fique trancado fora do sistema
         Gate::before(function ($user, $ability) {
