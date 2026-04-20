@@ -10,12 +10,12 @@
     <div class="mb-8 flex items-center justify-between">
         <div>
             <h2 class="text-2xl font-black text-gray-800 uppercase tracking-tighter">
-                <i class="fas fa-edit text-blue-900 mr-2"></i> Editar Registro
+                Editar Registro
             </h2>
             <p class="text-gray-500 italic text-sm">Atualize as informações do atendimento de {{ $attendance->customer_name }}.</p>
         </div>
         <a href="{{ route('attendances.index') }}" class="text-gray-400 hover:text-gray-600 transition font-bold text-sm">
-            <i class="fas fa-arrow-left mr-1"></i> Voltar
+            Voltar
         </a>
     </div>
 
@@ -24,7 +24,6 @@
             @csrf
             @method('PUT')
             
-            {{-- Campo oculto para o Alpine enviar o estado correto --}}
             <input type="hidden" name="is_scheduled" :value="isScheduled">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -33,13 +32,21 @@
                 <div class="md:col-span-2">
                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nome do Cidadão *</label>
                     <input type="text" name="customer_name" value="{{ old('customer_name', $attendance->customer_name) }}"
-                        class="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-900 focus:bg-white rounded-2xl outline-none transition-all font-bold text-gray-800" required>
+                        class="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-900 focus:bg-white rounded-2xl outline-none transition-all font-bold text-gray-800 @error('customer_name') border-red-500 @enderror" required>
+                    @error('customer_name') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                 </div>
 
                 {{-- CPF --}}
                 <div>
                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">CPF</label>
                     <input type="text" name="customer_cpf" id="cpf_mask" value="{{ old('customer_cpf', $attendance->customer_cpf) }}"
+                        class="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-900 focus:bg-white rounded-2xl outline-none transition-all font-bold text-gray-800">
+                </div>
+
+                {{-- Telefone --}}
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Telefone</label>
+                    <input type="text" name="customer_phone" id="phone_mask" value="{{ old('customer_phone', $attendance->customer_phone) }}"
                         class="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-900 focus:bg-white rounded-2xl outline-none transition-all font-bold text-gray-800">
                 </div>
 
@@ -79,7 +86,7 @@
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nova Data *</label>
                             <input type="date" name="scheduled_date" 
                                 value="{{ old('scheduled_date', $attendance->scheduled_at ? $attendance->scheduled_at->format('Y-m-d') : date('Y-m-d')) }}"
-                                class="w-full px-5 py-4 bg-gray-50 border-2 border-blue-200 focus:border-blue-900 rounded-2xl outline-none font-bold text-gray-800">
+                                min="{{ date('Y-m-d') }}" class="w-full px-5 py-4 bg-gray-50 border-2 border-blue-200 focus:border-blue-900 rounded-2xl outline-none font-bold text-gray-800">
                         </div>
                         <div>
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Novo Horário *</label>
@@ -94,10 +101,10 @@
                 <div class="md:col-span-2">
                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Relato do Atendimento *</label>
                     <textarea name="description" rows="4"
-                        class="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-900 rounded-2xl outline-none font-semibold text-gray-800" required>{{ old('description', $attendance->description) }}</textarea>
+                        class="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-900 rounded-2xl outline-none font-semibold text-gray-800 @error('description') border-red-500 @enderror" required>{{ old('description', $attendance->description) }}</textarea>
+                    @error('description') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                 </div>
 
-                {{-- Status Manual (Caso queira mudar de 'scheduled' para 'completed' na mão) --}}
                 <div class="md:col-span-2">
                     <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Alterar Status</label>
                     <select name="status" class="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-900 rounded-2xl outline-none font-bold text-gray-700">
@@ -112,10 +119,31 @@
                 <button type="submit"
                         class="w-full md:3/4 bg-blue-900 text-white py-5 rounded-2xl font-semibold uppercase tracking-widest shadow-2xl active:scale-95 flex items-center self-end justify-center">
                         <span>Salvar Alterações</span>
-                        <i class="fas hidden md:flex fa-arrow-right ml-2"></i>
                     </button>
             </div>
         </form>
     </div>
 </div>
+@push('scripts')
+    <script src="https://unpkg.com/imask"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const cpfElement = document.getElementById('cpf_mask');
+            if (cpfElement) {
+                IMask(cpfElement, { mask: '000.000.000-00' });
+            }
+
+            const phoneElement = document.getElementById('phone_mask');
+            if (phoneElement) {
+                IMask(phoneElement, {
+                    mask: [
+                        { mask: '(00) 00000-0000' },
+                        { mask: '(00) 0000-0000' },
+                        { mask: '+00 (00) 00000-0000' }
+                    ]
+                });
+            }
+        });
+    </script>
+@endpush
 @endsection

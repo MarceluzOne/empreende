@@ -18,6 +18,7 @@ class Attendance extends Model
         'user_id',
         'customer_name',
         'customer_cpf',
+        'customer_phone',
         'service_type',
         'description',
         'scheduled_at',
@@ -31,8 +32,8 @@ class Attendance extends Model
      */
     protected $casts = [
         'scheduled_at' => 'datetime',
-        'created_at'   => 'datetime',
-        'updated_at'   => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     /**

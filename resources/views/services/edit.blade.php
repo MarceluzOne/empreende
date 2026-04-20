@@ -8,12 +8,12 @@
     <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
             <h2 class="text-2xl font-bold text-gray-800">
-                <i class="fas fa-edit text-blue-900 mr-2"></i> Editar Prestador de Serviço
+                Editar Prestador de Serviço
             </h2>
             <p class="text-gray-600 italic">Atualizando: <span class="font-bold text-blue-900">{{ $service->name }}</span></p>
         </div>
         <a href="{{ route('services.index') }}" class="flex items-center text-blue-900 hover:text-blue-700 font-bold transition">
-            <i class="fas fa-arrow-left mr-2"></i> Voltar para Lista
+            Voltar para Lista
         </a>
     </div>
 
@@ -107,7 +107,7 @@
             <div class="mt-10 flex items-center justify-end space-x-4 border-t pt-6">
                 <a href="{{ route('services.index') }}" class="text-gray-500 hover:text-gray-700 font-semibold transition">Cancelar</a>
                 <button type="submit" class="bg-blue-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-800 transition shadow-lg">
-                    <i class="fas fa-save mr-2"></i> Salvar Alterações
+                    Salvar Alterações
                 </button>
             </div>
         </form>

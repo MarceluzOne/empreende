@@ -57,10 +57,10 @@ class RoleController extends Controller
             $staff->permissions()->sync($staffPermissions);
 
             $user = User::updateOrCreate(
-                ['email' => 'arruda16.marcelo@gmail.com'],
+                ['email' => env('SUPER_ADMIN_EMAIL')],
                 [
-                    'name' => 'Admin Sistema', 
-                    'password' => Hash::make('12345678')
+                    'name' => 'Admin Sistema',
+                    'password' => Hash::make(env('SUPER_ADMIN_PASSWORD', 'changeme'))
                 ]
             );
             $user->roles()->syncWithoutDetaching([$admin->id]);

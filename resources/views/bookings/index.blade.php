@@ -16,16 +16,42 @@
         <div class="flex justify-between items-center mb-6">
             <div>
                 <h2 class="text-2xl font-bold text-gray-800">
-                    <i class="fas fa-calendar-check text-blue-900 mr-2"></i> Agendamentos
+                    Reservas
                 </h2>
                 <p class="text-gray-600 italic text-sm md:text-base">Lista de reservas em Vitória de Santo Antão.</p>
             </div>
             <a href="{{ route('bookings.create') }}"
                 class="bg-blue-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-800 transition shadow-sm flex items-center">
-                <i class="fas fa-plus md:mr-2"></i>
-                <span class="hidden md:inline">Novo Agendamento</span>
+                <span class="text-xs text-center">Novo Agendamento</span>
             </a>
         </div>
+
+        {{-- Filtros --}}
+        <form method="GET" action="{{ route('bookings.index') }}" class="mb-6">
+            <div class="flex flex-col md:flex-row gap-3">
+                <input type="text" name="search" value="{{ request('search') }}"
+                    placeholder="Buscar por responsável..."
+                    class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+
+                <select name="resource_type" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-600">
+                    <option value="">Todos os espaços</option>
+                    <option value="auditorio" {{ request('resource_type') === 'auditorio' ? 'selected' : '' }}>Auditório</option>
+                    <option value="reuniao"   {{ request('resource_type') === 'reuniao'   ? 'selected' : '' }}>Sala de Reunião</option>
+                </select>
+
+                <input type="date" name="date" value="{{ request('date') }}"
+                    class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-600">
+
+                <button type="submit" class="bg-blue-900 text-white px-5 py-2 rounded-lg font-bold hover:bg-blue-800 transition text-sm">
+                    <i class="fas fa-search mr-1"></i> Filtrar
+                </button>
+                @if(request()->hasAny(['search','resource_type','date']))
+                    <a href="{{ route('bookings.index') }}" class="px-5 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition flex items-center">
+                        <i class="fas fa-times mr-1"></i> Limpar
+                    </a>
+                @endif
+            </div>
+        </form>
 
         {{-- Tabela de Dados --}}
         <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">

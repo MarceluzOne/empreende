@@ -27,16 +27,46 @@
     <div class="flex justify-between items-center mb-6">
       <div>
         <h2 class="text-2xl font-bold text-gray-800">
-          <i class="fas fa-tools text-blue-900 mr-2"></i> Prestadores de Serviço
+          Prestadores de Serviço
         </h2>
         <p class="text-gray-600 italic">Rede de profissionais em Vitória de Santo Antão.</p>
       </div>
       <a href="{{ route('services.create') }}"
         class="bg-blue-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-800 transition shadow-sm flex items-center">
-        <i class="fas fa-plus md:mr-2"></i>
         <span class="hidden md:inline">Cadastrar Serviço</span>
       </a>
     </div>
+
+    {{-- Filtros --}}
+    <form method="GET" action="{{ route('services.index') }}" class="mb-6">
+        <div class="flex flex-col md:flex-row gap-3">
+            <input type="text" name="search" value="{{ request('search') }}"
+                placeholder="Buscar por nome ou serviço..."
+                class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+
+            <select name="provider_type" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-600">
+                <option value="">Todos os tipos</option>
+                <option value="individual" {{ request('provider_type') === 'individual' ? 'selected' : '' }}>Pessoa Física</option>
+                <option value="company"    {{ request('provider_type') === 'company'    ? 'selected' : '' }}>Empresa</option>
+            </select>
+
+            <select name="status" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-600">
+                <option value="">Todos os status</option>
+                <option value="active"   {{ request('status') === 'active'   ? 'selected' : '' }}>Ativo</option>
+                <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inativo</option>
+                <option value="pending"  {{ request('status') === 'pending'  ? 'selected' : '' }}>Pendente</option>
+            </select>
+
+            <button type="submit" class="bg-blue-900 text-white px-5 py-2 rounded-lg font-bold hover:bg-blue-800 transition text-sm">
+                <i class="fas fa-search mr-1"></i> Filtrar
+            </button>
+            @if(request()->hasAny(['search','provider_type','status']))
+                <a href="{{ route('services.index') }}" class="px-5 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition flex items-center">
+                    <i class="fas fa-times mr-1"></i> Limpar
+                </a>
+            @endif
+        </div>
+    </form>
 
     {{-- Tabela --}}
     <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
@@ -115,7 +145,7 @@
       x-cloak x-transition>
       <div @click.away="openModal = false" class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
         <div class="bg-blue-900 p-5 flex justify-between items-center text-white">
-          <h3 class="font-bold"><i class="fas fa-address-card mr-2"></i> Perfil Detalhado</h3>
+          <h3 class="font-bold">Perfil Detalhado</h3>
           <button @click="openModal = false"><i class="fas fa-times"></i></button>
         </div>
         <div class="p-8 space-y-4">
@@ -129,7 +159,7 @@
               <span class="font-bold text-gray-700" x-text="selectedService.whatsapp"></span>
             </div>
             <div class="flex items-center p-3 bg-gray-50 rounded-lg text-gray-700">
-              <i class="fas fa-envelope text-red-500 mr-3 fa-lg"></i>
+              <i class="fas fa-envelope text-gray-700 mr-3 fa-lg"></i>
               <span x-text="selectedService.email"></span>
             </div>
           </div>
@@ -146,7 +176,7 @@
 
     {{-- MODAL DE EXCLUSÃO --}}
     <div x-show="openDeleteModal"
-      class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak x-transition>
+      class="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-cloak x-transition>
       <div @click.away="openDeleteModal = false"
         class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-t-4 border-red-600">
         <div class="p-6 text-center">

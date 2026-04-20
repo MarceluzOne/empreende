@@ -3,20 +3,24 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Services\BookingService;
 use Illuminate\Http\Request;
 
 class BookingController extends Controller
 {
-    public function index()
+    public function __construct(private BookingService $service) {}
+
+    public function index(Request $request)
     {
-        $bookings = Booking::with('user')->orderBy('booking_date', 'asc')->paginate(10);
+        $bookings = Booking::with('user')
+            ->when($request->search, fn($q) => $q->where('responsible_name', 'ilike', '%'.$request->search.'%'))
+            ->when($request->resource_type, fn($q) => $q->where('resource_type', $request->resource_type))
+            ->when($request->date, fn($q) => $q->whereDate('booking_date', $request->date))
+            ->orderBy('booking_date', 'asc')
+            ->paginate(10)
+            ->withQueryString();
 
         return view('bookings.index', compact('bookings'));
-    }
-
-    public function edit(Booking $booking)
-    {
-        return view('bookings.edit', compact('booking'));
     }
 
     public function create()
@@ -24,71 +28,55 @@ class BookingController extends Controller
         return view('bookings.create');
     }
 
-    public function store(Request $request, \App\Services\BookingService $bookingService)
+    public function store(Request $request)
     {
-        // A validação que já fizemos permanece aqui para garantir o formato dos dados
-        $validated = $request->validate([
-            'resource_type' => 'required|in:auditorio,reuniao',
+        $request->validate([
+            'resource_type'    => 'required|in:auditorio,reuniao',
             'responsible_name' => 'required|string|max:255',
-            'type' => 'required|in:single,consecutive,alternated',
-            'start_time' => 'required',
-            'end_time' => 'required|after:start_time',
-            // ... (demais regras de data que já temos)
+            'type'             => 'required|in:single,consecutive,alternated',
+            'start_time'       => 'required',
+            'end_time'         => 'required|after:start_time',
         ]);
 
         try {
-            $count = $bookingService->createBookings($request->all());
-
-            $msg = $count > 1 ? "$count agendamentos realizados!" : 'Agendamento realizado!';
+            $count = $this->service->createBookings($request->all());
+            $msg = $count > 1 ? "{$count} agendamentos realizados!" : 'Agendamento realizado!';
 
             return redirect()->route('bookings.index')->with('success', $msg);
-
         } catch (\Exception $e) {
             return back()->withErrors($e->getMessage())->withInput();
         }
     }
 
-    public function update(Request $request, $id)
+    public function edit(Booking $booking)
     {
-        // Criamos o campo 'booking_date' e 'end_date' a partir dos inputs da view
-        $request->merge([
-            'booking_date' => $request->date.' '.$request->start_time,
-            'end_date' => $request->date.' '.$request->end_time,
-        ]);
+        return view('bookings.edit', compact('booking'));
+    }
 
-        $validated = $request->validate([
+    public function update(Request $request, Booking $booking)
+    {
+        $request->validate([
             'responsible_name' => 'required|string|max:255',
-            'resource_type' => 'required|in:auditorio,reuniao',
-            'booking_date' => 'required|date',
-            'end_date' => 'required|date|after:booking_date',
-            'guests_count' => 'required|integer|min:1',
-            // ... outras validações
+            'resource_type'    => 'required|in:auditorio,reuniao',
+            'date'             => 'required|date',
+            'start_time'       => 'required',
+            'end_time'         => 'required|after:start_time',
+            'guests_count'     => 'required|integer|min:1',
         ]);
 
-        $booking = Booking::findOrFail($id);
+        try {
+            $this->service->update($booking, $request->all());
 
-        // Validar conflito (ignorando o ID atual para não dar erro com ele mesmo)
-        $hasConflict = Booking::where('resource_type', $request->resource_type)
-            ->where('id', '!=', $id)
-            ->where(function ($query) use ($request) {
-                $query->where('booking_date', '<', $request->end_date)
-                    ->where('end_date', '>', $request->booking_date);
-            })->exists();
-
-        if ($hasConflict) {
-            return back()->withErrors('Este horário já está ocupado por outro agendamento.')->withInput();
+            return redirect()->route('bookings.index')->with('success', 'Agendamento atualizado!');
+        } catch (\Exception $e) {
+            return back()->withErrors($e->getMessage())->withInput();
         }
-
-        $booking->update($validated);
-
-        return redirect()->route('bookings.index')->with('success', 'Agendamento atualizado!');
     }
 
     public function destroy(Booking $booking)
     {
         $booking->delete();
 
-        return redirect()->route('bookings.index')
-            ->with('success', 'Agendamento removido com sucesso!');
+        return redirect()->route('bookings.index')->with('success', 'Agendamento removido com sucesso!');
     }
 }

@@ -4,45 +4,57 @@
 
 @section('content')
   <div class="max-w-4xl mx-auto" x-data="{ 
-        type: '{{ old('type', 'single') }}',
-        selectedDates: [],
-        addDate(date) {
-            if(date && !this.selectedDates.includes(date)) {
-                this.selectedDates.push(date);
-            }
-        },
-        removeDate(index) {
-            this.selectedDates.splice(index, 1);
-        }
-    }">
+          type: '{{ old('type', 'single') }}',
+          selectedDates: [],
+          addDate(date) {
+              if(date && !this.selectedDates.includes(date)) {
+                  this.selectedDates.push(date);
+              }
+          },
+          removeDate(index) {
+              this.selectedDates.splice(index, 1);
+          }
+      }">
     <div class="mb-6 flex justify-between items-center">
       <div>
-        <h2 class="text-2xl font-bold text-gray-800">Novo Agendamento</h2>
+        <h2 class="text-2xl font-bold text-gray-800">Nova reserva</h2>
         <p class="text-gray-600 italic">Reserve o Auditório ou Sala de Reunião.</p>
       </div>
       <a href="{{ route('bookings.index') }}" class="text-blue-900 font-bold hover:underline text-sm">
-        <i class="fas fa-arrow-left mr-1"></i> Voltar
+        Voltar
       </a>
     </div>
 
     <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
       <form action="{{ route('bookings.store') }}" method="POST" class="p-8">
         @csrf
-        <div class="md:col-span-2   mb-4">
-          <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Local do Agendamento *</label>
-          <select name="resource_type"
-            class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white font-bold text-gray-700">
-            <option value="auditorio" {{ old('resource_type') == 'auditorio' ? 'selected' : '' }}>Auditório </option>
-            <option value="reuniao" {{ old('resource_type') == 'reuniao' ? 'selected' : '' }}>Sala de Reunião</option>
-          </select>
+        <div class="md:col-span-2 mb-4">
+          <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
+            Local da Reserva
+          </label>
+
+          <div class="relative w-full">
+            <select name="resource_type"
+              class="appearance-none w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white font-bold text-gray-700 cursor-pointer">
+              <option value="auditorio" {{ old('resource_type') == 'auditorio' ? 'selected' : '' }}>Auditório</option>
+              <option value="reuniao" {{ old('resource_type') == 'reuniao' ? 'selected' : '' }}>Sala de Reunião</option>
+            </select>
+
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+              <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clip-rule="evenodd" />
+              </svg>
+            </div>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
           {{-- Nome do Responsável --}}
           <div class="md:col-span-2">
-            <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Nome do Responsável
-              *</label>
+            <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Nome do Responsável</label>
             <input type="text" name="responsible_name" value="{{ old('responsible_name') }}"
               class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none @error('responsible_name') border-red-500 @enderror"
               placeholder="Ex: Marcelo Arruda" required>
@@ -58,7 +70,7 @@
           </div>
 
           <div>
-            <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Qtd. de Pessoas *</label>
+            <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Qtd. de Pessoas</label>
             <input type="number" name="guests_count" value="{{ old('guests_count', 1) }}" min="1"
               class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required>
           </div>
@@ -67,7 +79,7 @@
 
           {{-- SELETOR DE TIPO DE RESERVA --}}
           <div class="md:col-span-2">
-            <label class="block text-sm font-bold text-gray-700 mb-3 uppercase tracking-wide text-blue-900">Tipo de
+            <label class="block text-sm font-bold text-gray-700 mb-3 uppercase tracking-wide">Tipo de
               Reserva</label>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
               <label class="flex items-center p-3 border rounded-xl cursor-pointer transition hover:bg-gray-50"

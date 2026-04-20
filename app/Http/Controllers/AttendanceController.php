@@ -3,24 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
-use Auth;
-use Carbon\Carbon;
-use DB;
+use App\Services\AttendanceService;
 use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
 {
-    public function index()
-    {
-        // Eager Loading do usuário que atendeu para evitar o problema de N+1 queries
-        $attendances = Attendance::with('user')->latest()->paginate(10);
+    public function __construct(private AttendanceService $service) {}
 
-        return view('attendances.index', compact('attendances'));
-    }
-
-    public function create()
+    private function serviceList(): array
     {
-        $services = [
+        return [
             'Formalização MEI',
             'Emissão de DAS',
             'Declaração Anual (DASN)',
@@ -31,107 +23,72 @@ class AttendanceController extends Controller
             'Crédito/Banco do Nordeste',
             'Outros',
         ];
+    }
 
-        return view('attendances.create', compact('services'));
+    public function index(Request $request)
+    {
+        $attendances = Attendance::with('user')
+            ->when($request->search, fn($q) => $q->where('customer_name', 'ilike', '%'.$request->search.'%'))
+            ->when($request->status, fn($q) => $q->where('status', $request->status))
+            ->when($request->service_type, fn($q) => $q->where('service_type', $request->service_type))
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('attendances.index', compact('attendances'))->with('serviceTypes', $this->serviceList());
+    }
+
+    public function create()
+    {
+        return view('attendances.create', ['services' => $this->serviceList()]);
     }
 
     public function store(Request $request)
     {
-        // 1. Validação
         $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'customer_cpf' => 'nullable|string|max:14',
-            'service_type' => 'required|string',
-            'description' => 'required|string',
-            // Validamos 'is_scheduled' para aceitar os valores das tabs
+            'customer_name'  => 'required|string|max:255',
+            'customer_cpf'   => 'nullable|string|max:14',
+            'customer_phone' => 'nullable|string|max:20',
+            'service_type'   => 'required|string',
+            'description'    => 'required|string',
             'scheduled_date' => 'required_if:is_scheduled,true,1|nullable|date',
             'scheduled_time' => 'required_if:is_scheduled,true,1|nullable',
         ]);
 
         try {
-            return DB::transaction(function () use ($request) {
+            $this->service->store($request->all());
 
-                $cpf = $request->customer_cpf ? preg_replace('/[^0-9]/', '', $request->customer_cpf) : null;
+            $message = filter_var($request->is_scheduled, FILTER_VALIDATE_BOOLEAN)
+                ? 'Atendimento agendado com sucesso!'
+                : 'Atendimento registrado com sucesso!';
 
-                /**
-                 * CORREÇÃO DA LÓGICA:
-                 * O filter_var transforma a string "true" do Alpine em um booleano real do PHP.
-                 */
-                $isScheduled = filter_var($request->is_scheduled, FILTER_VALIDATE_BOOLEAN);
-
-                if ($isScheduled) {
-                    // Se for agendado, usamos estritamente o que veio do formulário
-                    $scheduledAt = Carbon::parse($request->scheduled_date.' '.$request->scheduled_time);
-                    $status = 'scheduled';
-                } else {
-                    // Se for "Realizado Agora", usamos o timestamp atual
-                    $scheduledAt = now();
-                    $status = 'completed';
-                }
-
-                Attendance::create([
-                    'user_id' => Auth::id(),
-                    'customer_name' => $request->customer_name,
-                    'customer_cpf' => $cpf,
-                    'service_type' => $request->service_type,
-                    'description' => $request->description,
-                    'scheduled_at' => $scheduledAt,
-                    'status' => $status,
-                ]);
-
-                $message = $isScheduled ? 'Atendimento agendado com sucesso!' : 'Atendimento registrado com sucesso!';
-
-                return redirect()->route('attendances.index')->with('success', $message);
-            });
-
+            return redirect()->route('attendances.index')->with('success', $message);
         } catch (\Exception $e) {
-            return back()
-                ->withErrors('Erro ao processar: '.$e->getMessage())
-                ->withInput();
+            return back()->withErrors('Erro ao processar: '.$e->getMessage())->withInput();
         }
     }
 
     public function edit(Attendance $attendance)
     {
-        $services = [
-            'Formalização MEI',
-            'Emissão de Guia',
-            'Declaração Anual',
-            'Consultoria',
-            'Outros',
-        ];
-
-        // Verificamos se o atendimento original era um agendamento
-        // ou se a data agendada é diferente da data de criação
         $isScheduled = $attendance->status === 'scheduled';
 
-        return view('attendances.edit', compact('attendance', 'services', 'isScheduled'));
+        return view('attendances.edit', [
+            'attendance'  => $attendance,
+            'services'    => $this->serviceList(),
+            'isScheduled' => $isScheduled,
+        ]);
     }
 
     public function update(Request $request, Attendance $attendance)
     {
         $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'service_type' => 'required',
-            'description' => 'required',
+            'customer_name'  => 'required|string|max:255',
+            'customer_phone' => 'nullable|string|max:20',
+            'service_type'   => 'required',
+            'description'    => 'required',
         ]);
 
-        $isScheduled = filter_var($request->is_scheduled, FILTER_VALIDATE_BOOLEAN);
-
-        // Se mudou para "Agora", o status deve virar 'completed' e a data ser 'now'
-        // A menos que o usuário tenha mudado o status manualmente no select final.
-        $scheduledAt = $isScheduled
-            ? Carbon::parse($request->scheduled_date.' '.$request->scheduled_time)
-            : $attendance->scheduled_at;
-
-        $attendance->update([
-            'customer_name' => $request->customer_name,
-            'customer_cpf' => preg_replace('/[^0-9]/', '', $request->customer_cpf),
-            'service_type' => $request->service_type,
-            'description' => $request->description,
-            'scheduled_at' => $scheduledAt,
-            'status' => $request->status, // Respeita o select de status
-        ]);
+        $this->service->update($attendance, $request->all());
 
         return redirect()->route('attendances.index')->with('success', 'Atendimento atualizado!');
     }

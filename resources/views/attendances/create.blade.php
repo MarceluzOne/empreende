@@ -11,14 +11,14 @@
         <div class="mb-8 flex items-center justify-between">
             <div>
                 <h2 class="text-2xl font-black text-gray-800 uppercase tracking-tighter">
-                    <i class="fas fa-clipboard-check text-blue-900 mr-2"></i> Registrar Atendimento
+                    Registrar Atendimento
                 </h2>
                 <p class="text-gray-500 italic text-sm">Cadastre o fluxo de cidadãos na recepção de Vitória de Santo Antão.
                 </p>
             </div>
             <a href="{{ route('attendances.index') }}"
                 class="bg-gray-100 text-gray-600 px-4 py-2 rounded-xl font-bold hover:bg-gray-200 transition text-sm">
-                <i class="fas fa-times mr-1"></i> Cancelar
+                
             </a>
         </div>
 
@@ -48,6 +48,15 @@
                             placeholder="000.000.000-00">
                     </div>
 
+                    {{-- Telefone (Opcional) --}}
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Telefone
+                            (Opcional)</label>
+                        <input type="text" name="customer_phone" id="phone_mask" value="{{ old('customer_phone') }}"
+                            class="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-900 focus:bg-white rounded-2xl outline-none transition-all font-bold text-gray-800"
+                            placeholder="(00) 00000-0000">
+                    </div>
+
                     {{-- Tipo de Serviço --}}
                     <div>
                         <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Tipo de
@@ -74,7 +83,7 @@
                             <button type="button" @click="isScheduled = false"
                                 :class="!isScheduled ? 'bg-white text-blue-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
                                 class="flex-1 px-6 py-2 rounded-xl font-bold text-sm transition-all flex items-center justify-center">
-                                <input type="radio" name="is_scheduled" :value="false" x-model="isScheduled" class="hidden">
+                                <input type="radio" :value="false" x-model="isScheduled" class="hidden">
                                 Realizado Agora
                             </button>
 
@@ -82,7 +91,7 @@
                             <button type="button" @click="isScheduled = true"
                                 :class="isScheduled ? 'bg-white text-blue-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
                                 class="flex-1  px-6 py-2 rounded-xl font-bold text-sm transition-all flex items-center justify-center">
-                                <input type="radio" name="is_scheduled" :value="true" x-model="isScheduled" class="hidden">
+                                <input type="radio" :value="true" x-model="isScheduled" class="hidden">
                                 Agendar Retorno
                             </button>
                         </div>
@@ -95,7 +104,7 @@
                                 <label
                                     class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Data
                                     do Agendamento *</label>
-                                <input type="date" name="scheduled_date" value="{{ date('Y-m-d') }}"
+                                <input type="date" name="scheduled_date" value="{{ date('Y-m-d') }}" min="{{ date('Y-m-d') }}"
                                     class="w-full px-5 py-4 bg-gray-50 border-2 border-blue-200 focus:border-blue-900 focus:bg-white rounded-2xl outline-none transition-all font-bold text-gray-800">
                             </div>
                             <div>
@@ -139,6 +148,17 @@
                 const cpfElement = document.getElementById('cpf_mask');
                 if (cpfElement) {
                     IMask(cpfElement, { mask: '000.000.000-00' });
+                }
+                // Máscara de Telefone
+                const phoneElement = document.getElementById('phone_mask');
+                if (phoneElement) {
+                    IMask(phoneElement, {
+                        mask: [
+                            { mask: '(00) 00000-0000' },
+                            { mask: '(00) 0000-0000' },
+                            { mask: '+00 (00) 00000-0000' }
+                        ]
+                    });
                 }
             });
         </script>

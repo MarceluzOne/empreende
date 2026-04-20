@@ -7,12 +7,12 @@
     <div class="mb-6 flex items-center justify-between">
         <div>
             <h2 class="text-2xl font-bold text-gray-800">
-                <i class="fas fa-edit text-blue-900 mr-2"></i> Editar Agendamento
+                Editar Agendamento
             </h2>
             <p class="text-gray-600 italic">Atualize as informações deste registro específico.</p>
         </div>
         <a href="{{ route('bookings.index') }}" class="text-blue-900 hover:underline font-semibold">
-            <i class="fas fa-arrow-left mr-1"></i> Voltar para Lista
+            Voltar para Lista
         </a>
     </div>
 
@@ -27,8 +27,8 @@
                 <div class="md:col-span-2">
                     <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Local do Agendamento *</label>
                     <select name="resource_type" class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50 font-semibold" required>
-                        <option value="auditorio" {{ old('resource_type', $booking->resource_type) == 'auditorio' ? 'selected' : '' }}>🏛️ Auditório Municipal</option>
-                        <option value="reuniao" {{ old('resource_type', $booking->resource_type) == 'reuniao' ? 'selected' : '' }}>👥 Sala de Reunião</option>
+                        <option value="auditorio" {{ old('resource_type', $booking->resource_type) == 'auditorio' ? 'selected' : '' }}>Auditório</option>
+                        <option value="reuniao" {{ old('resource_type', $booking->resource_type) == 'reuniao' ? 'selected' : '' }}>Sala de Reunião</option>
                     </select>
                 </div>
 
@@ -93,7 +93,7 @@
             <div class="mt-8 flex items-center justify-end space-x-4 border-t pt-6">
                 <a href="{{ route('bookings.index') }}" class="text-gray-500 font-semibold hover:text-gray-700">Descartar Alterações</a>
                 <button type="submit" class="bg-blue-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-800 transition shadow-lg transform hover:-translate-y-1">
-                    <i class="fas fa-save mr-2"></i> Atualizar Agendamento
+                    Atualizar Agendamento
                 </button>
             </div>
         </form>

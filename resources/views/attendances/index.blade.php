@@ -12,14 +12,47 @@
     <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
         <div>
             <h2 class="text-2xl font-bold text-gray-800">
-                <i class="fas fa-clipboard-list text-blue-900 mr-2"></i> Registro de Atendimentos
+                Registro de Atendimentos
             </h2>
             <p class="text-gray-600 italic">Histórico de cidadãos atendidos no Empreende Vitória.</p>
         </div>
         <a href="{{ route('attendances.create') }}" class="bg-blue-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-800 transition shadow-lg flex items-center w-full md:w-auto justify-center">
-            <i class="fas fa-plus mr-2"></i> Novo Atendimento
+            Novo Atendimento
         </a>
     </div>
+
+    {{-- Filtros --}}
+    <form method="GET" action="{{ route('attendances.index') }}" class="mb-6">
+        <div class="flex flex-col md:flex-row gap-3">
+            <input type="text" name="search" value="{{ request('search') }}"
+                placeholder="Buscar por nome do cidadão..."
+                class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+
+            <select name="service_type" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-600">
+                <option value="">Todos os serviços</option>
+                @foreach($serviceTypes as $type)
+                    <option value="{{ $type }}" {{ request('service_type') === $type ? 'selected' : '' }}>{{ $type }}</option>
+                @endforeach
+            </select>
+
+            <select name="status" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-600">
+                <option value="">Todos os status</option>
+                <option value="scheduled"  {{ request('status') === 'scheduled'  ? 'selected' : '' }}>Agendado</option>
+                <option value="completed"  {{ request('status') === 'completed'  ? 'selected' : '' }}>Concluído</option>
+                <option value="pending"    {{ request('status') === 'pending'    ? 'selected' : '' }}>Pendente</option>
+                <option value="forwarded"  {{ request('status') === 'forwarded'  ? 'selected' : '' }}>Encaminhado</option>
+            </select>
+
+            <button type="submit" class="bg-blue-900 text-white px-5 py-2 rounded-lg font-bold hover:bg-blue-800 transition text-sm">
+                <i class="fas fa-search mr-1"></i> Filtrar
+            </button>
+            @if(request()->hasAny(['search','status','service_type']))
+                <a href="{{ route('attendances.index') }}" class="px-5 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition flex items-center">
+                    <i class="fas fa-times mr-1"></i> Limpar
+                </a>
+            @endif
+        </div>
+    </form>
 
     {{-- Cards de Resumo --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -29,7 +62,6 @@
             </div>
             <div>
                 <p class="text-xs text-gray-500 uppercase font-bold">Atendimentos para Hoje</p>
-                {{-- Filtramos pela coluna scheduled_at que criamos --}}
                 <p class="text-xl font-bold text-gray-800">{{ $attendances->where('scheduled_at', '>=', today())->where('scheduled_at', '<', today()->addDay())->count() }}</p>
             </div>
         </div>
@@ -80,7 +112,7 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-600">
-                                {{-- Exibimos a data agendada. Se for nula, usamos a de criação --}}
+                                
                                 {{ $attendance->scheduled_at ? $attendance->scheduled_at->format('d/m/Y H:i') : $attendance->created_at->format('d/m/Y H:i') }}
                             </td>
                             <td class="px-6 py-4 text-center">
@@ -114,7 +146,7 @@
      x-transition x-cloak>
     <div @click.away="openModal = false" class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
         <div class="bg-blue-900 p-5 flex justify-between items-center text-white">
-            <h3 class="font-bold text-xl"><i class="fas fa-file-alt mr-2"></i> Resumo do Atendimento</h3>
+            <h3 class="font-bold text-xl"> Resumo do Atendimento</h3>
             <button @click="openModal = false" class="text-white hover:text-gray-300"><i class="fas fa-times fa-lg"></i></button>
         </div>
         <div class="p-8 space-y-6">
@@ -129,6 +161,25 @@
                 </div>
             </div>
 
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">CPF</label>
+                    <p class="text-sm text-gray-700 font-mono mt-1"
+                        x-text="selectedAttendance.customer_cpf
+                            ? selectedAttendance.customer_cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+                            : 'Não informado'">
+                    </p>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Telefone para Contato</label>
+                    <p class="text-sm text-gray-700 mt-1"
+                        x-text="selectedAttendance.customer_phone
+                            ? selectedAttendance.customer_phone.replace(/(\d{2})(\d{1})(\d{4})(\d{4})/, '($1)$2 $3-$4')
+                            : 'Não informado'">
+                    </p>
+                </div>
+            </div>
+
             <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
                 <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Descrição / Evolução</label>
                 <p class="text-gray-700 text-sm mt-2 leading-relaxed italic" x-text="selectedAttendance.description"></p>
@@ -136,7 +187,6 @@
 
             {{-- QUEM REALIZOU O AGENDAMENTO --}}
             <div class="flex items-center text-sm text-gray-600 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
-                <i class="fas fa-user-tie text-blue-900 mr-2"></i>
                 <span class="font-semibold mr-1">Atendente:</span>
                 <span x-text="selectedAttendance.user ? selectedAttendance.user.name : 'Não identificado'"></span>
             </div>

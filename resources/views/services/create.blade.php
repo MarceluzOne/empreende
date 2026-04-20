@@ -8,12 +8,12 @@
     <div class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
             <h2 class="text-2xl font-bold text-gray-800">
-                <i class="fas fa-plus-circle text-blue-900 mr-2"></i> Novo Prestador de Serviço
+                Novo Prestador de Serviço
             </h2>
             <p class="text-gray-600 italic">Cadastre profissionais ou empresas de Vitória de Santo Antão.</p>
         </div>
         <a href="{{ route('services.index') }}" class="flex items-center text-blue-900 hover:text-blue-700 font-bold transition">
-            <i class="fas fa-arrow-left mr-2"></i> Voltar para Lista
+            Voltar para Lista
         </a>
     </div>
 
@@ -52,7 +52,7 @@
                         </span>
                         <input type="text" name="name" value="{{ old('name') }}" 
                             class="w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition @error('name') border-red-500 @enderror" 
-                            :placeholder="providerType === 'individual' ? 'Ex: Marcelo Arruda' : 'Ex: Zticket Ingressos LTDA'" required>
+                            :placeholder="providerType === 'individual' ? 'Ex: Marcelo Arruda' : 'Ex: Empresa LTDA'" required>
                     </div>
                     @error('name') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                 </div>
@@ -94,7 +94,7 @@
                         </span>
                         <input type="text" name="whatsapp" value="{{ old('whatsapp') }}" 
                             class="w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition @error('whatsapp') border-red-500 @enderror" 
-                            placeholder="(81) 90000-0000" required>
+                            placeholder="(00) 0 0000-0000" required>
                     </div>
                     @error('whatsapp') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                 </div>
@@ -125,7 +125,7 @@
                     Cancelar
                 </a>
                 <button type="submit" class="bg-blue-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-800 transition shadow-lg flex items-center">
-                    <i class="fas fa-check-circle mr-2"></i> Finalizar Cadastro
+                    Finalizar Cadastro
                 </button>
             </div>
         </form>

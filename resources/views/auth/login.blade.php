@@ -59,7 +59,20 @@
             <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded-md hover:bg-blue-700 transition duration-300">
                 Entrar
             </button>
+
+            <div class="mt-4 text-center">
+                <a href="{{ route('password.request') }}" class="text-sm text-blue-600 hover:underline">
+                    Esqueci minha senha
+                </a>
+            </div>
         </form>
+
+        @if(session('status'))
+            <div class="mt-4 flex items-center gap-2 bg-green-50 border border-green-300 text-green-800 px-4 py-3 rounded-lg text-sm">
+                <i class="fas fa-check-circle text-green-500"></i>
+                <span>{{ session('status') }}</span>
+            </div>
+        @endif
     </div>
 </body>
 </html>

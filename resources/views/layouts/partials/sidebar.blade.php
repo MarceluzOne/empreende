@@ -4,7 +4,7 @@
     <div class="p-6 border-b border-blue-800 flex flex-col items-center">
         <div
             class="w-20 h-20 rounded-full bg-gray-300 border-2 border-white overflow-hidden mb-3 flex items-center justify-center">
-            <img src="{{ asset('assets/Brasão_vitoria.png') }}" alt="Brasão Vitória" class="w-full h-full object-cover">
+            <img src="{{ asset('assets/Brasão_vitoria.png') }}" alt="Brasão Vitória" class="w-full h-full object-contain p-1">
         </div>
 
         <p class="font-bold text-sm text-center leading-tight">{{ auth()->user()->name }}</p>
@@ -30,13 +30,22 @@
         </a>
 
         <a href="{{ route('services.index') }}" class="flex items-center p-2 text-blue-100 hover:bg-blue-800 rounded transition group">
-            <i class="fas fa-briefcase mr-3 w-5 text-center group-hover:scale-110 transition"></i> Cadastro de vagas
+            <i class="fas fa-user-tie mr-3 w-5 text-center group-hover:scale-110 transition"></i> Prestadores de Serviço
         </a>
 
         <a href="{{ route('bookings.index') }}"
             class="flex items-center p-2 text-blue-100 hover:bg-blue-800 rounded transition group">
-            <i class="fas fa-calendar-alt mr-3 w-5 text-center group-hover:scale-110 transition"></i> Agendamentos
+            <i class="fas fa-calendar-alt mr-3 w-5 text-center group-hover:scale-110 transition"></i> Reservas
         </a>
+
+        <div class="pt-4 pb-2">
+            <p class="text-xs font-semibold text-blue-400 uppercase tracking-wider px-2">Área do Usuário</p>
+        </div>
+
+        <a href="{{ route('profile.edit') }}" class="flex items-center p-2 text-blue-100 hover:bg-blue-800 rounded transition group {{ request()->routeIs('profile.*') ? 'bg-blue-800' : '' }}">
+            <i class="fas fa-user-cog mr-3 w-5 text-center group-hover:scale-110 transition"></i> Meu Perfil
+        </a>
+
         @if(auth()->user()->roles->contains('name', 'admin'))
             <div class="pt-4 pb-2">
                 <p class="text-xs font-semibold text-blue-400 uppercase tracking-wider px-2">Administração</p>
