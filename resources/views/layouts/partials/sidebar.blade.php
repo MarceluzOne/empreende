@@ -34,8 +34,18 @@
         </a>
 
         <a href="{{ route('bookings.index') }}"
-            class="flex items-center p-2 text-blue-100 hover:bg-blue-800 rounded transition group">
+            class="flex items-center p-2 text-blue-100 hover:bg-blue-800 rounded transition group {{ request()->routeIs('bookings.*') ? 'bg-blue-800' : '' }}">
             <i class="fas fa-calendar-alt mr-3 w-5 text-center group-hover:scale-110 transition"></i> Reservas
+        </a>
+
+        <a href="{{ route('job-vacancies.index') }}"
+            class="flex items-center p-2 text-blue-100 hover:bg-blue-800 rounded transition group {{ request()->routeIs('job-vacancies.*') ? 'bg-blue-800' : '' }}">
+            <i class="fas fa-briefcase mr-3 w-5 text-center group-hover:scale-110 transition"></i> Vagas de Emprego
+        </a>
+
+        <a href="{{ route('job-seekers.index') }}"
+            class="flex items-center p-2 text-blue-100 hover:bg-blue-800 rounded transition group {{ request()->routeIs('job-seekers.*') ? 'bg-blue-800' : '' }}">
+            <i class="fas fa-user-graduate mr-3 w-5 text-center group-hover:scale-110 transition"></i> Banco de Talentos
         </a>
 
         <div class="pt-4 pb-2">

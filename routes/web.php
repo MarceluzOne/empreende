@@ -4,6 +4,8 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\JobSeekerController;
+use App\Http\Controllers\JobVacancyController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
@@ -32,6 +34,13 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('bookings', BookingController::class);
     Route::resource('attendances', AttendanceController::class);
     Route::resource('services', ServiceProviderController::class);
+    Route::resource('job-vacancies', JobVacancyController::class)->parameters([
+        'job-vacancies' => 'jobVacancy',
+    ]);
+    Route::post('job-vacancies/{jobVacancy}/notify', [JobVacancyController::class, 'notify'])->name('job-vacancies.notify');
+    Route::resource('job-seekers', JobSeekerController::class)->parameters([
+        'job-seekers' => 'jobSeeker',
+    ]);
     Route::middleware(['can:admin-only'])->group(function () {
         Route::resource('users', UserController::class);
     });
