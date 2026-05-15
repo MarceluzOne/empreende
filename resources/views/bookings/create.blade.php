@@ -99,12 +99,20 @@
             @error('responsible_name') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
           </div>
 
-          {{-- CPF e Quantidade --}}
+          {{-- CPF e Telefone --}}
           <div>
             <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">CPF (Opcional)</label>
             <input type="text" name="cpf" id="cpf_mask" value="{{ old('cpf') }}"
               class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
               placeholder="000.000.000-00">
+          </div>
+
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Telefone para Contato</label>
+            <input type="text" name="phone" id="phone_mask" value="{{ old('phone') }}"
+              class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none @error('phone') border-red-500 @enderror"
+              placeholder="(00) 00000-0000">
+            @error('phone') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
           </div>
 
           <div>
@@ -220,6 +228,17 @@
         const element = document.getElementById('cpf_mask');
         if (element) {
           IMask(element, { mask: '000.000.000-00' });
+        }
+
+        const phone = document.getElementById('phone_mask');
+        if (phone) {
+          IMask(phone, {
+            mask: [{ mask: '(00) 0000-0000' }, { mask: '(00) 00000-0000' }],
+            dispatch: (appended, dynamicMasked) => {
+              const value = (dynamicMasked.value + appended).replace(/\D/g, '');
+              return dynamicMasked.compiledMasks[value.length > 10 ? 1 : 0];
+            }
+          });
         }
       });
     </script>

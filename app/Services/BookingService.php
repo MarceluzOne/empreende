@@ -31,6 +31,7 @@ class BookingService
                 'resource_type'    => $data['resource_type'],
                 'responsible_name' => $data['responsible_name'],
                 'cpf'              => !empty($data['cpf']) ? preg_replace('/[^0-9]/', '', $data['cpf']) : null,
+                'phone'            => !empty($data['phone']) ? preg_replace('/[^0-9]/', '', $data['phone']) : null,
                 'booking_date'     => $start,
                 'end_date'         => $end,
                 'guests_count'     => $data['guests_count'],
