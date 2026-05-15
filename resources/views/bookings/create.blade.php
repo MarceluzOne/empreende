@@ -3,18 +3,54 @@
 @section('title', 'Novo Agendamento - Empreende Vitória')
 
 @section('content')
-  <div class="max-w-4xl mx-auto" x-data="{ 
+  <div class="max-w-4xl mx-auto" x-data="{
           type: '{{ old('type', 'single') }}',
+          resourceType: '{{ old('resource_type', 'auditorio') }}',
+          startTime: '{{ old('start_time', '') }}',
+          endTime: '{{ old('end_time', '') }}',
+          consecutiveStep: 'start',
+          singleDate: '{{ old('single_date', '') }}',
+          startDate: '{{ old('start_date', '') }}',
+          endDatePeriod: '{{ old('end_date_period', '') }}',
           selectedDates: [],
           addDate(date) {
-              if(date && !this.selectedDates.includes(date)) {
+              if (date && !this.selectedDates.includes(date)) {
                   this.selectedDates.push(date);
+                  this.$dispatch('dates-updated', { dates: this.selectedDates });
               }
           },
           removeDate(index) {
               this.selectedDates.splice(index, 1);
+              this.$dispatch('dates-updated', { dates: this.selectedDates });
+          },
+          onDateSelected(e) {
+              const date = e.detail.date;
+              if (this.type === 'single') {
+                  this.singleDate = date;
+              } else if (this.type === 'consecutive') {
+                  if (this.consecutiveStep === 'start') {
+                      this.startDate = date;
+                      this.consecutiveStep = 'end';
+                  } else {
+                      this.endDatePeriod = date;
+                      this.consecutiveStep = 'start';
+                  }
+              } else if (this.type === 'alternated') {
+                  if (this.selectedDates.includes(date)) {
+                      this.removeDate(this.selectedDates.indexOf(date));
+                  } else {
+                      this.addDate(date);
+                  }
+              }
+          },
+          onTimeSelected(e) {
+              this.startTime = e.detail.start;
+              this.endTime   = e.detail.end;
           }
-      }">
+      }"
+      @date-selected.window="onDateSelected($event)"
+      @time-selected.window="onTimeSelected($event)">
+
     <div class="mb-6 flex justify-between items-center">
       <div>
         <h2 class="text-2xl font-bold text-gray-800">Nova reserva</h2>
@@ -35,6 +71,8 @@
 
           <div class="relative w-full">
             <select name="resource_type"
+              x-model="resourceType"
+              @change="$dispatch('resource-changed', { value: $event.target.value })"
               class="appearance-none w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white font-bold text-gray-700 cursor-pointer">
               <option value="auditorio" {{ old('resource_type') == 'auditorio' ? 'selected' : '' }}>Auditório</option>
               <option value="reuniao" {{ old('resource_type') == 'reuniao' ? 'selected' : '' }}>Sala de Reunião</option>
@@ -79,8 +117,7 @@
 
           {{-- SELETOR DE TIPO DE RESERVA --}}
           <div class="md:col-span-2">
-            <label class="block text-sm font-bold text-gray-700 mb-3 uppercase tracking-wide">Tipo de
-              Reserva</label>
+            <label class="block text-sm font-bold text-gray-700 mb-3 uppercase tracking-wide">Tipo de Reserva</label>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
               <label class="flex items-center p-3 border rounded-xl cursor-pointer transition hover:bg-gray-50"
                 :class="type === 'single' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
@@ -100,69 +137,59 @@
             </div>
           </div>
 
-          {{-- CAMPOS DE HORÁRIO (Sempre visíveis) --}}
-          <div class="p-4 bg-blue-900 rounded-xl md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 text-white">
-            <div>
-              <label class="block text-xs font-bold uppercase mb-1">Horário de Início *</label>
-              <input type="time" name="start_time" value="{{ old('start_time') }}"
-                class="w-full px-4 py-2 rounded-lg text-gray-900 outline-none" required>
-            </div>
-            <div>
-              <label class="block text-xs font-bold uppercase mb-1">Horário de Término *</label>
-              <input type="time" name="end_time" value="{{ old('end_time') }}"
-                class="w-full px-4 py-2 rounded-lg text-gray-900 outline-none" required>
+          {{-- CALENDÁRIO VISUAL + GRADE DE HORÁRIOS --}}
+          <div class="md:col-span-2">
+            <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
+              Disponibilidade —
+              <span x-text="type === 'single' ? 'clique em um dia para selecioná-lo' : (type === 'consecutive' ? 'clique no dia de início, depois no de fim' : 'clique para adicionar dias')"></span>
+            </label>
+            @include('bookings.partials._calendar')
+          </div>
+
+          {{-- Inputs hidden para envio do formulário --}}
+          <div class="md:col-span-2">
+            <input type="hidden" name="start_time" x-model="startTime">
+            <input type="hidden" name="end_time" x-model="endTime">
+            <input type="hidden" name="single_date" x-model="singleDate">
+            <input type="hidden" name="start_date" x-model="startDate">
+            <input type="hidden" name="end_date_period" x-model="endDatePeriod">
+            <template x-for="(date, index) in selectedDates" :key="index">
+              <input type="hidden" name="selected_dates[]" :value="date">
+            </template>
+          </div>
+
+          {{-- Resumo do horário selecionado --}}
+          <div x-show="startTime && endTime" class="md:col-span-2 p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800 font-semibold">
+            <i class="fas fa-clock mr-1"></i>
+            Horário selecionado: <span x-text="startTime"></span> até <span x-text="endTime"></span>
+          </div>
+
+          {{-- Resumo das datas selecionadas (modo alternado) --}}
+          <div x-show="type === 'alternated' && selectedDates.length > 0" class="md:col-span-2">
+            <p class="text-xs font-bold text-gray-500 uppercase mb-2">Dias selecionados:</p>
+            <div class="flex flex-wrap gap-2">
+              <template x-for="(date, index) in selectedDates" :key="'tag-' + index">
+                <div class="bg-blue-100 border border-blue-300 text-blue-900 px-3 py-1 rounded-full flex items-center text-sm font-bold">
+                  <span x-text="date.split('-').reverse().join('/')"></span>
+                  <button type="button" @click="removeDate(index)" class="ml-2 text-red-500 hover:text-red-700">
+                    <i class="fas fa-times-circle"></i>
+                  </button>
+                </div>
+              </template>
             </div>
           </div>
 
-          {{-- LÓGICA DE DATAS DINÂMICAS --}}
-          <div class="md:col-span-2 border-2 border-dashed border-gray-200 rounded-xl p-6 bg-gray-50">
-            {{-- Caso: Dia Único --}}
-            <div x-show="type === 'single'">
-              <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Data da Reserva *</label>
-              <input type="date" name="single_date" value="{{ old('single_date') }}"
-                class="w-full px-4 py-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
+          {{-- Resumo das datas consecutivas --}}
+          <div x-show="type === 'consecutive' && startDate" class="md:col-span-2 p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800 font-semibold">
+            <i class="fas fa-calendar-alt mr-1"></i>
+            <span x-show="!endDatePeriod">De: <span x-text="startDate.split('-').reverse().join('/')"></span> — clique no dia de fim no calendário</span>
+            <span x-show="endDatePeriod">De <span x-text="startDate.split('-').reverse().join('/')"></span> até <span x-text="endDatePeriod.split('-').reverse().join('/')"></span></span>
+          </div>
 
-            {{-- Caso: Dias Consecutivos --}}
-            <div x-show="type === 'consecutive'" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">De (Início) *</label>
-                <input type="date" name="start_date" value="{{ old('start_date') }}"
-                  class="w-full px-4 py-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
-              </div>
-              <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Até (Fim) *</label>
-                <input type="date" name="end_date_period" value="{{ old('end_date_period') }}"
-                  class="w-full px-4 py-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
-              </div>
-            </div>
-
-            {{-- Caso: Dias Alternados --}}
-            <div x-show="type === 'alternated'">
-              <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Adicionar Datas
-                Específicas</label>
-              <div class="flex gap-2 mb-4">
-                <input type="date" x-ref="dateInput" class="flex-1 px-4 py-2 border rounded-lg outline-none">
-                <button type="button" @click="addDate($refs.dateInput.value)"
-                  class="bg-blue-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-800 transition">
-                  <i class="fas fa-plus"></i>
-                </button>
-              </div>
-
-              {{-- Lista de Datas Selecionadas --}}
-              <div class="flex flex-wrap gap-2">
-                <template x-for="(date, index) in selectedDates" :key="index">
-                  <div
-                    class="bg-white border border-blue-200 text-blue-900 px-3 py-1 rounded-full flex items-center text-sm font-bold shadow-sm">
-                    <span x-text="date.split('-').reverse().join('/')"></span>
-                    <input type="hidden" name="selected_dates[]" :value="date">
-                    <button type="button" @click="removeDate(index)" class="ml-2 text-red-500 hover:text-red-700">
-                      <i class="fas fa-times-circle"></i>
-                    </button>
-                  </div>
-                </template>
-              </div>
-            </div>
+          {{-- Resumo do dia único --}}
+          <div x-show="type === 'single' && singleDate" class="md:col-span-2 p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800 font-semibold">
+            <i class="fas fa-calendar-day mr-1"></i>
+            Data selecionada: <span x-text="singleDate.split('-').reverse().join('/')"></span>
           </div>
 
           {{-- Observações --}}
@@ -177,8 +204,9 @@
         <div class="mt-8 flex items-center justify-end space-x-4 border-t pt-6">
           <a href="{{ route('bookings.index') }}" class="text-gray-500 font-semibold hover:text-gray-700">Cancelar</a>
           <button type="submit"
-            class="bg-blue-900 text-white px-10 py-3 rounded-xl font-bold hover:bg-blue-800 transition shadow-lg transform hover:-translate-y-1">
-            Confirmar Reserva
+            class="bg-blue-600 text-white px-10 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg transform hover:-translate-y-1">
+            <i class="fas fa-check sm:hidden"></i>
+            <span class="hidden sm:inline">Confirmar Reserva</span>
           </button>
         </div>
       </form>

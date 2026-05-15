@@ -56,7 +56,9 @@
                 </div>
             </div>
 
-            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded-md hover:bg-blue-700 transition duration-300">
+            <button type="submit"
+                    onclick="this.disabled=true; this.form.submit();"
+                    class="w-full bg-blue-600 text-white font-bold py-2 rounded-md hover:bg-blue-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
                 Entrar
             </button>
 

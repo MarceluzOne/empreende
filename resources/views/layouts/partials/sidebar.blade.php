@@ -1,15 +1,21 @@
 <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-    class="fixed inset-y-0 left-0 z-30 w-64 bg-blue-900 text-white transition duration-300 transform lg:translate-x-0 lg:static lg:inset-0 flex flex-col shadow-xl">
+    class="fixed inset-y-0 left-0 z-30 w-56 bg-white border-r border-gray-200 text-gray-700 transition duration-300 transform lg:translate-x-0 lg:static lg:inset-0 flex flex-col">
 
-    <div class="p-6 border-b border-blue-800 flex flex-col items-center">
-        <div
-            class="w-20 h-20 rounded-full bg-gray-300 border-2 border-white overflow-hidden mb-3 flex items-center justify-center">
-            <img src="{{ asset('assets/Brasão_vitoria.png') }}" alt="Brasão Vitória" class="w-full h-full object-contain p-1">
+    {{-- Logo / Marca --}}
+    <div class="px-5 py-5 border-b border-gray-100 flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
+            <span class="text-white font-bold text-sm">EV</span>
         </div>
+        <div class="leading-tight">
+            <p class="font-bold text-sm text-gray-900">Empreende</p>
+            <p class="text-xs text-gray-400">Vitória de S. Antão</p>
+        </div>
+    </div>
 
-        <p class="font-bold text-sm text-center leading-tight">{{ auth()->user()->name }}</p>
-
-        <span class="text-xs text-blue-300 mt-1">
+    {{-- Perfil de acesso --}}
+    <div class="px-5 py-4 border-b border-gray-100">
+        <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Perfil de acesso</p>
+        <div class="bg-gray-100 rounded-lg px-3 py-2 text-xs font-semibold text-gray-700 truncate">
             @if(auth()->user()->roles->contains('name', 'admin'))
                 Administrador
             @elseif(auth()->user()->roles->contains('name', 'employee'))
@@ -17,63 +23,108 @@
             @else
                 Usuário
             @endif
-        </span>
+        </div>
     </div>
 
-    <nav class="flex-1 px-4 py-4 space-y-2 overflow-y-auto custom-scrollbar">
+    <nav class="flex-1 px-3 py-4 overflow-y-auto space-y-0.5">
+
+        {{-- GERAL --}}
+        <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-2 pb-1 pt-2">Geral</p>
+
         <a href="{{ route('dashboard') }}"
-            class="flex items-center p-2 text-blue-100 hover:bg-blue-800 rounded transition group">
-            <i class="fas fa-chart-line mr-3 w-5 text-center group-hover:scale-110 transition"></i> Dashboard
-        </a>
-        <a href="{{ route('attendances.index') }}" class="flex items-center p-2 text-blue-100 hover:bg-blue-800 rounded transition group">
-            <i class="fas fa-briefcase mr-3 w-5 text-center group-hover:scale-110 transition"></i> Atendimentos
+            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                {{ request()->routeIs('dashboard') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+            <i class="fas fa-chart-bar w-4 text-center"></i>
+            Dashboard
         </a>
 
-        <a href="{{ route('services.index') }}" class="flex items-center p-2 text-blue-100 hover:bg-blue-800 rounded transition group">
-            <i class="fas fa-user-tie mr-3 w-5 text-center group-hover:scale-110 transition"></i> Prestadores de Serviço
+        {{-- OPERAÇÕES --}}
+        <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-2 pb-1 pt-4">Operações</p>
+
+        <a href="{{ route('attendances.index') }}"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                {{ request()->routeIs('attendances.*') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+            <i class="fas fa-briefcase w-4 text-center"></i>
+            Atendimentos
         </a>
 
         <a href="{{ route('bookings.index') }}"
-            class="flex items-center p-2 text-blue-100 hover:bg-blue-800 rounded transition group {{ request()->routeIs('bookings.*') ? 'bg-blue-800' : '' }}">
-            <i class="fas fa-calendar-alt mr-3 w-5 text-center group-hover:scale-110 transition"></i> Reservas
+            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                {{ request()->routeIs('bookings.*') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+            <i class="fas fa-calendar-alt w-4 text-center"></i>
+            Reservas
         </a>
 
+        <a href="{{ route('events.index') }}"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                {{ request()->routeIs('events.*') || request()->routeIs('speakers.*') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+            <i class="fas fa-star w-4 text-center"></i>
+            Eventos
+        </a>
+
+        <a href="{{ route('services.index') }}"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                {{ request()->routeIs('services.*') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+            <i class="fas fa-user-tie w-4 text-center"></i>
+            Prestadores
+        </a>
+
+        {{-- CADASTROS --}}
+        <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-2 pb-1 pt-4">Cadastros</p>
+
         <a href="{{ route('job-vacancies.index') }}"
-            class="flex items-center p-2 text-blue-100 hover:bg-blue-800 rounded transition group {{ request()->routeIs('job-vacancies.*') ? 'bg-blue-800' : '' }}">
-            <i class="fas fa-briefcase mr-3 w-5 text-center group-hover:scale-110 transition"></i> Vagas de Emprego
+            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                {{ request()->routeIs('job-vacancies.*') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+            <i class="fas fa-clipboard-list w-4 text-center"></i>
+            Vagas de Emprego
         </a>
 
         <a href="{{ route('job-seekers.index') }}"
-            class="flex items-center p-2 text-blue-100 hover:bg-blue-800 rounded transition group {{ request()->routeIs('job-seekers.*') ? 'bg-blue-800' : '' }}">
-            <i class="fas fa-user-graduate mr-3 w-5 text-center group-hover:scale-110 transition"></i> Banco de Talentos
+            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                {{ request()->routeIs('job-seekers.*') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+            <i class="fas fa-user-graduate w-4 text-center"></i>
+            Banco de Talentos
         </a>
 
-        <div class="pt-4 pb-2">
-            <p class="text-xs font-semibold text-blue-400 uppercase tracking-wider px-2">Área do Usuário</p>
-        </div>
-
-        <a href="{{ route('profile.edit') }}" class="flex items-center p-2 text-blue-100 hover:bg-blue-800 rounded transition group {{ request()->routeIs('profile.*') ? 'bg-blue-800' : '' }}">
-            <i class="fas fa-user-cog mr-3 w-5 text-center group-hover:scale-110 transition"></i> Meu Perfil
-        </a>
-
+        {{-- SISTEMA --}}
         @if(auth()->user()->roles->contains('name', 'admin'))
-            <div class="pt-4 pb-2">
-                <p class="text-xs font-semibold text-blue-400 uppercase tracking-wider px-2">Administração</p>
-            </div>
+        <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-2 pb-1 pt-4">Sistema</p>
 
-            <a href="{{ route('users.index') }}" class="flex items-center p-2 text-blue-100 hover:bg-blue-800 rounded transition group">
-                <i class="fas fa-users-cog mr-3 w-5 text-center group-hover:scale-110 transition"></i>
-                Gerenciar Equipe
-            </a>
+        <a href="{{ route('users.index') }}"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                {{ request()->routeIs('users.*') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+            <i class="fas fa-users-cog w-4 text-center"></i>
+            Usuários
+        </a>
         @endif
+
+        <a href="{{ route('profile.edit') }}"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                {{ request()->routeIs('profile.*') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+            <i class="fas fa-user-cog w-4 text-center"></i>
+            Meu Perfil
+        </a>
+
     </nav>
 
-    <div class="p-4 border-t border-blue-800">
+    {{-- Usuário logado + logout --}}
+    <div class="px-4 py-4 border-t border-gray-100 flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0 text-white text-xs font-bold">
+            {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="text-xs font-semibold text-gray-800 truncate">{{ auth()->user()->name }}</p>
+            <p class="text-[10px] text-gray-400 uppercase tracking-wide">
+                @if(auth()->user()->roles->contains('name', 'admin')) Administrador
+                @elseif(auth()->user()->roles->contains('name', 'employee')) Funcionário
+                @else Usuário @endif
+            </p>
+        </div>
         <form action="{{ route('logout') }}" method="POST">
             @csrf
-            <button type="submit"
-                class="w-full flex items-center justify-center p-2 bg-red-600 hover:bg-red-700 rounded text-sm font-bold transition">
-                Sair do Sistema
+            <button type="submit" title="Sair"
+                class="text-gray-400 hover:text-red-500 transition">
+                <i class="fas fa-sign-out-alt"></i>
             </button>
         </form>
     </div>

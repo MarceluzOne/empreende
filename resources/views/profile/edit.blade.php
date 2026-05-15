@@ -103,8 +103,9 @@
         <div class="mt-8 flex items-center justify-end space-x-4">
           <a href="{{ route('dashboard') }}" class="text-gray-600 hover:underline">Cancelar</a>
           <button type="submit"
-            class="bg-blue-900 text-white px-8 py-2 rounded-lg font-bold hover:bg-blue-800 transition shadow-md">
-              Salvar Alterações
+            class="bg-blue-600 text-white px-8 py-2 rounded-lg font-semibold hover:bg-blue-700 transition shadow-sm">
+              <i class="fas fa-check sm:hidden"></i>
+              <span class="hidden sm:inline">Salvar Alterações</span>
           </button>
         </div>
       </form>

@@ -80,8 +80,9 @@
         <div class="mt-8 flex items-center justify-end space-x-4">
           <a href="{{ route('users.index') }}" class="text-gray-600 hover:underline">Cancelar</a>
           <button type="submit"
-            class="bg-blue-900 text-white px-8 py-2 rounded-lg font-bold hover:bg-blue-800 transition shadow-md">
-            <i class="fas fa-save mr-2"></i> Atualizar Usuário
+            class="bg-blue-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-blue-700 transition shadow-md">
+            <i class="fas fa-save sm:hidden"></i>
+            <span class="hidden sm:inline">Atualizar Usuário</span>
           </button>
         </div>
       </form>

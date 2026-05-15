@@ -3,26 +3,45 @@
 @section('title', 'Agendamentos - Empreende Vitória')
 
 @section('content')
-    {{-- Estrutura corrigida: vírgulas no lugar e variáveis padronizadas --}}
-    <div x-data="{ 
-        openModal: false, 
-        openDeleteModal: false, 
-        selectedBooking: {}, 
+    <div x-data="{
+        openModal: false,
+        openDeleteModal: false,
+        openBulkDeleteModal: false,
+        selectedBooking: {},
         bookingToDelete: null,
-        bookingToDeleteName: '' 
-    }" class="max-w-6xl mx-auto">
+        bookingToDeleteName: '',
+        selectedIds: [],
+        toggleAll(event) {
+            const checkboxes = document.querySelectorAll('.booking-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = event.target.checked;
+                const id = parseInt(cb.value);
+                if (event.target.checked) {
+                    if (!this.selectedIds.includes(id)) this.selectedIds.push(id);
+                } else {
+                    this.selectedIds = this.selectedIds.filter(i => i !== id);
+                }
+            });
+        },
+        toggle(id) {
+            if (this.selectedIds.includes(id)) {
+                this.selectedIds = this.selectedIds.filter(i => i !== id);
+            } else {
+                this.selectedIds.push(id);
+            }
+        }
+    }">
 
         {{-- Cabeçalho da Página --}}
-        <div class="flex justify-between items-center mb-6">
+        <div class="flex items-start justify-between mb-6">
             <div>
-                <h2 class="text-2xl font-bold text-gray-800">
-                    Reservas
-                </h2>
-                <p class="text-gray-600 italic text-sm md:text-base">Lista de reservas em Vitória de Santo Antão.</p>
+                <h1 class="text-2xl font-bold text-gray-900">Reservas</h1>
+                <p class="text-sm text-gray-400 mt-0.5">Lista de reservas em Vitória de Santo Antão.</p>
             </div>
             <a href="{{ route('bookings.create') }}"
-                class="bg-blue-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-800 transition shadow-sm flex items-center">
-                <span class="text-xs text-center">Novo Agendamento</span>
+                class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+                <i class="fas fa-plus text-xs sm:hidden"></i>
+                <span class="hidden sm:inline">Novo Agendamento</span>
             </a>
         </div>
 
@@ -42,7 +61,7 @@
                 <input type="date" name="date" value="{{ request('date') }}"
                     class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-600">
 
-                <button type="submit" class="bg-blue-900 text-white px-5 py-2 rounded-lg font-bold hover:bg-blue-800 transition text-sm">
+                <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition text-sm">
                     <i class="fas fa-search mr-1"></i> Filtrar
                 </button>
                 @if(request()->hasAny(['search','resource_type','date']))
@@ -53,12 +72,28 @@
             </div>
         </form>
 
+        {{-- Barra de ações em massa --}}
+        <div x-show="selectedIds.length > 0" x-transition
+            class="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4">
+            <p class="text-sm text-red-700 font-semibold">
+                <span x-text="selectedIds.length"></span> agendamento(s) selecionado(s)
+            </p>
+            <button @click="openBulkDeleteModal = true"
+                class="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+                <i class="fas fa-trash-alt"></i> Excluir Selecionados
+            </button>
+        </div>
+
         {{-- Tabela de Dados --}}
         <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
+                            <th class="px-4 py-4 w-10">
+                                <input type="checkbox" @change="toggleAll($event)"
+                                    class="w-4 h-4 accent-blue-600 cursor-pointer rounded">
+                            </th>
                             <th class="px-6 py-4 text-sm font-semibold text-gray-700 w-16">#</th>
                             <th class="px-6 py-4 text-sm font-semibold text-gray-700 ">Responsável</th>
                             <th class="px-6 py-4 text-sm font-semibold text-gray-700 text-center">Qtd. Pessoas</th>
@@ -69,7 +104,13 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse($bookings as $booking)
-                            <tr class="hover:bg-gray-50 transition">
+                            <tr class="hover:bg-gray-50 transition" :class="selectedIds.includes({{ $booking->id }}) ? 'bg-red-50' : ''">
+                                <td class="px-4 py-4">
+                                    <input type="checkbox" value="{{ $booking->id }}"
+                                        class="booking-checkbox w-4 h-4 accent-blue-600 cursor-pointer rounded"
+                                        @change="toggle({{ $booking->id }})"
+                                        :checked="selectedIds.includes({{ $booking->id }})">
+                                </td>
                                 <td class="px-6 py-4 text-sm text-gray-600">{{ $loop->iteration }}</td>
                                 <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $booking->responsible_name }}</td>
                                 <td class="px-6 py-4 text-sm text-center">
@@ -118,7 +159,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center text-gray-500 italic">Nenhum agendamento.</td>
+                                <td colspan="7" class="px-6 py-12 text-center text-gray-500 italic">Nenhum agendamento.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -126,26 +167,34 @@
             </div>
         </div>
 
-        {{-- MODAL DE VISUALIZAÇÃO RESTAURADO --}}
+        {{-- Paginação --}}
+        @if($bookings->hasPages())
+            <div class="mt-4">{{ $bookings->links() }}</div>
+        @endif
+
+        {{-- Form exclusão em massa (invisível) --}}
+        <form id="bulk-delete-form" action="{{ route('bookings.destroyMultiple') }}" method="POST" class="hidden">
+            @csrf @method('DELETE')
+            <template x-for="id in selectedIds" :key="id">
+                <input type="hidden" name="ids[]" :value="id">
+            </template>
+        </form>
+
+        {{-- MODAL DE VISUALIZAÇÃO --}}
         <div x-show="openModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
             x-transition x-cloak>
             <div @click.away="openModal = false" class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
-                {{-- Header --}}
                 <div class="bg-blue-900 p-5 flex justify-between items-center text-white">
                     <h3 class="font-bold text-xl"><i class="fas fa-info-circle mr-2"></i> Detalhes do Registro</h3>
-                    <button @click="openModal = false" class="text-white hover:text-gray-300"><i
-                            class="fas fa-times fa-lg"></i></button>
+                    <button @click="openModal = false" class="text-white hover:text-gray-300"><i class="fas fa-times fa-lg"></i></button>
                 </div>
 
                 <div class="p-8 space-y-6">
-                    {{-- Responsável --}}
                     <div>
                         <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Responsável</label>
-                        <p class="text-lg text-gray-800 font-bold border-b pb-2" x-text="selectedBooking.responsible_name">
-                        </p>
+                        <p class="text-lg text-gray-800 font-bold border-b pb-2" x-text="selectedBooking.responsible_name"></p>
                     </div>
 
-                    {{-- Local e Qtd Pessoas --}}
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Espaço Reservado</label>
@@ -160,71 +209,57 @@
                         </div>
                         <div>
                             <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total de Pessoas</label>
-                            <p class="text-gray-800 font-medium"><i class="fas fa-users mr-1 text-blue-900"></i> <span
-                                    x-text="selectedBooking.guests_count"></span></p>
+                            <p class="text-gray-800 font-medium"><i class="fas fa-users mr-1 text-blue-900"></i> <span x-text="selectedBooking.guests_count"></span></p>
                         </div>
                     </div>
 
-                    {{-- Data e Horário com Início/Fim --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Data do Evento</label>
                             <p class="text-gray-800 font-medium">
                                 <i class="fas fa-calendar-day mr-1 text-blue-900"></i>
-                                <span
-                                    x-text="selectedBooking.booking_date ? new Date(selectedBooking.booking_date).toLocaleDateString('pt-BR') : ''"></span>
+                                <span x-text="selectedBooking.booking_date ? new Date(selectedBooking.booking_date).toLocaleDateString('pt-BR') : ''"></span>
                             </p>
                         </div>
                         <div>
-                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Horário (Início -
-                                Fim)</label>
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Horário (Início - Fim)</label>
                             <p class="text-gray-800 font-bold">
                                 <i class="fas fa-clock mr-1 text-blue-900"></i>
-                                <span
-                                    x-text="selectedBooking.booking_date ? new Date(selectedBooking.booking_date).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : ''"></span>
+                                <span x-text="selectedBooking.booking_date ? new Date(selectedBooking.booking_date).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : ''"></span>
                                 <span> às </span>
-                                <span
-                                    x-text="selectedBooking.end_date ? new Date(selectedBooking.end_date).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : ''"></span>
+                                <span x-text="selectedBooking.end_date ? new Date(selectedBooking.end_date).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) : ''"></span>
                             </p>
                         </div>
                     </div>
 
-                    {{-- CPF --}}
                     <div>
                         <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">CPF do Responsável</label>
                         <p class="text-gray-800 font-medium"
-                            x-text="selectedBooking.cpf ? selectedBooking.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : 'Não informado'">
-                        </p>
+                            x-text="selectedBooking.cpf ? selectedBooking.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : 'Não informado'"></p>
                     </div>
 
-                    {{-- Observações --}}
                     <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
                         <label class="text-xs font-bold text-blue-400 uppercase tracking-wider">Observações Internas</label>
-                        <p class="text-blue-900 text-sm mt-1 leading-relaxed"
-                            x-text="selectedBooking.observation || 'Nenhuma observação cadastrada.'"></p>
+                        <p class="text-blue-900 text-sm mt-1 leading-relaxed" x-text="selectedBooking.observation || 'Nenhuma observação cadastrada.'"></p>
                     </div>
                 </div>
 
-                {{-- Footer --}}
                 <div class="p-4 bg-gray-50 flex justify-end space-x-2 border-t">
                     <button @click="openModal = false"
                         class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-bold hover:bg-gray-300 transition text-sm">Fechar</button>
                     <a :href="'/bookings/' + selectedBooking.id + '/edit'"
-                        class="bg-blue-900 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-800 transition text-sm">Editar
-                        Agora</a>
+                        class="bg-blue-900 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition text-sm">Editar Agora</a>
                 </div>
             </div>
         </div>
 
-        {{-- MODAL DE EXCLUSÃO ESTILIZADO --}}
+        {{-- MODAL DE EXCLUSÃO INDIVIDUAL --}}
         <div x-show="openDeleteModal"
-            class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition
-            x-cloak>
+            class="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition x-cloak>
             <div @click.away="openDeleteModal = false"
                 class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-t-4 border-red-600">
                 <div class="p-6 text-center">
-                    <div
-                        class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-trash-alt fa-2x"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-800 mb-2">Excluir Agendamento?</h3>
@@ -237,8 +272,33 @@
                     <button @click="openDeleteModal = false"
                         class="w-full bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold hover:bg-gray-300 transition">Manter</button>
                     <button @click="document.getElementById('delete-form-' + bookingToDelete).submit()"
-                        class="w-full bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 transition shadow-md">Sim,
-                        Excluir</button>
+                        class="w-full bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 transition shadow-md">Sim, Excluir</button>
+                </div>
+            </div>
+        </div>
+
+        {{-- MODAL DE EXCLUSÃO EM MASSA --}}
+        <div x-show="openBulkDeleteModal"
+            class="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" x-transition x-cloak>
+            <div @click.away="openBulkDeleteModal = false"
+                class="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-t-4 border-red-600">
+                <div class="p-6 text-center">
+                    <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-trash-alt fa-2x"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Excluir Agendamentos?</h3>
+                    <p class="text-gray-600 text-sm italic leading-relaxed">
+                        Deseja realmente remover os
+                        <span class="font-bold text-red-600" x-text="selectedIds.length"></span>
+                        agendamento(s) selecionado(s)?<br>
+                        <span class="text-xs text-gray-500">Esta ação não poderá ser desfeita.</span>
+                    </p>
+                </div>
+                <div class="p-4 bg-gray-50 flex space-x-2 border-t border-gray-100">
+                    <button @click="openBulkDeleteModal = false"
+                        class="w-full bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-bold hover:bg-gray-300 transition">Cancelar</button>
+                    <button @click="document.getElementById('bulk-delete-form').submit()"
+                        class="w-full bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 transition shadow-md">Sim, Excluir</button>
                 </div>
             </div>
         </div>

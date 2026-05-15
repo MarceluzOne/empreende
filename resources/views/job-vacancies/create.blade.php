@@ -191,8 +191,9 @@
                 Cancelar
             </a>
             <button type="submit"
-                class="px-6 py-3 bg-blue-900 text-white rounded-xl shadow-lg hover:bg-blue-800 transition font-semibold text-sm flex items-center gap-2">
-                Cadastrar Vaga
+                class="px-6 py-3 bg-blue-600 text-white rounded-xl shadow-lg hover:bg-blue-700 transition font-semibold text-sm flex items-center gap-2">
+                <i class="fas fa-check sm:hidden"></i>
+                <span class="hidden sm:inline">Cadastrar Vaga</span>
             </button>
         </div>
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Services\BookingService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class BookingController extends Controller
@@ -78,5 +79,42 @@ class BookingController extends Controller
         $booking->delete();
 
         return redirect()->route('bookings.index')->with('success', 'Agendamento removido com sucesso!');
+    }
+
+    public function availability(Request $request)
+    {
+        $request->validate([
+            'resource_type' => 'required|in:auditorio,reuniao',
+            'year'          => 'required|integer|min:2000|max:2100',
+            'month'         => 'required|integer|min:1|max:12',
+        ]);
+
+        $start = Carbon::create($request->year, $request->month, 1)->startOfMonth();
+        $end   = $start->copy()->endOfMonth();
+
+        $bookings = Booking::where('resource_type', $request->resource_type)
+            ->where('booking_date', '>=', $start)
+            ->where('booking_date', '<=', $end)
+            ->get(['id', 'booking_date', 'end_date']);
+
+        $byDate = [];
+        foreach ($bookings as $b) {
+            $date = $b->booking_date->format('Y-m-d');
+            $byDate[$date][] = [
+                'start' => $b->booking_date->format('H:i'),
+                'end'   => $b->end_date ? $b->end_date->format('H:i') : null,
+            ];
+        }
+
+        return response()->json(['bookings_by_date' => $byDate]);
+    }
+
+    public function destroyMultiple(Request $request)
+    {
+        $request->validate(['ids' => 'required|array', 'ids.*' => 'integer|exists:bookings,id']);
+
+        $count = Booking::whereIn('id', $request->ids)->delete();
+
+        return redirect()->route('bookings.index')->with('success', "{$count} agendamento(s) removido(s) com sucesso!");
     }
 }

@@ -6,18 +6,18 @@
 <div x-data="{ 
     openModal: false, 
     selectedAttendance: {} 
-}" class="max-w-6xl mx-auto">
+}">
 
     {{-- Cabeçalho e Ação --}}
-    <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+    <div class="flex items-start justify-between mb-6">
         <div>
-            <h2 class="text-2xl font-bold text-gray-800">
-                Registro de Atendimentos
-            </h2>
-            <p class="text-gray-600 italic">Histórico de cidadãos atendidos no Empreende Vitória.</p>
+            <h1 class="text-2xl font-bold text-gray-900">Registro de Atendimentos</h1>
+            <p class="text-sm text-gray-400 mt-0.5">Histórico de cidadãos atendidos no Empreende Vitória.</p>
         </div>
-        <a href="{{ route('attendances.create') }}" class="bg-blue-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-800 transition shadow-lg flex items-center w-full md:w-auto justify-center">
-            Novo Atendimento
+        <a href="{{ route('attendances.create') }}"
+            class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+            <i class="fas fa-plus text-xs sm:hidden"></i>
+            <span class="hidden sm:inline">Novo Atendimento</span>
         </a>
     </div>
 
@@ -43,7 +43,7 @@
                 <option value="forwarded"  {{ request('status') === 'forwarded'  ? 'selected' : '' }}>Encaminhado</option>
             </select>
 
-            <button type="submit" class="bg-blue-900 text-white px-5 py-2 rounded-lg font-bold hover:bg-blue-800 transition text-sm">
+            <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition text-sm">
                 <i class="fas fa-search mr-1"></i> Filtrar
             </button>
             @if(request()->hasAny(['search','status','service_type']))
@@ -61,7 +61,7 @@
                 <i class="fas fa-calendar-day fa-lg"></i>
             </div>
             <div>
-                <p class="text-xs text-gray-500 uppercase font-bold">Atendimentos para Hoje</p>
+                <p class="text-xs text-gray-500 uppercase font-bold">Atendimentos de Hoje</p>
                 <p class="text-xl font-bold text-gray-800">{{ $attendances->where('scheduled_at', '>=', today())->where('scheduled_at', '<', today()->addDay())->count() }}</p>
             </div>
         </div>
@@ -117,13 +117,23 @@
                             </td>
                             <td class="px-6 py-4 text-center">
                                 <div class="flex justify-center space-x-3">
-                                    <button @click="selectedAttendance = {{ $attendance->toJson() }}; openModal = true" 
+                                    <button @click="selectedAttendance = {{ $attendance->toJson() }}; openModal = true"
                                             class="text-blue-900 hover:text-blue-700 transition" title="Ver Detalhes">
                                         <i class="fas fa-eye fa-lg"></i>
                                     </button>
                                     <a href="{{ route('attendances.edit', $attendance->id) }}" class="text-gray-400 hover:text-gray-600 transition">
                                         <i class="fas fa-edit fa-lg"></i>
                                     </a>
+                                    @if(auth()->user()->roles->contains('name', 'admin'))
+                                    <form action="{{ route('attendances.destroy', $attendance->id) }}" method="POST"
+                                          onsubmit="return confirm('Tem certeza que deseja excluir este atendimento?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-400 hover:text-red-600 transition" title="Excluir">
+                                            <i class="fas fa-trash fa-lg"></i>
+                                        </button>
+                                    </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -196,7 +206,7 @@
             </div>
         </div>
         <div class="p-4 bg-gray-50 flex justify-end border-t">
-            <button @click="openModal = false" class="bg-blue-900 text-white px-8 py-2 rounded-lg font-bold hover:bg-blue-800 transition">Fechar</button>
+            <button @click="openModal = false" class="bg-blue-900 text-white px-8 py-2 rounded-lg font-bold hover:bg-blue-700 transition">Fechar</button>
         </div>
     </div>
 </div>

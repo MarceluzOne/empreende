@@ -104,8 +104,9 @@
                 <a href="{{ route('users.index') }}" class="text-gray-500 hover:text-gray-700 font-semibold transition">
                     Cancelar
                 </a>
-                <button type="submit" class="bg-blue-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-800 transition shadow-lg flex items-center">
-                    <i class="fas fa-user-check mr-2"></i> Criar Usuário
+                <button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg flex items-center">
+                    <i class="fas fa-user-check sm:hidden"></i>
+                    <span class="hidden sm:inline">Criar Usuário</span>
                 </button>
             </div>
         </form>

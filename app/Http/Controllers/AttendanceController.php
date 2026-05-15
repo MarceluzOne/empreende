@@ -92,4 +92,13 @@ class AttendanceController extends Controller
 
         return redirect()->route('attendances.index')->with('success', 'Atendimento atualizado!');
     }
+
+    public function destroy(Attendance $attendance)
+    {
+        abort_unless(auth()->user()->roles->contains('name', 'admin'), 403);
+
+        $attendance->delete();
+
+        return redirect()->route('attendances.index')->with('success', 'Atendimento excluído com sucesso!');
+    }
 }

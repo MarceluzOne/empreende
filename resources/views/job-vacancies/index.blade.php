@@ -33,14 +33,15 @@
 >
 
     {{-- Header --}}
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex items-start justify-between mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">Vagas de Emprego</h1>
-            <p class="text-sm text-gray-500 mt-1">Gerencie as vagas cadastradas pelas empresas</p>
+            <h1 class="text-2xl font-bold text-gray-900">Vagas de Emprego</h1>
+            <p class="text-sm text-gray-400 mt-0.5">Gerencie as vagas cadastradas pelas empresas</p>
         </div>
         <a href="{{ route('job-vacancies.create') }}"
-            class="flex items-center gap-2 bg-blue-900 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-800 transition text-sm font-semibold">
-            Nova Vaga
+            class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+            <i class="fas fa-plus text-xs sm:hidden"></i>
+            <span class="hidden sm:inline">Nova Vaga</span>
         </a>
     </div>
 
@@ -87,7 +88,7 @@
         </div>
         <div class="flex items-end gap-2">
             <button type="submit"
-                class="px-4 py-2 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition">
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
                 Filtrar
             </button>
             @if(request('search') || request('status'))
@@ -147,20 +148,20 @@
                         <div class="flex items-center gap-2">
                             <button @click="showVacancy({{ $vacancy->toJson() }})"
                                 class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Visualizar">
-                                <i class="fas fa-eye text-sm"></i>
+                                <i class="fas fa-eye fa-lg"></i>
                             </button>
                             <a href="{{ route('job-vacancies.edit', $vacancy) }}"
                                 class="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded-lg transition" title="Editar">
-                                <i class="fas fa-pencil-alt text-sm"></i>
+                                <i class="fas fa-edit fa-lg"></i>
                             </a>
                             <button @click="prepDelete({{ $vacancy->id }}, '{{ addslashes($vacancy->position) }}')"
                                 class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition" title="Remover">
-                                <i class="fas fa-trash text-sm"></i>
+                                <i class="fas fa-trash-alt fa-lg"></i>
                             </button>
-                            <button @click="prepNotify({{ $vacancy->id }}, '{{ addslashes($vacancy->position) }}', '{{ addslashes($vacancy->interest_area ?? '') }}')"
+                            {{-- <button @click="prepNotify({{ $vacancy->id }}, '{{ addslashes($vacancy->position) }}', '{{ addslashes($vacancy->interest_area ?? '') }}')"
                                 class="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition" title="Notificar candidatos por e-mail">
                                 <i class="fas fa-envelope text-sm"></i>
-                            </button>
+                            </button> --}}
                             <form id="delete-form-{{ $vacancy->id }}"
                                 action="{{ route('job-vacancies.destroy', $vacancy) }}"
                                 method="POST" class="hidden">

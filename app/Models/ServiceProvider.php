@@ -31,7 +31,7 @@ class ServiceProvider extends Model
 
     public function getTypeLabelAttribute()
     {
-        return $this->provider_type === 'company' ? 'Empresa' : 'Pessoa Física';
+        return $this->provider_type === 'company' ? 'Produto' : 'Serviço';
     }
     public function getStatusLabelAttribute()
 {

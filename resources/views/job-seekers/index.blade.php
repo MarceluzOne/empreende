@@ -23,14 +23,15 @@
 >
 
     {{-- Header --}}
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex items-start justify-between mb-6">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">Banco de Talentos</h1>
-            <p class="text-sm text-gray-500 mt-1">Cadastro de pessoas em busca de oportunidades</p>
+            <h1 class="text-2xl font-bold text-gray-900">Banco de Talentos</h1>
+            <p class="text-sm text-gray-400 mt-0.5">Cadastro de pessoas em busca de oportunidades</p>
         </div>
         <a href="{{ route('job-seekers.create') }}"
-            class="flex items-center gap-2 bg-blue-900 text-white px-4 py-2 rounded-xl shadow hover:bg-blue-800 transition text-sm font-semibold">
-            Novo Cadastro
+            class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+            <i class="fas fa-plus text-xs sm:hidden"></i>
+            <span class="hidden sm:inline">Novo Cadastro</span>
         </a>
     </div>
 
@@ -44,7 +45,7 @@
     {{-- Filters --}}
     <form method="GET" action="{{ route('job-seekers.index') }}"
         class="mb-6 bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-wrap gap-3 items-end">
-        <div class="flex-1 min-w-[180px]">
+        <div class="flex-1 min-w-45">
             <label class="text-xs font-semibold text-gray-500 uppercase mb-1 block">Buscar</label>
             <div class="relative">
                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
@@ -55,7 +56,7 @@
                     class="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
             </div>
         </div>
-        <div class="min-w-[180px]">
+        <div class="min-w-45">
             <label class="text-xs font-semibold text-gray-500 uppercase mb-1 block">Área de Interesse</label>
             <select name="interest_area"
                 class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
@@ -67,7 +68,7 @@
                 @endforeach
             </select>
         </div>
-        <div class="min-w-[130px]">
+        <div class="min-w-32.5">
             <label class="text-xs font-semibold text-gray-500 uppercase mb-1 block">Status</label>
             <select name="status"
                 class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
@@ -78,7 +79,7 @@
         </div>
         <div class="flex items-end gap-2">
             <button type="submit"
-                class="px-4 py-2 bg-blue-900 text-white rounded-lg text-sm font-semibold hover:bg-blue-800 transition">
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition">
                 Filtrar
             </button>
             @if(request('search') || request('interest_area') || request('status'))
@@ -138,15 +139,15 @@
                         <div class="flex items-center gap-2">
                             <button @click="showSeeker({{ $seeker->toJson() }})"
                                 class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Visualizar">
-                                <i class="fas fa-eye text-sm"></i>
+                                <i class="fas fa-eye fa-lg"></i>
                             </button>
                             <a href="{{ route('job-seekers.edit', $seeker) }}"
                                 class="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded-lg transition" title="Editar">
-                                <i class="fas fa-pencil-alt text-sm"></i>
+                                <i class="fas fa-edit fa-lg"></i>
                             </a>
                             <button @click="prepDelete({{ $seeker->id }}, '{{ addslashes($seeker->name) }}')"
                                 class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition" title="Remover">
-                                <i class="fas fa-trash text-sm"></i>
+                                <i class="fas fa-trash-alt fa-lg"></i>
                             </button>
                             <form id="delete-form-{{ $seeker->id }}"
                                 action="{{ route('job-seekers.destroy', $seeker) }}"

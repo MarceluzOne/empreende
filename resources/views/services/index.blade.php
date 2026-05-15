@@ -21,19 +21,18 @@
           this.serviceToDeleteName = name;
           this.openDeleteModal = true;
       }
-  }" class="max-w-6xl mx-auto">
+  }">
 
     {{-- Cabeçalho --}}
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex items-start justify-between mb-6">
       <div>
-        <h2 class="text-2xl font-bold text-gray-800">
-          Prestadores de Serviço
-        </h2>
-        <p class="text-gray-600 italic">Rede de profissionais em Vitória de Santo Antão.</p>
+        <h1 class="text-2xl font-bold text-gray-900">Prestadores de Serviço</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Rede de profissionais em Vitória de Santo Antão.</p>
       </div>
       <a href="{{ route('services.create') }}"
-        class="bg-blue-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-800 transition shadow-sm flex items-center">
-        <span class="hidden md:inline">Cadastrar Serviço</span>
+        class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+        <i class="fas fa-plus text-xs sm:hidden"></i>
+        <span class="hidden sm:inline">Cadastrar Serviço</span>
       </a>
     </div>
 
@@ -46,8 +45,8 @@
 
             <select name="provider_type" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-600">
                 <option value="">Todos os tipos</option>
-                <option value="individual" {{ request('provider_type') === 'individual' ? 'selected' : '' }}>Pessoa Física</option>
-                <option value="company"    {{ request('provider_type') === 'company'    ? 'selected' : '' }}>Empresa</option>
+                <option value="individual" {{ request('provider_type') === 'individual' ? 'selected' : '' }}>Serviço</option>
+                <option value="company"    {{ request('provider_type') === 'company'    ? 'selected' : '' }}>Produto</option>
             </select>
 
             <select name="status" class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-600">
@@ -57,7 +56,7 @@
                 <option value="pending"  {{ request('status') === 'pending'  ? 'selected' : '' }}>Pendente</option>
             </select>
 
-            <button type="submit" class="bg-blue-900 text-white px-5 py-2 rounded-lg font-bold hover:bg-blue-800 transition text-sm">
+            <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-700 transition text-sm">
                 <i class="fas fa-search mr-1"></i> Filtrar
             </button>
             @if(request()->hasAny(['search','provider_type','status']))

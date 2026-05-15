@@ -10,20 +10,18 @@
     selectedUser: {}, 
     userToDelete: null,
     userToDeleteName: '' 
-}" class="max-w-6xl mx-auto">
+}">
 
     {{-- Cabeçalho da Página --}}
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex items-start justify-between mb-6">
         <div>
-            <h2 class="text-2xl font-bold text-gray-800">
-                <i class="fas fa-users-cog text-blue-900 mr-2"></i> Gerenciar Equipe
-            </h2>
-            <p class="text-gray-600 italic">Visualize e gerencie os acessos ao sistema em Vitória de Santo Antão.</p>
+            <h1 class="text-2xl font-bold text-gray-900">Gerenciar Equipe</h1>
+            <p class="text-sm text-gray-400 mt-0.5">Visualize e gerencie os acessos ao sistema.</p>
         </div>
         <a href="{{ route('users.create') }}"
-            class="bg-blue-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-800 transition shadow-sm flex items-center">
-            <i class="fas fa-user-plus md:mr-2"></i>
-            <span class="hidden md:inline">Novo Usuário</span>
+            class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+            <i class="fas fa-plus text-xs sm:hidden"></i>
+            <span class="hidden sm:inline">Novo Usuário</span>
         </a>
     </div>
 
@@ -142,7 +140,7 @@
 
             <div class="p-4 bg-gray-50 flex justify-end space-x-2 border-t">
                 <button @click="openModal = false" class="bg-gray-200 px-6 py-2 rounded-lg font-bold hover:bg-gray-300 transition text-sm">Fechar</button>
-                <a :href="'/users/' + selectedUser.id + '/edit'" class="bg-blue-900 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-800 transition text-sm flex items-center">
+                <a :href="'/users/' + selectedUser.id + '/edit'" class="bg-blue-900 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition text-sm flex items-center">
                     <i class="fas fa-edit mr-2"></i> Editar
                 </a>
             </div>

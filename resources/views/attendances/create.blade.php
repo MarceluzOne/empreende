@@ -131,9 +131,9 @@
                 {{-- Botão de Ação --}}
                 <div class="mt-10">
                     <button type="submit"
-                        class="w-full md:3/4 bg-blue-900 text-white py-5 rounded-2xl font-semibold uppercase tracking-widest shadow-2xl active:scale-95 flex items-center self-end justify-center">
-                        <span x-text="isScheduled ? 'Agendar Atendimento' : 'Finalizar Atendimento Agora'"></span>
-                        <i class="fas hidden md:flex fa-arrow-right ml-2"></i>
+                        class="w-full md:3/4 bg-blue-600 text-white py-5 rounded-2xl font-semibold uppercase tracking-widest shadow-2xl active:scale-95 flex items-center self-end justify-center">
+                        <i class="fas fa-check sm:hidden"></i>
+                        <span class="hidden sm:inline" x-text="isScheduled ? 'Agendar Atendimento' : 'Finalizar Atendimento Agora'"></span>
                     </button>
                 </div>
             </form>

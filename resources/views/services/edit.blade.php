@@ -50,13 +50,13 @@
                         <label class="flex-1 flex items-center justify-center p-4 border-2 rounded-xl cursor-pointer transition"
                             :class="providerType === 'individual' ? 'border-blue-900 bg-blue-50 text-blue-900' : 'border-gray-100 text-gray-400'">
                             <input type="radio" name="provider_type" value="individual" x-model="providerType" class="hidden">
-                            <i class="fas fa-user mr-2"></i> <span class="font-bold">Pessoa Física</span>
+                            <i class="fas fa-user mr-2"></i> <span class="font-bold">Serviço</span>
                         </label>
                         
                         <label class="flex-1 flex items-center justify-center p-4 border-2 rounded-xl cursor-pointer transition"
                             :class="providerType === 'company' ? 'border-blue-900 bg-blue-50 text-blue-900' : 'border-gray-100 text-gray-400'">
                             <input type="radio" name="provider_type" value="company" x-model="providerType" class="hidden">
-                            <i class="fas fa-building mr-2"></i> <span class="font-bold">Empresa</span>
+                            <i class="fas fa-building mr-2"></i> <span class="font-bold">Produto</span>
                         </label>
                     </div>
                 </div>
@@ -106,8 +106,9 @@
             {{-- Ações --}}
             <div class="mt-10 flex items-center justify-end space-x-4 border-t pt-6">
                 <a href="{{ route('services.index') }}" class="text-gray-500 hover:text-gray-700 font-semibold transition">Cancelar</a>
-                <button type="submit" class="bg-blue-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-800 transition shadow-lg">
-                    Salvar Alterações
+                <button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg">
+                    <i class="fas fa-check sm:hidden"></i>
+                    <span class="hidden sm:inline">Salvar Alterações</span>
                 </button>
             </div>
         </form>
