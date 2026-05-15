@@ -41,7 +41,7 @@
             <a href="{{ route('bookings.create') }}"
                 class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
                 <i class="fas fa-plus text-xs sm:hidden"></i>
-                <span class="hidden sm:inline">Novo Agendamento</span>
+                <span class="hidden sm:inline">Nova Reserva</span>
             </a>
         </div>
 

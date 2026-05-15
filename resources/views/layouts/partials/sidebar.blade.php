@@ -12,20 +12,6 @@
         </div>
     </div>
 
-    {{-- Perfil de acesso --}}
-    <div class="px-5 py-4 border-b border-gray-100">
-        <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Perfil de acesso</p>
-        <div class="bg-gray-100 rounded-lg px-3 py-2 text-xs font-semibold text-gray-700 truncate">
-            @if(auth()->user()->roles->contains('name', 'admin'))
-                Administrador
-            @elseif(auth()->user()->roles->contains('name', 'employee'))
-                Funcionário
-            @else
-                Usuário
-            @endif
-        </div>
-    </div>
-
     <nav class="flex-1 px-3 py-4 overflow-y-auto space-y-0.5">
 
         {{-- GERAL --}}
@@ -83,7 +69,7 @@
             class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
                 {{ request()->routeIs('job-seekers.*') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100' }}">
             <i class="fas fa-user-graduate w-4 text-center"></i>
-            Banco de Talentos
+            Candidatos
         </a>
 
         {{-- SISTEMA --}}
@@ -120,12 +106,39 @@
                 @else Usuário @endif
             </p>
         </div>
-        <form action="{{ route('logout') }}" method="POST">
-            @csrf
-            <button type="submit" title="Sair"
-                class="text-gray-400 hover:text-red-500 transition">
-                <i class="fas fa-sign-out-alt"></i>
-            </button>
-        </form>
+        <button type="button" title="Sair"
+            onclick="document.getElementById('modal-logout').style.display='flex'"
+            class="text-gray-400 hover:text-red-500 transition">
+            <i class="fas fa-sign-out-alt"></i>
+        </button>
     </div>
 </aside>
+
+{{-- Modal de confirmação de logout --}}
+<div id="modal-logout" style="display:none" class="fixed inset-0 z-50 items-center justify-center bg-black/40">
+    <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm mx-4">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <i class="fas fa-sign-out-alt text-red-500"></i>
+            </div>
+            <div>
+                <h2 class="text-base font-semibold text-gray-800">Sair da conta</h2>
+                <p class="text-sm text-gray-500">Tem certeza que deseja sair?</p>
+            </div>
+        </div>
+        <div class="flex justify-end gap-2 mt-4">
+            <button type="button"
+                onclick="document.getElementById('modal-logout').style.display='none'"
+                class="px-4 py-2 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
+                Cancelar
+            </button>
+            <form action="{{ route('logout') }}" method="POST">
+                @csrf
+                <button type="submit"
+                    class="px-4 py-2 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600 transition">
+                    Sair
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
