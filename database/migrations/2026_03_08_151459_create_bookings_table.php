@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('bookings', function (Blueprint $table) {
-            $table->id();
-            
+            $table->uuid('id')->primary();
+
             $table->string('responsible_name');
             
             $table->string('cpf')->nullable();
@@ -21,7 +21,7 @@ return new class extends Migration
             
             $table->text('observation')->nullable();
 
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('user_id')->constrained()->onDelete('cascade');
 
             $table->timestamps();
         });

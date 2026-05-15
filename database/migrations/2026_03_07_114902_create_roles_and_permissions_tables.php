@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('roles', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('name')->unique(); 
             $table->string('label');
             $table->text('description')->nullable();
@@ -20,24 +20,28 @@ return new class extends Migration
         });
 
         Schema::create('permissions', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('permission_id')->nullable()->constrained('permissions')->onDelete('cascade');
+            $table->uuid('id')->primary();
+            $table->uuid('permission_id')->nullable();
             $table->string('name')->unique();
             $table->string('label');
             $table->text('description')->nullable();
             $table->timestamps();
         });
 
+        Schema::table('permissions', function (Blueprint $table) {
+            $table->foreign('permission_id')->references('id')->on('permissions')->onDelete('cascade');
+        });
+
         Schema::create('permission_role', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('role_id')->constrained()->onDelete('cascade');
-            $table->foreignId('permission_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('role_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('permission_id')->constrained()->onDelete('cascade');
+            $table->primary(['role_id', 'permission_id']);
         });
 
         Schema::create('role_user', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('role_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('user_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('role_id')->constrained()->onDelete('cascade');
+            $table->primary(['user_id', 'role_id']);
         });
     }
 
