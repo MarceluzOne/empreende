@@ -23,7 +23,7 @@ class AppServiceProvider extends ServiceProvider
         // 1. Super Admin Bypass (Opcional, mas recomendado para o seu e-mail)
         // Isso garante que você nunca fique trancado fora do sistema
         Gate::before(function ($user, $ability) {
-            if ($user->email === env('SUPER_ADMIN_EMAIL')) {
+            if ($user->email === config('app.super_admin_email')) {
                 return true;
             }
         });

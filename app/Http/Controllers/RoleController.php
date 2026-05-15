@@ -13,6 +13,7 @@ class RoleController extends Controller
 {
     // Tags focadas em Salas e Agendamentos
     private $tags = [
+        'admin-only',
         'rooms', 'rooms_view', 'rooms_create', 'rooms_update', 'rooms_delete',
         'bookings', 'bookings_view', 'bookings_create', 'bookings_update', 'bookings_delete',
         'users', 'users_view', 'users_create', 'users_update', 'users_delete'
@@ -27,10 +28,10 @@ class RoleController extends Controller
             $staff = Role::updateOrCreate(['name' => 'employee'], ['name' => 'employee', 'label' => 'Funcionário']);
 
             foreach ($this->tags as $tag) {
-                if (!Str::contains($tag, '_')) {
+                if (!Str::contains($tag, '_') || Str::contains($tag, '-')) {
                     Permission::updateOrCreate(
                         ['name' => $tag],
-                        ['name' => $tag, 'label' => ucfirst($tag)]
+                        ['name' => $tag, 'label' => ucfirst(str_replace('-', ' ', $tag))]
                     );
                 } else {
                     $parentName = explode('_', $tag)[0];
@@ -57,10 +58,10 @@ class RoleController extends Controller
             $staff->permissions()->sync($staffPermissions);
 
             $user = User::updateOrCreate(
-                ['email' => env('SUPER_ADMIN_EMAIL')],
+                ['email' => config('app.super_admin_email')],
                 [
                     'name' => 'Admin Sistema',
-                    'password' => Hash::make(env('SUPER_ADMIN_PASSWORD', 'changeme'))
+                    'password' => Hash::make(config('app.super_admin_password', 'changeme'))
                 ]
             );
             $user->roles()->syncWithoutDetaching([$admin->id]);
