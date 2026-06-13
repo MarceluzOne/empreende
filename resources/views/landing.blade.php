@@ -740,7 +740,7 @@
   <!-- ============ HERO ============ -->
   <section class="hero">
     <img class="hero__img"
-         src="https://www.prefeituradavitoria.pe.gov.br/empreendevitoria/wp-content/uploads/2023/06/CAPA-SITE-EMPREENDE-VITORIA-1960X470.png"
+         src="{{ asset('assets/Capa-site-_-Empreende-Vitoria.png') }}"
          alt="Empreende Vitória — Salão do Empreendedor"
          onerror="this.style.display='none'">
     <div class="hero__overlay"></div>
