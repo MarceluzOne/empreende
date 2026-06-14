@@ -13,6 +13,11 @@ class Empresa extends Model
         'telefone',
         'descricao',
         'cidade',
+        'active',
+    ];
+
+    protected $casts = [
+        'active' => 'boolean',
     ];
 
     public function user()

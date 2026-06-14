@@ -123,7 +123,13 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->prefix('portal/funci
 
     // Empresas: lista consolidada por CNPJ (cadastradas + com vagas publicadas)
     Route::get('empresas', [CompanyController::class, 'index'])->name('companies.index');
+    Route::get('empresas/{empresa}/editar', [CompanyController::class, 'editEmpresa'])->name('companies.empresa.edit');
+    Route::put('empresas/{empresa}', [CompanyController::class, 'updateEmpresa'])->name('companies.empresa.update');
+    Route::patch('empresas/{empresa}/status', [CompanyController::class, 'toggleEmpresa'])->name('companies.empresa.toggle');
     Route::get('empresas/{uuid}', [CompanyController::class, 'show'])->name('companies.show');
+
+    // Habilitar/desabilitar vaga (controle interno)
+    Route::patch('vagas/{jobVacancy}/status', [JobVacancyController::class, 'toggleStatus'])->name('job-vacancies.toggle');
 
     Route::get('vagas/{jobVacancy}/candidatos', [JobApplicationController::class, 'applicants'])->name('job-vacancies.applicants');
     Route::patch('candidaturas/{application}/status', [JobApplicationController::class, 'updateStatus'])->name('job-applications.status');

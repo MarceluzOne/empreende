@@ -54,6 +54,11 @@
                                         <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
                                             <i class="fas fa-building"></i> Cadastrada
                                         </span>
+                                        @unless($company->active)
+                                            <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-700">
+                                                <i class="fas fa-ban"></i> Desabilitada
+                                            </span>
+                                        @endunless
                                     @endif
                                     @if($company->vacancy_count > 0)
                                         <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">

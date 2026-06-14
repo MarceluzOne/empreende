@@ -85,6 +85,7 @@ class CompanyService
             $entry = $this->ensure($companies, $cnpj);
             $entry['name']          = $entry['name'] ?: $e->razao_social;
             $entry['is_registered'] = true;
+            $entry['active']        = (bool) $e->active;
             $entry['city']          = $e->cidade;
             $companies[$cnpj] = $entry;
         }
@@ -115,9 +116,18 @@ class CompanyService
             'cnpj_formatted' => $this->formatCnpj($cnpj),
             'name'           => null,
             'is_registered'  => false,
+            'active'         => true,
             'city'           => null,
             'vacancy_count'  => 0,
         ];
+    }
+
+    /**
+     * UUID público (derivado do CNPJ) para uso em redirects/links.
+     */
+    public function uuidFor(string $cnpj): string
+    {
+        return $this->uuidForCnpj($this->onlyDigits($cnpj));
     }
 
     private function paginate(Collection $items, int $perPage): LengthAwarePaginator

@@ -33,6 +33,12 @@ class EmpresaAuthController extends Controller
             return back()->withErrors(['email' => 'E-mail ou senha inválidos.'])->withInput($request->only('email'));
         }
 
+        if ($user->empresa && ! $user->empresa->active) {
+            return back()->withErrors([
+                'email' => 'Empresa desabilitada. Entre em contato com a equipe do Empreende Vitória.',
+            ])->withInput($request->only('email'));
+        }
+
         Auth::login($user);
 
         return redirect()->route('portal.empresa');
