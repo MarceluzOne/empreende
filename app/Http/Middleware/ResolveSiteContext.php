@@ -60,16 +60,21 @@ class ResolveSiteContext
         //  - asset.url = host base + slug    -> assets estáticos em /www/{slug}/assets
         // Em produção fixa o host canônico; em dev usa o host do request (localhost)
         // para que a navegação local funcione.
-        $base = rtrim((string) ($config['app_url'] ?? ''), '/');
-        if (!app()->environment('production')) {
-            $base = $request->getSchemeAndHttpHost();
-        }
-        if ($base !== '') {
-            config(['app.url' => $base]);
-            config(['app.asset_url' => $base . '/' . $slug]);
-            if (app()->environment('production')) {
+        if (app()->environment('production')) {
+            // Produção: host canônico (sem slug) para route(); assets servidos
+            // pelo Apache em /www/{slug}/assets => asset_url = host + slug.
+            $base = rtrim((string) ($config['app_url'] ?? ''), '/');
+            if ($base !== '') {
+                config(['app.url' => $base]);
+                config(['app.asset_url' => $base . '/' . $slug]);
                 URL::forceRootUrl($base);
             }
+        } else {
+            // Dev (artisan serve): docroot é public/, assets em public/assets
+            // servidos em /assets (sem slug). route() injeta o slug pelo prefixo.
+            $base = $request->getSchemeAndHttpHost();
+            config(['app.url' => $base]);
+            config(['app.asset_url' => $base]);
         }
 
         // Canal de log dedicado ao site.
