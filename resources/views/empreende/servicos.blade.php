@@ -679,7 +679,7 @@
     };
 
     try {
-      const resp = await fetch('/api/services/external-register', {
+      const resp = await fetch('{{ route('api.services.external-register') }}', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
         body:    JSON.stringify(data),
