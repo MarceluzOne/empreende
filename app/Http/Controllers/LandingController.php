@@ -4,13 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Models\ServiceProvider;
+use App\Support\BusinessDay;
 use Carbon\Carbon;
 
 class LandingController extends Controller
 {
     public function index()
     {
-        return view('landing');
+        return view('landing', [
+            'scheduleMinDate'   => BusinessDay::nextBookable()->format('Y-m-d'),
+            'scheduleStartHour' => (int) substr(BusinessDay::openingTime(), 0, 2),
+        ]);
     }
 
     public function contato()

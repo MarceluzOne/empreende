@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Attendance;
 use App\Rules\CpfOrCnpj;
 use App\Services\AttendanceService;
+use App\Support\BusinessDay;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -42,21 +43,44 @@ class PublicAttendanceController extends Controller
 
     public function store(Request $request)
     {
+        $minDate = BusinessDay::nextBookable();
+        $opening = BusinessDay::openingTime();
+        $closing = BusinessDay::closingTime();
+
         $request->validate([
             'customer_name'  => 'required|string|max:255',
             'customer_cpf'   => ['nullable', 'string', new CpfOrCnpj],
             'customer_phone' => 'nullable|string|max:20',
             'service_type'   => 'required|string',
             'description'    => 'required|string',
-            'scheduled_date' => 'required|date',
-            'scheduled_time' => 'required',
+            'scheduled_date' => ['required', 'date', 'after_or_equal:'.$minDate->format('Y-m-d'),
+                function ($attribute, $value, $fail) {
+                    if (Carbon::parse($value)->isWeekend()) {
+                        $fail('Não há atendimento aos finais de semana. Escolha um dia útil.');
+                    }
+                },
+            ],
+            'scheduled_time' => ['required',
+                function ($attribute, $value, $fail) use ($opening, $closing) {
+                    if (!preg_match('/^\d{2}:\d{2}$/', (string) $value)) {
+                        $fail('Horário inválido.');
+                        return;
+                    }
+                    if ($value < $opening) {
+                        $fail('Os atendimentos começam a partir das '.$opening.'.');
+                    } elseif ($value > $closing) {
+                        $fail('O último horário de atendimento é às '.$closing.'.');
+                    }
+                },
+            ],
         ], [
-            'customer_name.required'  => 'Informe seu nome completo.',
-            'service_type.required'   => 'Selecione o serviço desejado.',
-            'description.required'    => 'Descreva sua situação.',
-            'scheduled_date.required' => 'Selecione o dia do atendimento no calendário.',
-            'scheduled_date.date'     => 'A data selecionada é inválida.',
-            'scheduled_time.required' => 'Selecione um horário disponível.',
+            'customer_name.required'        => 'Informe seu nome completo.',
+            'service_type.required'         => 'Selecione o serviço desejado.',
+            'description.required'          => 'Descreva sua situação.',
+            'scheduled_date.required'       => 'Selecione o dia do atendimento no calendário.',
+            'scheduled_date.date'           => 'A data selecionada é inválida.',
+            'scheduled_date.after_or_equal' => 'Só é possível agendar a partir do próximo dia útil ('.$minDate->format('d/m/Y').').',
+            'scheduled_time.required'       => 'Selecione um horário disponível.',
         ]);
 
         $this->service->storePublic($request->all());

@@ -1083,7 +1083,7 @@
                 {{-- Calendário --}}
                 <div>
                     <label style="display:block;font-size:.7rem;font-weight:900;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-family:'Plus Jakarta Sans',sans-serif">Data e horário desejados *</label>
-                    @include('bookings.partials._calendar', ['calendarFetchUrl' => route('public.attendance.availability'), 'singleSlot' => true])
+                    @include('bookings.partials._calendar', ['calendarFetchUrl' => route('public.attendance.availability'), 'singleSlot' => true, 'minDate' => $scheduleMinDate ?? '', 'startHour' => $scheduleStartHour ?? 7])
                     <input type="hidden" name="scheduled_date" x-model="scheduledDate">
                     <input type="hidden" name="scheduled_time" x-model="scheduledTime">
 

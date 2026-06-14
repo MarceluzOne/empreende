@@ -11,7 +11,9 @@
         '{{ $preselectedStart  ?? '' }}',
         '{{ $preselectedEnd    ?? '' }}',
         '{{ $calendarFetchUrl  ?? '' }}',
-        {{ isset($singleSlot) && $singleSlot ? 'true' : 'false' }}
+        {{ isset($singleSlot) && $singleSlot ? 'true' : 'false' }},
+        '{{ $minDate ?? '' }}',
+        {{ (int) ($startHour ?? 7) }}
     )"
     x-init="init()"
     @resource-changed.window="onResourceChanged($event.detail.value)"
@@ -51,7 +53,7 @@
             <template x-for="(cell, idx) in calDays" :key="idx">
                 <div
                     :class="dayClasses(cell)"
-                    @click="cell && cell.date && !isPast(cell.date) && !isWeekend(cell.date) && cell.state !== 'full' ? selectDate(cell.date) : null"
+                    @click="cell && cell.date && !isPast(cell.date) && !isWeekend(cell.date) && !isBeforeMin(cell.date) && cell.state !== 'full' ? selectDate(cell.date) : null"
                     class="h-9 flex flex-col items-center justify-center rounded-lg text-sm select-none transition-colors relative">
                     <span x-text="cell ? cell.day : ''"></span>
                     <span x-show="cell && cell.state === 'partial'"
@@ -103,7 +105,7 @@
 
 <script>
 document.addEventListener('alpine:init', () => {
-    Alpine.data('bookingCalendar', (preselectedDate = '', preselectedStart = '', preselectedEnd = '', fetchUrl = '', singleSlot = false) => ({
+    Alpine.data('bookingCalendar', (preselectedDate = '', preselectedStart = '', preselectedEnd = '', fetchUrl = '', singleSlot = false, minDate = '', startHour = 7) => ({
         calYear:  new Date().getFullYear(),
         calMonth: new Date().getMonth() + 1,
         bookingsByDate: {},
@@ -129,9 +131,12 @@ document.addEventListener('alpine:init', () => {
             const sel = document.querySelector('[name="resource_type"]');
             if (sel) this.resourceType = sel.value;
 
-            // Se há data pré-selecionada (modo edição), navega para o mês correto
-            if (preselectedDate) {
-                const d = new Date(preselectedDate + 'T00:00:00');
+            // Se há data pré-selecionada (modo edição), navega para o mês correto.
+            // Caso contrário, se há data mínima (ex.: próximo dia útil) num mês
+            // futuro, já abre o calendário nesse mês.
+            const navTo = preselectedDate || minDate;
+            if (navTo) {
+                const d = new Date(navTo + 'T00:00:00');
                 this.calYear  = d.getFullYear();
                 this.calMonth = d.getMonth() + 1;
             }
@@ -229,6 +234,11 @@ document.addEventListener('alpine:init', () => {
             return day === 0 || day === 6;
         },
 
+        isBeforeMin(dateStr) {
+            // Comparação de strings 'YYYY-MM-DD' funciona lexicograficamente.
+            return minDate && dateStr < minDate;
+        },
+
         dayClasses(cell) {
             if (!cell) return 'cursor-default';
             const today = new Date();
@@ -239,7 +249,7 @@ document.addEventListener('alpine:init', () => {
             const isSelected   = cell.date === this.selectedDate;
             const isExtSelected = this.externalSelectedDates.includes(cell.date);
 
-            if (isPast || isWeekend) return 'text-gray-300 cursor-not-allowed';
+            if (isPast || isWeekend || this.isBeforeMin(cell.date)) return 'text-gray-300 cursor-not-allowed';
             if (cell.state === 'full') return 'bg-red-100 text-red-400 cursor-not-allowed';
             if (isSelected) return 'bg-blue-600 text-white cursor-pointer font-bold ring-2 ring-blue-400';
             if (isExtSelected) return 'bg-blue-200 text-blue-900 cursor-pointer ring-1 ring-blue-400 font-bold';
@@ -249,7 +259,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         selectDate(dateStr) {
-            if (!dateStr || this.isPast(dateStr) || this.isWeekend(dateStr)) return;
+            if (!dateStr || this.isPast(dateStr) || this.isWeekend(dateStr) || this.isBeforeMin(dateStr)) return;
             this.selectedDate  = dateStr;
             this.selectedStart = '';
             this.selectedEnd   = '';
@@ -260,7 +270,7 @@ document.addEventListener('alpine:init', () => {
 
         buildTimeSlots(dateStr) {
             const slots = [];
-            for (let h = 7; h < 15; h++) {
+            for (let h = startHour; h < 15; h++) {
                 for (let m = 0; m < 60; m += 30) {
                     const time = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
                     slots.push({ time, occupied: this.isOccupied(dateStr, time) });
