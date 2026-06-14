@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Route;
 
 class RouteServiceProvider extends ServiceProvider
 {
-    public const HOME = '/painel';
+    public const HOME = '/portal/funcionario/painel';
 
     public function boot(): void
     {

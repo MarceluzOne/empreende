@@ -95,7 +95,7 @@ Route::post('/sair/empresa', [EmpresaAuthController::class, 'logout'])->name('em
 | Portal do Funcionário (admin)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'check.user.type:funcionario'])->group(function () {
+Route::middleware(['auth', 'check.user.type:funcionario'])->prefix('portal/funcionario')->group(function () {
     Route::get('/painel', [DashboardController::class, 'index'])->name('panel');
     Route::get('/perfil', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/perfil', [ProfileController::class, 'update'])->name('profile.update');
