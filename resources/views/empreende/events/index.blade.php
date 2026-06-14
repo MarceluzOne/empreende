@@ -92,20 +92,20 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-center">
-                                @if(auth()->user()->roles->contains('name', 'admin'))
+                                @php $autoEnded = $event->status === 'active' && $event->hasEnded(); @endphp
+                                @if(auth()->user()->roles->contains('name', 'admin') && ! $autoEnded)
                                     <form action="{{ route('events.status', $event) }}" method="POST">
                                         @csrf @method('PATCH')
                                         <select name="status" onchange="this.form.submit()"
-                                            class="text-xs font-semibold rounded-full px-2 py-1 border-0 outline-none cursor-pointer
-                                            {{ $event->status === 'completed' ? 'bg-green-100 text-green-700' : ($event->status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700') }}">
+                                            class="text-xs font-semibold rounded-full px-2 py-1 border-0 outline-none cursor-pointer {{ $event->status_color }}">
                                             <option value="active"    {{ $event->status === 'active'    ? 'selected' : '' }}>Em andamento</option>
                                             <option value="completed" {{ $event->status === 'completed' ? 'selected' : '' }}>Concluído</option>
                                             <option value="cancelled" {{ $event->status === 'cancelled' ? 'selected' : '' }}>Cancelado</option>
                                         </select>
                                     </form>
                                 @else
-                                    <span class="text-[10px] font-bold uppercase px-2 py-1 rounded-full
-                                        {{ $event->status === 'completed' ? 'bg-green-100 text-green-700' : ($event->status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700') }}">
+                                    <span class="text-[10px] font-bold uppercase px-2 py-1 rounded-full {{ $event->status_color }}"
+                                        @if($autoEnded) title="Encerrado automaticamente (data/horário já passou)" @endif>
                                         {{ $event->status_label }}
                                     </span>
                                 @endif
