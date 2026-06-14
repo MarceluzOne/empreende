@@ -120,7 +120,7 @@ class BookingController extends Controller
 
     public function destroyMultiple(Request $request)
     {
-        $request->validate(['ids' => 'required|array', 'ids.*' => 'integer|exists:bookings,id']);
+        $request->validate(['ids' => 'required|array', 'ids.*' => 'string|exists:bookings,id']);
 
         $count = Booking::whereIn('id', $request->ids)->delete();
 

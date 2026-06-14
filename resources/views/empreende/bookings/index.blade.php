@@ -15,7 +15,7 @@
             const checkboxes = document.querySelectorAll('.booking-checkbox');
             checkboxes.forEach(cb => {
                 cb.checked = event.target.checked;
-                const id = parseInt(cb.value);
+                const id = cb.value;
                 if (event.target.checked) {
                     if (!this.selectedIds.includes(id)) this.selectedIds.push(id);
                 } else {
@@ -104,12 +104,12 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @forelse($bookings as $booking)
-                            <tr class="hover:bg-gray-50 transition" :class="selectedIds.includes({{ $booking->id }}) ? 'bg-red-50' : ''">
+                            <tr class="hover:bg-gray-50 transition" :class="selectedIds.includes('{{ $booking->id }}') ? 'bg-red-50' : ''">
                                 <td class="px-4 py-4">
                                     <input type="checkbox" value="{{ $booking->id }}"
                                         class="booking-checkbox w-4 h-4 accent-blue-600 cursor-pointer rounded"
-                                        @change="toggle({{ $booking->id }})"
-                                        :checked="selectedIds.includes({{ $booking->id }})">
+                                        @change="toggle('{{ $booking->id }}')"
+                                        :checked="selectedIds.includes('{{ $booking->id }}')">
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-600">{{ $loop->iteration }}</td>
                                 <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $booking->responsible_name }}</td>
