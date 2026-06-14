@@ -14,7 +14,11 @@ return [
     'view_namespace' => 'empreende',
 
     // Cookie de sessão isolado por site (login num site não vale em outro).
-    'session_cookie' => 'empreende_session',
+    // Renomeado de 'empreende_session' para evitar conflito com cookies antigos
+    // que ficaram gravados no navegador com Path=/empreendevitoria (antes do
+    // session.path passar para '/'). Cookies de nome diferente são ignorados,
+    // então o novo é setado limpo em Path=/ sem ambiguidade.
+    'session_cookie' => 'empreendevitoria_session',
 
     // Host base do site, SEM o slug. O slug é acrescentado pelo prefixo das
     // rotas; por isso o root URL não deve incluí-lo (senão duplica:
