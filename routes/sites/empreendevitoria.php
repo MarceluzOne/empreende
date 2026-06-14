@@ -24,6 +24,7 @@ use App\Http\Controllers\Auth\UsuarioAuthController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CitizenController;
+use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\JobApplicationController;
@@ -119,6 +120,10 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->prefix('portal/funci
     // Cidadãos: lista consolidada por CPF (candidatos + atendidos)
     Route::get('cidadaos', [CitizenController::class, 'index'])->name('citizens.index');
     Route::get('cidadaos/{uuid}', [CitizenController::class, 'show'])->name('citizens.show');
+
+    // Empresas: lista consolidada por CNPJ (cadastradas + com vagas publicadas)
+    Route::get('empresas', [CompanyController::class, 'index'])->name('companies.index');
+    Route::get('empresas/{uuid}', [CompanyController::class, 'show'])->name('companies.show');
 
     Route::get('vagas/{jobVacancy}/candidatos', [JobApplicationController::class, 'applicants'])->name('job-vacancies.applicants');
     Route::patch('candidaturas/{application}/status', [JobApplicationController::class, 'updateStatus'])->name('job-applications.status');

@@ -79,6 +79,13 @@
             Cidadãos
         </a>
 
+        <a href="{{ route('companies.index') }}"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                {{ request()->routeIs('companies.*') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+            <i class="fas fa-building w-4 text-center"></i>
+            Empresas
+        </a>
+
         {{-- SISTEMA --}}
         @if(auth()->user()->roles->contains('name', 'admin'))
         <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-2 pb-1 pt-4">Sistema</p>
