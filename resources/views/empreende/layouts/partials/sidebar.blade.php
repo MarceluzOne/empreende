@@ -72,6 +72,13 @@
             Candidatos
         </a>
 
+        <a href="{{ route('citizens.index') }}"
+            class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition
+                {{ request()->routeIs('citizens.*') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+            <i class="fas fa-id-card w-4 text-center"></i>
+            Cidadãos
+        </a>
+
         {{-- SISTEMA --}}
         @if(auth()->user()->roles->contains('name', 'admin'))
         <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-2 pb-1 pt-4">Sistema</p>

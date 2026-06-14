@@ -19,6 +19,7 @@ use App\Http\Controllers\Auth\EmpresaAuthController;
 use App\Http\Controllers\Auth\UsuarioAuthController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CitizenController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\JobApplicationController;
@@ -109,6 +110,10 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->group(function () {
     Route::post('job-vacancies/{jobVacancy}/notify', [JobVacancyController::class, 'notify'])->name('job-vacancies.notify');
 
     Route::resource('job-seekers', JobSeekerController::class)->parameters(['job-seekers' => 'jobSeeker']);
+
+    // Cidadãos: lista consolidada por CPF (candidatos + atendidos)
+    Route::get('cidadaos', [CitizenController::class, 'index'])->name('citizens.index');
+    Route::get('cidadaos/{cpf}', [CitizenController::class, 'show'])->name('citizens.show');
 
     Route::get('job-vacancies/{jobVacancy}/applicants', [JobApplicationController::class, 'applicants'])->name('job-vacancies.applicants');
     Route::patch('job-applications/{application}/status', [JobApplicationController::class, 'updateStatus'])->name('job-applications.status');
