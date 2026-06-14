@@ -56,9 +56,20 @@ class ResolveSiteContext
         }
 
         // URL pública do site.
-        if (!empty($config['app_url'])) {
-            config(['app.url' => $config['app_url']]);
-            URL::forceRootUrl($config['app_url']);
+        //  - app.url   = host base SEM slug  -> route() já injeta o slug pelo prefixo
+        //  - asset.url = host base + slug    -> assets estáticos em /www/{slug}/assets
+        // Em produção fixa o host canônico; em dev usa o host do request (localhost)
+        // para que a navegação local funcione.
+        $base = rtrim((string) ($config['app_url'] ?? ''), '/');
+        if (!app()->environment('production')) {
+            $base = $request->getSchemeAndHttpHost();
+        }
+        if ($base !== '') {
+            config(['app.url' => $base]);
+            config(['app.asset_url' => $base . '/' . $slug]);
+            if (app()->environment('production')) {
+                URL::forceRootUrl($base);
+            }
         }
 
         // Canal de log dedicado ao site.

@@ -16,8 +16,12 @@ return [
     // Cookie de sessão isolado por site (login num site não vale em outro).
     'session_cookie' => 'empreende_session',
 
-    // URL pública do site (com prefixo do slug).
-    'app_url'        => env('EMPREENDE_APP_URL', 'https://prefeituradavitoria.pe.gov.br/empreendevitoria'),
+    // Host base do site, SEM o slug. O slug é acrescentado pelo prefixo das
+    // rotas; por isso o root URL não deve incluí-lo (senão duplica:
+    // /empreendevitoria/empreendevitoria/...). Os assets estáticos, servidos
+    // direto pelo Apache em /www/{slug}/assets, usam host + slug (asset_url,
+    // derivado no middleware).
+    'app_url'        => env('EMPREENDE_APP_URL', 'https://prefeituradavitoria.pe.gov.br'),
 
     'mail'           => [
         'from_address' => 'no-reply@empreendevitoria.pe.gov.br',
