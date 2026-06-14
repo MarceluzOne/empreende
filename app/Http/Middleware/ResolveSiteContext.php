@@ -36,11 +36,14 @@ class ResolveSiteContext
             config(['database.default' => $config['db_connection']]);
         }
 
-        // Sessão isolada por site (cookie e path próprios).
+        // Sessão isolada por site: o isolamento vem do NOME único do cookie
+        // ({slug}_session). O path fica em '/' (não em '/{slug}') porque as rotas
+        // de API ficam em /api/{slug} — fora de /{slug} — e um cookie com
+        // Path=/{slug} não seria enviado para a API, quebrando sessão/CSRF (419).
         if (!empty($config['session_cookie'])) {
             config(['session.cookie' => $config['session_cookie']]);
         }
-        config(['session.path' => '/' . $slug]);
+        config(['session.path' => '/']);
 
         // Views do site: prepend do diretório do site no finder, para que
         // chamadas sem namespace (view('portal.x'), @extends('layouts.app'))
