@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\View;
 
 /**
  * Resolve o "site atual" da plataforma multi-site no início do request e
@@ -40,6 +41,19 @@ class ResolveSiteContext
             config(['session.cookie' => $config['session_cookie']]);
         }
         config(['session.path' => '/' . $slug]);
+
+        // Views do site: prepend do diretório do site no finder, para que
+        // chamadas sem namespace (view('portal.x'), @extends('layouts.app'))
+        // resolvam automaticamente para resources/views/{namespace}. O
+        // namespace explícito ({ns}::) continua disponível via SiteServiceProvider.
+        $viewPath = resource_path('views/' . ($config['view_namespace'] ?? $slug));
+        if (is_dir($viewPath)) {
+            $finder = View::getFinder();
+            if (!in_array($viewPath, $finder->getPaths(), true)) {
+                $finder->prependLocation($viewPath);
+                View::flushFinderCache();
+            }
+        }
 
         // URL pública do site.
         if (!empty($config['app_url'])) {
