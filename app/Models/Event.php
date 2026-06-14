@@ -91,6 +91,14 @@ class Event extends Model
             ->isPast();
     }
 
+    /**
+     * Inscrições fechadas: evento concluído, cancelado ou já encerrado por data.
+     */
+    public function registrationsClosed(): bool
+    {
+        return in_array($this->status, ['completed', 'cancelled'], true) || $this->hasEnded();
+    }
+
     public function getStatusLabelAttribute(): string
     {
         return match (true) {

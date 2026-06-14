@@ -232,8 +232,8 @@ class EventController extends Controller
 
     public function storeParticipant(StoreEventParticipantRequest $request, Event $event)
     {
-        if ($event->hasEnded()) {
-            return back()->withErrors('Não é possível inscrever participantes: o evento já foi encerrado.')->withInput();
+        if ($event->registrationsClosed()) {
+            return back()->withErrors('Não é possível inscrever participantes: as inscrições deste evento estão encerradas.')->withInput();
         }
 
         $cpf = $request->cpf ? preg_replace('/[^0-9]/', '', $request->cpf) : null;

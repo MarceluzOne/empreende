@@ -75,10 +75,14 @@
         </div>
     </div>
 
-    {{-- Formulário de inscrição (não exibido quando o evento já foi encerrado) --}}
-    @if($event->hasEnded())
+    {{-- Formulário de inscrição: oculto quando encerrado, concluído ou cancelado --}}
+    @if($event->registrationsClosed())
+        @php
+            $motivo = $event->status === 'completed' ? 'Evento concluído'
+                    : ($event->status === 'cancelled' ? 'Evento cancelado' : 'Evento encerrado');
+        @endphp
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex items-center gap-2 text-sm text-gray-600">
-            <i class="fas fa-lock"></i> Evento encerrado — inscrições indisponíveis.
+            <i class="fas fa-lock"></i> {{ $motivo }} — inscrições indisponíveis.
         </div>
     @else
     @php $locked = $event->isFull(); @endphp
