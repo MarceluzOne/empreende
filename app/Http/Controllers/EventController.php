@@ -286,27 +286,13 @@ class EventController extends Controller
         return redirect()->back()->with('success', "Status do evento atualizado para \"{$label}\".");
     }
 
-    public function certificate(Event $event, EventParticipant $participant)
+    public function certificate(Event $event, EventParticipant $participant, \App\Services\CertificateService $certificates)
     {
         abort_if($event->status !== 'completed', 403, 'Certificados disponíveis apenas para eventos concluídos.');
         abort_if($participant->event_id !== $event->id, 404);
 
-        $event->load('speaker');
-        $dates      = $event->allDates();
-        $startDate  = \Carbon\Carbon::parse($dates[0])->format('d/m/Y');
-        $endDate    = \Carbon\Carbon::parse(end($dates))->format('d/m/Y');
-        $totalHours = $event->totalHours();
-
-        $cpfFormatted = $participant->cpf
-            ? preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $participant->cpf)
-            : null;
-
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('events.certificate', compact(
-            'event', 'participant', 'startDate', 'endDate', 'totalHours', 'cpfFormatted'
-        ))->setPaper('a4', 'landscape');
-
-        $slug = \Illuminate\Support\Str::slug($participant->name);
-        return $pdf->download("certificado-{$slug}.pdf");
+        // stream = exibe o PDF inline no navegador (visualizar, não baixar).
+        return $certificates->pdf($event, $participant)->stream($certificates->filename($participant));
     }
 
     public function pdf(Event $event)

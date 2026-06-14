@@ -195,7 +195,7 @@
                             @if($event->status === 'completed')
                                 <td class="px-6 py-3 text-center">
                                     <a href="{{ route('events.certificate', [$event, $participant]) }}" target="_blank"
-                                        title="Baixar certificado"
+                                        title="Visualizar certificado"
                                         class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-800 transition">
                                         <i class="fas fa-certificate"></i>
                                         <span class="hidden md:inline">Certificado</span>

@@ -239,4 +239,19 @@ class PortalUsuarioController extends Controller
 
         return redirect()->route('portal.usuario')->with('success', 'Inscrição cancelada.');
     }
+
+    /**
+     * Certificado do próprio candidato (PDF inline). Só do participante cujo
+     * e-mail é o do usuário logado, e apenas para eventos concluídos.
+     */
+    public function certificado(Event $event, \App\Services\CertificateService $certificates)
+    {
+        abort_if($event->status !== 'completed', 403, 'Certificado disponível apenas para eventos concluídos.');
+
+        $participant = EventParticipant::where('event_id', $event->id)
+            ->where('email', auth()->user()->email)
+            ->firstOrFail();
+
+        return $certificates->pdf($event, $participant)->stream($certificates->filename($participant));
+    }
 }

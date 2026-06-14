@@ -479,7 +479,7 @@
                 data-inscrito="1"
                 data-status="{{ $ev->status }}"
                 data-cancelar-url="{{ route('portal.usuario.eventos.cancelar', $ev) }}"
-                data-certificado-url="{{ route('events.certificate', [$ev, $participante]) }}">
+                data-certificado-url="{{ route('portal.usuario.eventos.certificado', $ev) }}">
                 <div class="card-badge badge-blue">
                   <i class="fas fa-calendar"></i> {{ $datasEv }}
                 </div>
@@ -490,7 +490,7 @@
                 </div>
                 <div class="card-actions" onclick="event.stopPropagation()">
                   @if($ev->status === 'completed')
-                    <a href="{{ route('events.certificate', [$ev, $participante]) }}" class="btn-sm btn-yellow" target="_blank">
+                    <a href="{{ route('portal.usuario.eventos.certificado', $ev) }}" class="btn-sm btn-yellow" target="_blank">
                       <i class="fas fa-certificate"></i> Certificado
                     </a>
                   @else

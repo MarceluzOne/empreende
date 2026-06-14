@@ -174,6 +174,7 @@ Route::middleware(['auth', 'check.user.type:usuario'])->group(function () {
     // Inscrição em eventos
     Route::post('/portal/usuario/eventos/{event}/inscrever', [PortalUsuarioController::class, 'inscreverEvento'])->name('portal.usuario.eventos.inscrever');
     Route::delete('/portal/usuario/eventos/{event}/cancelar', [PortalUsuarioController::class, 'cancelarEvento'])->name('portal.usuario.eventos.cancelar');
+    Route::get('/portal/usuario/eventos/{event}/certificado', [PortalUsuarioController::class, 'certificado'])->name('portal.usuario.eventos.certificado');
 });
 
 /*
