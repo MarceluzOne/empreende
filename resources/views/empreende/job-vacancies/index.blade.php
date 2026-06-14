@@ -154,6 +154,17 @@
                                 class="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded-lg transition" title="Editar">
                                 <i class="fas fa-edit fa-lg"></i>
                             </a>
+                            @if($vacancy->status !== 'filled')
+                            <form action="{{ route('job-vacancies.toggle', $vacancy) }}" method="POST"
+                                onsubmit="return confirm('{{ $vacancy->status === 'active' ? 'Desabilitar esta vaga? Sairá do site.' : 'Habilitar esta vaga?' }}')">
+                                @csrf @method('PATCH')
+                                <button type="submit"
+                                    class="p-1.5 rounded-lg transition {{ $vacancy->status === 'active' ? 'text-red-500 hover:bg-red-50' : 'text-emerald-600 hover:bg-emerald-50' }}"
+                                    title="{{ $vacancy->status === 'active' ? 'Desabilitar' : 'Habilitar' }}">
+                                    <i class="fas {{ $vacancy->status === 'active' ? 'fa-ban' : 'fa-check-circle' }} fa-lg"></i>
+                                </button>
+                            </form>
+                            @endif
                             <button @click="prepDelete('{{ $vacancy->id }}', '{{ addslashes($vacancy->position) }}')"
                                 class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition" title="Remover">
                                 <i class="fas fa-trash-alt fa-lg"></i>
