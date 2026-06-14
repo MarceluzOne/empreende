@@ -1,0 +1,175 @@
+@extends('layouts.app')
+
+@section('title', 'Editar Atendimento - Empreende Vitória')
+
+@section('content')
+<div class="max-w-4xl mx-auto"
+    x-data="{
+        isScheduled: {{ $isScheduled ? 'true' : 'false' }},
+        status: '{{ $attendance->status }}',
+        scheduledDate: '{{ $attendance->scheduled_at ? $attendance->scheduled_at->format('Y-m-d') : '' }}',
+        scheduledTime: '{{ $attendance->scheduled_at ? $attendance->scheduled_at->format('H:i') : '' }}'
+    }"
+    @date-selected.window="scheduledDate = $event.detail.date"
+    @time-selected.window="scheduledTime = $event.detail.start">
+    <div class="mb-8 flex items-center justify-between">
+        <div>
+            <h2 class="text-2xl font-black text-gray-800 uppercase tracking-tighter">
+                Editar Registro
+            </h2>
+            <p class="text-gray-500 italic text-sm">Atualize as informações do atendimento de {{ $attendance->customer_name }}.</p>
+        </div>
+        <a href="{{ route('attendances.index') }}" class="text-gray-400 hover:text-gray-600 transition font-bold text-sm">
+            Voltar
+        </a>
+    </div>
+
+    <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+        <form action="{{ route('attendances.update', $attendance->id) }}" method="POST" class="p-8 md:p-10">
+            @csrf
+            @method('PUT')
+            
+            <input type="hidden" name="is_scheduled" :value="isScheduled">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                {{-- Nome --}}
+                <div class="md:col-span-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nome do Cidadão *</label>
+                    <input type="text" name="customer_name" value="{{ old('customer_name', $attendance->customer_name) }}"
+                        class="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-900 focus:bg-white rounded-2xl outline-none transition-all font-bold text-gray-800 @error('customer_name') border-red-500 @enderror" required>
+                    @error('customer_name') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                </div>
+
+                {{-- CPF --}}
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">CPF / CNPJ</label>
+                    <input type="text" name="customer_cpf" id="cpf_mask" value="{{ old('customer_cpf', $attendance->customer_cpf) }}"
+                        placeholder="CPF ou CNPJ"
+                        class="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-900 focus:bg-white rounded-2xl outline-none transition-all font-bold text-gray-800 @error('customer_cpf') border-red-500 @enderror">
+                    @error('customer_cpf') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                </div>
+
+                {{-- Telefone --}}
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Telefone</label>
+                    <input type="text" name="customer_phone" id="phone_mask" value="{{ old('customer_phone', $attendance->customer_phone) }}"
+                        class="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-900 focus:bg-white rounded-2xl outline-none transition-all font-bold text-gray-800">
+                </div>
+
+                {{-- Serviço --}}
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Serviço</label>
+                    <select name="service_type" class="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-900 focus:bg-white rounded-2xl outline-none transition-all font-bold text-gray-700">
+                        @foreach($services as $service)
+                            <option value="{{ $service }}" {{ (old('service_type', $attendance->service_type) == $service) ? 'selected' : '' }}>
+                                {{ $service }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Seletor de Momento (Tabs) --}}
+                <div class="md:col-span-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Momento do Atendimento</label>
+                    <div class="flex bg-gray-100 p-1 rounded-2xl w-full">
+                        <button type="button" @click="isScheduled = false"
+                            :class="!isScheduled ? 'bg-white text-blue-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                            class="flex-1 px-6 py-2 rounded-xl font-bold text-sm transition-all">
+                            Realizado Agora
+                        </button>
+                        <button type="button" @click="isScheduled = true"
+                            :class="isScheduled ? 'bg-white text-blue-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+                            class="flex-1 px-6 py-2 rounded-xl font-bold text-sm transition-all">
+                            Agendar Retorno
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Calendário de agendamento --}}
+                <div x-show="isScheduled" x-cloak class="md:col-span-2 animate-fade-in-down">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
+                        Data e Horário do Agendamento *
+                    </label>
+
+                    @include('bookings.partials._calendar', [
+                        'preselectedDate'   => $attendance->scheduled_at?->format('Y-m-d') ?? '',
+                        'preselectedStart'  => $attendance->scheduled_at?->format('H:i') ?? '',
+                        'preselectedEnd'    => '',
+                        'calendarFetchUrl'  => route('attendances.availability'),
+                        'startHour'         => $startHour ?? 9,
+                    ])
+
+                    <input type="hidden" name="scheduled_date" x-model="scheduledDate">
+                    <input type="hidden" name="scheduled_time" x-model="scheduledTime">
+
+                    <div x-show="scheduledDate && scheduledTime"
+                        class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800 font-semibold">
+                        <i class="fas fa-calendar-check mr-1"></i>
+                        Agendado para <span x-text="scheduledDate.split('-').reverse().join('/')"></span>
+                        às <span x-text="scheduledTime"></span>
+                    </div>
+                </div>
+
+                {{-- Descrição --}}
+                <div class="md:col-span-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Relato do Atendimento *</label>
+                    <textarea name="description" rows="4"
+                        class="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-900 rounded-2xl outline-none font-semibold text-gray-800 @error('description') border-red-500 @enderror" required>{{ old('description', $attendance->description) }}</textarea>
+                    @error('description') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Alterar Status</label>
+                    <select name="status" class="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-900 rounded-2xl outline-none font-bold text-gray-700">
+                        <option value="scheduled" {{ $attendance->status == 'scheduled' ? 'selected' : '' }}>Agendado</option>
+                        <option value="completed" {{ $attendance->status == 'completed' ? 'selected' : '' }}>Concluído</option>
+                        <option value="pending" {{ $attendance->status == 'pending' ? 'selected' : '' }}>Pendente</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-10 flex gap-4">
+                <button type="submit"
+                        class="w-full md:3/4 bg-blue-600 text-white py-5 rounded-2xl font-semibold uppercase tracking-widest shadow-2xl active:scale-95 flex items-center self-end justify-center">
+                        <i class="fas fa-check sm:hidden"></i>
+                        <span class="hidden sm:inline">Salvar Alterações</span>
+                    </button>
+            </div>
+        </form>
+    </div>
+</div>
+@push('scripts')
+    <script src="https://unpkg.com/imask"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const cpfElement = document.getElementById('cpf_mask');
+            if (cpfElement) {
+                IMask(cpfElement, {
+                    mask: [
+                        { mask: '000.000.000-00', maxLength: 11 },
+                        { mask: '00.000.000/0000-00' }
+                    ],
+                    dispatch: function (appended, dynamicMasked) {
+                        const number = (dynamicMasked.value + appended).replace(/\D/g, '');
+                        return number.length > 11
+                            ? dynamicMasked.compiledMasks[1]
+                            : dynamicMasked.compiledMasks[0];
+                    }
+                });
+            }
+
+            const phoneElement = document.getElementById('phone_mask');
+            if (phoneElement) {
+                IMask(phoneElement, {
+                    mask: [
+                        { mask: '(00) 00000-0000' },
+                        { mask: '(00) 0000-0000' },
+                        { mask: '+00 (00) 00000-0000' }
+                    ]
+                });
+            }
+        });
+    </script>
+@endpush
+@endsection

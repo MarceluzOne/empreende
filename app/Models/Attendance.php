@@ -54,4 +54,24 @@ class Attendance extends Model
     {
         return $this->scheduled_at?->isToday() ?? false;
     }
+
+    /**
+     * Documento do cidadão formatado conforme o tamanho:
+     * 11 dígitos => CPF (000.000.000-00), 14 dígitos => CNPJ (00.000.000/0000-00).
+     * Retorna null quando não há documento.
+     */
+    public function getCustomerDocumentFormattedAttribute(): ?string
+    {
+        $doc = preg_replace('/\D/', '', (string) $this->customer_cpf);
+
+        if (strlen($doc) === 11) {
+            return preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $doc);
+        }
+
+        if (strlen($doc) === 14) {
+            return preg_replace('/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/', '$1.$2.$3/$4-$5', $doc);
+        }
+
+        return $this->customer_cpf ?: null;
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Phone;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -53,15 +54,7 @@ class JobSeeker extends Model
 
     public function getFormattedPhoneAttribute(): ?string
     {
-        if (!$this->phone) return null;
-        $phone = preg_replace('/[^0-9]/', '', $this->phone);
-        if (strlen($phone) === 11) {
-            return preg_replace('/(\d{2})(\d{1})(\d{4})(\d{4})/', '($1)$2 $3-$4', $phone);
-        }
-        if (strlen($phone) === 10) {
-            return preg_replace('/(\d{2})(\d{4})(\d{4})/', '($1) $2-$3', $phone);
-        }
-        return $this->phone;
+        return Phone::format($this->phone);
     }
 
     public function getStatusLabelAttribute(): string

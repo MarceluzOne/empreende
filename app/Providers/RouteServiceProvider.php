@@ -10,28 +10,18 @@ use Illuminate\Support\Facades\Route;
 
 class RouteServiceProvider extends ServiceProvider
 {
-    public const HOME = '/panel';
+    public const HOME = '/portal/funcionario/painel';
 
     public function boot(): void
     {
         $this->configureRateLimiting();
 
+        // As rotas de cada site são registradas pelo App\Providers\SiteServiceProvider
+        // a partir de routes/sites/{slug}.php (com prefixo e middleware próprios).
+        // routes/web.php fica como ponto de extensão para rotas globais (sem site).
         $this->routes(function () {
-            Route::middleware('api')
-                ->prefix('api')
-                ->group(base_path('routes/api.php'));
-
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
-
-            Route::middleware('web')
-                ->group(base_path('routes/portal/usuario.php'));
-
-            Route::middleware('web')
-                ->group(base_path('routes/portal/empresa.php'));
-
-            Route::middleware('web')
-                ->group(base_path('routes/portal/funcionario.php'));
         });
     }
 

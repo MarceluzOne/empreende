@@ -19,7 +19,8 @@ class AuditController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        $users = User::orderBy('name')->get(['id', 'name']);
+        // Filtro lista apenas funcionários (quem gera ações no painel interno).
+        $users = User::where('type', 'funcionario')->orderBy('name')->get(['id', 'name']);
 
         return view('audit.index', compact('logs', 'users'));
     }

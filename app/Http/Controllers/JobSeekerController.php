@@ -179,6 +179,18 @@ class JobSeekerController extends Controller
         return response()->json($jobSeeker);
     }
 
+    /**
+     * Currículo do candidato em PDF, exibido inline (para o funcionário ver).
+     */
+    public function curriculo(JobSeeker $jobSeeker)
+    {
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('job-seekers.curriculo-pdf', [
+            'seeker' => $jobSeeker,
+        ]);
+
+        return $pdf->stream('curriculo-'.\Illuminate\Support\Str::slug($jobSeeker->name ?: 'candidato').'.pdf');
+    }
+
     public function destroy(JobSeeker $jobSeeker)
     {
         $name = $jobSeeker->name;

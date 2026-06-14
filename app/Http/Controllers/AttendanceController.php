@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
+use App\Rules\CpfOrCnpj;
 use App\Services\AttendanceService;
 use App\Services\AuditService;
+use App\Support\BusinessDay;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -42,19 +44,53 @@ class AttendanceController extends Controller
 
     public function create()
     {
-        return view('attendances.create', ['services' => $this->serviceList()]);
+        return view('attendances.create', [
+            'services'  => $this->serviceList(),
+            'startHour' => (int) substr(BusinessDay::openingTime(), 0, 2),
+        ]);
+    }
+
+    /**
+     * Regra do horário do agendamento: quando for agendado, o horário precisa
+     * estar dentro do expediente (a partir das 09h). Não afeta "Realizado Agora".
+     */
+    private function scheduledTimeRule(Request $request): array
+    {
+        $isScheduled = filter_var($request->is_scheduled, FILTER_VALIDATE_BOOLEAN);
+        $opening = BusinessDay::openingTime();
+        $closing = BusinessDay::closingTime();
+
+        return ['required_if:is_scheduled,true,1', 'nullable',
+            function ($attribute, $value, $fail) use ($isScheduled, $opening, $closing) {
+                if (!$isScheduled || !$value) {
+                    return;
+                }
+                if (!preg_match('/^\d{2}:\d{2}$/', (string) $value)) {
+                    $fail('Horário inválido.');
+                    return;
+                }
+                if ($value < $opening) {
+                    $fail('Os atendimentos começam a partir das '.$opening.'.');
+                } elseif ($value > $closing) {
+                    $fail('O último horário de atendimento é às '.$closing.'.');
+                }
+            },
+        ];
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'customer_name'  => 'required|string|max:255',
-            'customer_cpf'   => 'nullable|string|max:14',
+            'customer_cpf'   => ['nullable', 'string', new CpfOrCnpj],
             'customer_phone' => 'nullable|string|max:20',
             'service_type'   => 'required|string',
             'description'    => 'required|string',
             'scheduled_date' => 'required_if:is_scheduled,true,1|nullable|date',
-            'scheduled_time' => 'required_if:is_scheduled,true,1|nullable',
+            'scheduled_time' => $this->scheduledTimeRule($request),
+        ], [
+            'scheduled_date.required_if' => 'Selecione o dia do agendamento.',
+            'scheduled_time.required_if' => 'Selecione o horário do agendamento.',
         ]);
 
         try {
@@ -79,6 +115,7 @@ class AttendanceController extends Controller
             'attendance'  => $attendance,
             'services'    => $this->serviceList(),
             'isScheduled' => $isScheduled,
+            'startHour'   => (int) substr(BusinessDay::openingTime(), 0, 2),
         ]);
     }
 
@@ -86,9 +123,13 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'customer_name'  => 'required|string|max:255',
+            'customer_cpf'   => ['nullable', 'string', new CpfOrCnpj],
             'customer_phone' => 'nullable|string|max:20',
             'service_type'   => 'required',
             'description'    => 'required',
+            'scheduled_time' => $this->scheduledTimeRule($request),
+        ], [
+            'scheduled_time.required_if' => 'Selecione o horário do agendamento.',
         ]);
 
         $this->service->update($attendance, $request->all());
@@ -99,7 +140,8 @@ class AttendanceController extends Controller
 
     public function complete(Attendance $attendance)
     {
-        $attendance->update(['status' => 'completed']);
+        // Quem concluiu (atualização de status) passa a ser o atendente registrado.
+        $attendance->update(['status' => 'completed', 'user_id' => auth()->id()]);
         AuditService::log('updated', $attendance->fresh(), [['status' => 'completed']]);
 
         return back()->with('success', 'Atendimento concluído com sucesso!');

@@ -10,7 +10,7 @@ class CheckUserType
     public function handle(Request $request, Closure $next, string $type)
     {
         if (!auth()->check()) {
-            return redirect('/')->with('error', 'Acesso não autorizado.');
+            return redirect()->route('home')->with('error', 'Acesso não autorizado.');
         }
 
         $user = auth()->user();
@@ -19,7 +19,7 @@ class CheckUserType
             return match ($user->type) {
                 'empresa'  => redirect()->route('portal.empresa')->with('error', 'Acesso restrito a funcionários.'),
                 'usuario'  => redirect()->route('portal.usuario')->with('error', 'Acesso restrito a funcionários.'),
-                default    => redirect('/')->with('error', 'Acesso não autorizado.'),
+                default    => redirect()->route('home')->with('error', 'Acesso não autorizado.'),
             };
         }
 

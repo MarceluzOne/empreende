@@ -26,11 +26,31 @@ class AttendanceService
         ]);
     }
 
+    /**
+     * Cria um agendamento feito pelo cidadão no site público (sem usuário logado).
+     * Sempre entra como 'scheduled'.
+     */
+    public function storePublic(array $data): Attendance
+    {
+        return Attendance::create([
+            'user_id'        => null,
+            'customer_name'  => $data['customer_name'],
+            'customer_cpf'   => $this->sanitizeCpf($data['customer_cpf'] ?? null),
+            'customer_phone' => $this->sanitizePhone($data['customer_phone'] ?? null),
+            'service_type'   => $data['service_type'],
+            'description'    => $data['description'],
+            'scheduled_at'   => Carbon::parse($data['scheduled_date'].' '.$data['scheduled_time']),
+            'status'         => 'scheduled',
+        ]);
+    }
+
     public function update(Attendance $attendance, array $data): Attendance
     {
         $isScheduled = filter_var($data['is_scheduled'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
         $attendance->update([
+            // Quem fez a atualização cadastral passa a ser o atendente registrado.
+            'user_id'        => Auth::id(),
             'customer_name'  => $data['customer_name'],
             'customer_cpf'   => $this->sanitizeCpf($data['customer_cpf'] ?? null),
             'customer_phone' => $this->sanitizePhone($data['customer_phone'] ?? null),

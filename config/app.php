@@ -59,6 +59,7 @@ return [
         // Application Service Providers
         App\Providers\AppServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
+        App\Providers\SiteServiceProvider::class,
     ],
 
     'aliases' => Illuminate\Support\Facades\Facade::defaultAliases()->merge([

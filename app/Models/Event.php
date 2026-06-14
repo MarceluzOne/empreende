@@ -72,12 +72,53 @@ class Event extends Model
         return $this->availableSpots() <= 0;
     }
 
+    /**
+     * Indica se o evento já terminou (última data + horário de término no passado).
+     * Usado para derivar o status automaticamente, sem depender de cron/agendador.
+     */
+    public function hasEnded(): bool
+    {
+        $dates = $this->allDates();
+        if (empty($dates)) {
+            return false;
+        }
+
+        // Datas em 'Y-m-d' — max() coincide com a ordem cronológica.
+        $lastDate = max($dates);
+
+        return Carbon::parse($lastDate.' '.$this->start_time)
+            ->addMinutes((int) $this->duration_minutes)
+            ->isPast();
+    }
+
+    /**
+     * Inscrições fechadas: evento concluído, cancelado ou já encerrado por data.
+     */
+    public function registrationsClosed(): bool
+    {
+        return in_array($this->status, ['completed', 'cancelled'], true) || $this->hasEnded();
+    }
+
     public function getStatusLabelAttribute(): string
     {
-        return match ($this->status) {
-            'completed' => 'Concluído',
-            'cancelled' => 'Cancelado',
-            default     => 'Em andamento',
+        return match (true) {
+            $this->status === 'cancelled' => 'Cancelado',
+            $this->status === 'completed' => 'Concluído',
+            $this->hasEnded()             => 'Encerrado',
+            default                       => 'Em andamento',
+        };
+    }
+
+    /**
+     * Classes Tailwind do badge de status, alinhadas ao status_label.
+     */
+    public function getStatusColorAttribute(): string
+    {
+        return match (true) {
+            $this->status === 'cancelled' => 'bg-red-100 text-red-700',
+            $this->status === 'completed' => 'bg-green-100 text-green-700',
+            $this->hasEnded()             => 'bg-gray-100 text-gray-600',
+            default                       => 'bg-blue-100 text-blue-700',
         };
     }
 

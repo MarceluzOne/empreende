@@ -122,6 +122,25 @@ class JobVacancyController extends Controller
         return response()->json($jobVacancy);
     }
 
+    /**
+     * Habilita/desabilita a vaga (active <-> inactive). Vaga inativa some das
+     * listagens públicas. Mantém o estado 'filled' intacto.
+     */
+    public function toggleStatus(JobVacancy $jobVacancy)
+    {
+        if ($jobVacancy->status === 'filled') {
+            return back()->with('info', 'Vaga preenchida — altere pela edição se necessário.');
+        }
+
+        $jobVacancy->update([
+            'status' => $jobVacancy->status === 'active' ? 'inactive' : 'active',
+        ]);
+
+        return back()->with('success', $jobVacancy->status === 'active'
+            ? 'Vaga habilitada.'
+            : 'Vaga desabilitada (oculta do site).');
+    }
+
     public function notify(JobVacancy $jobVacancy)
     {
         if (! $jobVacancy->interest_area) {
