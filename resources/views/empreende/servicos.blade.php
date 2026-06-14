@@ -687,7 +687,7 @@
       const json = await resp.json();
 
       if (resp.ok && json.success) {
-        feedback.textContent = '✓ Cadastro enviado com sucesso! Aguarde a aprovação da equipe.';
+        feedback.textContent = '✓ Cadastro enviado com sucesso! Após a aprovação da nossa equipe, ele será publicado no site.';
         feedback.className = 'form-feedback success';
         form.reset();
         croppedBase64 = null;
