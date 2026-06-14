@@ -28,9 +28,9 @@
                     <i class="fas fa-user-graduate text-indigo-500 mr-1"></i> Candidato
                 </h3>
                 @if($candidato)
-                    <a href="{{ route('job-seekers.show', $candidato->id) }}"
+                    <a href="{{ route('job-seekers.curriculo', $candidato->id) }}" target="_blank"
                         class="text-blue-600 hover:text-blue-800 text-sm font-bold">
-                        Ver currículo <i class="fas fa-arrow-right ml-1 text-xs"></i>
+                        <i class="fas fa-file-pdf mr-1"></i> Ver currículo (PDF)
                     </a>
                 @endif
             </div>

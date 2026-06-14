@@ -110,6 +110,7 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->group(function () {
     Route::post('job-vacancies/{jobVacancy}/notify', [JobVacancyController::class, 'notify'])->name('job-vacancies.notify');
 
     Route::resource('job-seekers', JobSeekerController::class)->parameters(['job-seekers' => 'jobSeeker']);
+    Route::get('job-seekers/{jobSeeker}/curriculo', [JobSeekerController::class, 'curriculo'])->name('job-seekers.curriculo');
 
     // Cidadãos: lista consolidada por CPF (candidatos + atendidos)
     Route::get('cidadaos', [CitizenController::class, 'index'])->name('citizens.index');
