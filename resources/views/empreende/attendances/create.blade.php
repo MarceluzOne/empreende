@@ -108,7 +108,7 @@
                             Data e Horário do Agendamento *
                         </label>
 
-                        @include('bookings.partials._calendar', ['calendarFetchUrl' => route('attendances.availability'), 'singleSlot' => true])
+                        @include('bookings.partials._calendar', ['calendarFetchUrl' => route('attendances.availability'), 'singleSlot' => true, 'startHour' => $startHour ?? 9])
 
                         {{-- Hidden inputs para o controller --}}
                         <input type="hidden" name="scheduled_date" x-model="scheduledDate">

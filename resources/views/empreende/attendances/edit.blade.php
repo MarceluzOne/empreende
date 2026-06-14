@@ -97,6 +97,7 @@
                         'preselectedStart'  => $attendance->scheduled_at?->format('H:i') ?? '',
                         'preselectedEnd'    => '',
                         'calendarFetchUrl'  => route('attendances.availability'),
+                        'startHour'         => $startHour ?? 9,
                     ])
 
                     <input type="hidden" name="scheduled_date" x-model="scheduledDate">
