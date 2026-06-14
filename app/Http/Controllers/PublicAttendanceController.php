@@ -49,8 +49,14 @@ class PublicAttendanceController extends Controller
 
         $request->validate([
             'customer_name'  => 'required|string|max:255',
-            'customer_cpf'   => ['nullable', 'string', new CpfOrCnpj],
-            'customer_phone' => 'nullable|string|max:20',
+            'customer_cpf'   => ['required', 'string', new CpfOrCnpj],
+            'customer_phone' => ['required', 'string', 'max:20',
+                function ($attribute, $value, $fail) {
+                    if (strlen(preg_replace('/\D/', '', (string) $value)) < 10) {
+                        $fail('Informe um telefone válido com DDD.');
+                    }
+                },
+            ],
             'service_type'   => 'required|string',
             'description'    => 'required|string',
             'scheduled_date' => ['required', 'date', 'after_or_equal:'.$minDate->format('Y-m-d'),
@@ -75,6 +81,8 @@ class PublicAttendanceController extends Controller
             ],
         ], [
             'customer_name.required'        => 'Informe seu nome completo.',
+            'customer_cpf.required'         => 'Informe o CPF ou CNPJ.',
+            'customer_phone.required'       => 'Informe o telefone para contato.',
             'service_type.required'         => 'Selecione o serviço desejado.',
             'description.required'          => 'Descreva sua situação.',
             'scheduled_date.required'       => 'Selecione o dia do atendimento no calendário.',

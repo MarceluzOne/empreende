@@ -1034,8 +1034,8 @@
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
                     {{-- CPF --}}
                     <div>
-                        <label style="display:block;font-size:.7rem;font-weight:900;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;font-family:'Plus Jakarta Sans',sans-serif">CPF / CNPJ (opcional)</label>
-                        <input type="text" name="customer_cpf" id="pub_cpf" value="{{ old('customer_cpf') }}"
+                        <label style="display:block;font-size:.7rem;font-weight:900;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;font-family:'Plus Jakarta Sans',sans-serif">CPF / CNPJ *</label>
+                        <input type="text" name="customer_cpf" id="pub_cpf" value="{{ old('customer_cpf') }}" required
                             style="width:100%;padding:14px 18px;background:#f9fafb;border:2px solid {{ $errors->has('customer_cpf') ? '#ef4444' : 'transparent' }};border-radius:14px;outline:none;font-weight:700;color:#1f2937;font-family:'Lato',sans-serif;box-sizing:border-box"
                             placeholder="CPF ou CNPJ"
                             onfocus="this.style.borderColor='#0763A0';this.style.background='#fff'"
@@ -1044,12 +1044,13 @@
                     </div>
                     {{-- Telefone --}}
                     <div>
-                        <label style="display:block;font-size:.7rem;font-weight:900;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;font-family:'Plus Jakarta Sans',sans-serif">Telefone (opcional)</label>
-                        <input type="text" name="customer_phone" id="pub_phone" value="{{ old('customer_phone') }}"
-                            style="width:100%;padding:14px 18px;background:#f9fafb;border:2px solid transparent;border-radius:14px;outline:none;font-weight:700;color:#1f2937;font-family:'Lato',sans-serif;box-sizing:border-box"
+                        <label style="display:block;font-size:.7rem;font-weight:900;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;font-family:'Plus Jakarta Sans',sans-serif">Telefone *</label>
+                        <input type="text" name="customer_phone" id="pub_phone" value="{{ old('customer_phone') }}" required
+                            style="width:100%;padding:14px 18px;background:#f9fafb;border:2px solid {{ $errors->has('customer_phone') ? '#ef4444' : 'transparent' }};border-radius:14px;outline:none;font-weight:700;color:#1f2937;font-family:'Lato',sans-serif;box-sizing:border-box"
                             placeholder="(00) 00000-0000"
                             onfocus="this.style.borderColor='#0763A0';this.style.background='#fff'"
                             onblur="this.style.borderColor='transparent';this.style.background='#f9fafb'">
+                        @error('customer_phone') <span style="display:block;color:#ef4444;font-size:.75rem;margin-top:4px;font-family:'Lato',sans-serif">{{ $message }}</span> @enderror
                     </div>
                 </div>
 
