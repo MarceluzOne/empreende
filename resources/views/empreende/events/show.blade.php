@@ -75,22 +75,20 @@
         </div>
     </div>
 
-    {{-- Formulário de inscrição --}}
-    @php $locked = $event->isFull() || $event->hasEnded(); @endphp
+    {{-- Formulário de inscrição (não exibido quando o evento já foi encerrado) --}}
+    @if($event->hasEnded())
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex items-center gap-2 text-sm text-gray-600">
+            <i class="fas fa-lock"></i> Evento encerrado — inscrições indisponíveis.
+        </div>
+    @else
+    @php $locked = $event->isFull(); @endphp
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
             <h2 class="font-bold text-gray-800">Inscrever Participante</h2>
-            @if($event->hasEnded())
-                <span class="text-xs font-bold uppercase px-3 py-1 rounded-full bg-gray-200 text-gray-600">Evento encerrado</span>
-            @elseif($event->isFull())
+            @if($event->isFull())
                 <span class="text-xs font-bold uppercase px-3 py-1 rounded-full bg-red-100 text-red-700">Vagas Esgotadas</span>
             @endif
         </div>
-        @if($event->hasEnded())
-            <div class="px-6 py-4 text-sm text-gray-600 bg-gray-50 border-b border-gray-100">
-                <i class="fas fa-lock mr-1"></i> Este evento já foi encerrado — não é possível inscrever novos participantes.
-            </div>
-        @endif
         <form action="{{ route('events.participants.store', $event) }}" method="POST" class="p-6">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -141,6 +139,7 @@
             </div>
         </form>
     </div>
+    @endif
 
     {{-- Tabela de participantes --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
