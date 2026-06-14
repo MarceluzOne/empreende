@@ -76,13 +76,21 @@
     </div>
 
     {{-- Formulário de inscrição --}}
+    @php $locked = $event->isFull() || $event->hasEnded(); @endphp
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
             <h2 class="font-bold text-gray-800">Inscrever Participante</h2>
-            @if($event->isFull())
+            @if($event->hasEnded())
+                <span class="text-xs font-bold uppercase px-3 py-1 rounded-full bg-gray-200 text-gray-600">Evento encerrado</span>
+            @elseif($event->isFull())
                 <span class="text-xs font-bold uppercase px-3 py-1 rounded-full bg-red-100 text-red-700">Vagas Esgotadas</span>
             @endif
         </div>
+        @if($event->hasEnded())
+            <div class="px-6 py-4 text-sm text-gray-600 bg-gray-50 border-b border-gray-100">
+                <i class="fas fa-lock mr-1"></i> Este evento já foi encerrado — não é possível inscrever novos participantes.
+            </div>
+        @endif
         <form action="{{ route('events.participants.store', $event) }}" method="POST" class="p-6">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -91,7 +99,7 @@
                     <input type="text" name="name" value="{{ old('name') }}"
                         class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm @error('name') border-red-500 @enderror"
                         placeholder="Nome completo do participante"
-                        {{ $event->isFull() ? 'disabled' : '' }}>
+                        {{ $locked ? 'disabled' : '' }}>
                     @error('name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                 </div>
                 <div>
@@ -99,7 +107,7 @@
                     <input type="text" name="cpf" id="participant_cpf" value="{{ old('cpf') }}"
                         class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono @error('cpf') border-red-500 @enderror"
                         placeholder="000.000.000-00"
-                        {{ $event->isFull() ? 'disabled' : '' }}>
+                        {{ $locked ? 'disabled' : '' }}>
                     @error('cpf') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                 </div>
                 <div>
@@ -107,7 +115,7 @@
                     <input type="text" name="whatsapp" id="participant_whatsapp" value="{{ old('whatsapp') }}"
                         class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm @error('whatsapp') border-red-500 @enderror"
                         placeholder="(00)9 0000-0000"
-                        {{ $event->isFull() ? 'disabled' : '' }}>
+                        {{ $locked ? 'disabled' : '' }}>
                     @error('whatsapp') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                 </div>
                 <div class="md:col-span-2">
@@ -115,7 +123,7 @@
                     <input type="email" name="email" value="{{ old('email') }}"
                         class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm @error('email') border-red-500 @enderror"
                         placeholder="email@exemplo.com"
-                        {{ $event->isFull() ? 'disabled' : '' }}>
+                        {{ $locked ? 'disabled' : '' }}>
                     @error('email') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                 </div>
                 @error('capacity')
@@ -126,7 +134,7 @@
             </div>
             <div class="mt-4 flex justify-end">
                 <button type="submit"
-                    {{ $event->isFull() ? 'disabled' : '' }}
+                    {{ $locked ? 'disabled' : '' }}
                     class="bg-blue-600 text-white px-8 py-2 rounded-lg font-bold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
                     <i class="fas fa-user-plus mr-1"></i> Inscrever
                 </button>
