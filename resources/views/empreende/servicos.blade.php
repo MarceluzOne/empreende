@@ -381,7 +381,7 @@
 <div class="page-body">
 
   @if($prestadores->count() > 0)
-    <p class="count-label" id="countLabel">Exibindo <strong>{{ $prestadores->count() }}</strong> prestador{{ $prestadores->count() !== 1 ? 'es' : '' }} de serviço</p>
+    <p class="count-label" id="countLabel" style="display:none">Exibindo <strong>{{ $prestadores->count() }}</strong> prestador{{ $prestadores->count() !== 1 ? 'es' : '' }} de serviço</p>
     <div class="cards-grid" id="cardsGrid">
       @foreach($prestadores as $p)
         <div class="provider-card" data-search="{{ strtolower($p->name . ' ' . $p->service_title) }}">
@@ -581,7 +581,15 @@
       if (match) visible++;
     });
     if (emptySearch) emptySearch.style.display = (q && visible === 0) ? '' : 'none';
-    if (countLabel) countLabel.style.display = (q && visible === 0) ? 'none' : '';
+    // Mostra o contador apenas quando há busca ativa (com resultados).
+    if (countLabel) {
+      if (q && visible > 0) {
+        countLabel.innerHTML = 'Exibindo <strong>' + visible + '</strong> prestador' + (visible !== 1 ? 'es' : '') + ' de serviço';
+        countLabel.style.display = '';
+      } else {
+        countLabel.style.display = 'none';
+      }
+    }
   });
 
   // ====== CROP LOGIC ======

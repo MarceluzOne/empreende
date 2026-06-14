@@ -378,7 +378,7 @@
 <div class="page-body">
 
   @if($empresas->count() > 0)
-    <p class="count-label" id="countLabel">Exibindo <strong>{{ $empresas->count() }}</strong> empresa{{ $empresas->count() !== 1 ? 's' : '' }} local{{ $empresas->count() !== 1 ? 'is' : '' }}</p>
+    <p class="count-label" id="countLabel" style="display:none">Exibindo <strong>{{ $empresas->count() }}</strong> empresa{{ $empresas->count() !== 1 ? 's' : '' }} local{{ $empresas->count() !== 1 ? 'is' : '' }}</p>
     <div class="cards-grid" id="cardsGrid">
       @foreach($empresas as $e)
         <div class="provider-card" data-search="{{ strtolower($e->name . ' ' . $e->service_title) }}">
@@ -570,7 +570,15 @@
       if (match) visible++;
     });
     if (emptySearch) emptySearch.style.display = (q && visible === 0) ? '' : 'none';
-    if (countLabel) countLabel.style.display = (q && visible === 0) ? 'none' : '';
+    // Mostra o contador apenas quando há busca ativa (com resultados).
+    if (countLabel) {
+      if (q && visible > 0) {
+        countLabel.innerHTML = 'Exibindo <strong>' + visible + '</strong> empresa' + (visible !== 1 ? 's' : '') + ' local' + (visible !== 1 ? 'is' : '');
+        countLabel.style.display = '';
+      } else {
+        countLabel.style.display = 'none';
+      }
+    }
   });
 
   // ===== IMAGE CROP =====
