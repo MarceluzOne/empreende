@@ -134,6 +134,10 @@
                                 class="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Visualizar">
                                 <i class="fas fa-eye fa-lg"></i>
                             </button>
+                            <a href="{{ route('job-seekers.curriculo', $seeker) }}" target="_blank"
+                                class="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition" title="Currículo (PDF)">
+                                <i class="fas fa-file-pdf fa-lg"></i>
+                            </a>
                             <a href="{{ route('job-seekers.edit', $seeker) }}"
                                 class="p-1.5 text-yellow-600 hover:bg-yellow-50 rounded-lg transition" title="Editar">
                                 <i class="fas fa-edit fa-lg"></i>
