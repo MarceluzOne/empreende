@@ -105,8 +105,8 @@
                             <tr class="hover:bg-gray-50 transition">
                                 <td class="px-6 py-4">
                                     <div class="text-sm font-bold text-gray-800">{{ $vaga->position }}</div>
-                                    @if($vaga->remuneration)
-                                        <div class="text-xs text-gray-400">{{ $vaga->remuneration }}</div>
+                                    @if($vaga->formatted_remuneration)
+                                        <div class="text-xs text-gray-400">{{ $vaga->formatted_remuneration }}</div>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-600">{{ $vaga->interest_area ?? '—' }}</td>

@@ -59,7 +59,7 @@
 
                 <div class="detail-row">
                     <span class="detail-label">Remuneração</span>
-                    <span class="detail-value">{{ $vacancy->remuneration ?? 'A combinar' }}</span>
+                    <span class="detail-value">{{ $vacancy->formatted_remuneration ?? 'A combinar' }}</span>
                 </div>
 
                 @if($vacancy->min_experience)

@@ -28,7 +28,7 @@ class JobVacancy extends Model
         'benefits' => 'array',
     ];
 
-    protected $appends = ['formatted_cnpj', 'status_label'];
+    protected $appends = ['formatted_cnpj', 'status_label', 'formatted_remuneration'];
 
     public function user()
     {
@@ -57,5 +57,23 @@ class JobVacancy extends Model
             'filled'   => 'Preenchida',
             default    => $this->status,
         };
+    }
+
+    /**
+     * Remuneração formatada em Real (ex.: "R$ 5.000,00"). Retorna null quando
+     * não há valor (exibir "A combinar"). Baseia-se no decimal armazenado.
+     */
+    public function getFormattedRemunerationAttribute(): ?string
+    {
+        if ($this->remuneration === null || $this->remuneration === '') {
+            return null;
+        }
+
+        $value = (float) $this->remuneration;
+        if ($value <= 0) {
+            return null;
+        }
+
+        return 'R$ ' . number_format($value, 2, ',', '.');
     }
 }

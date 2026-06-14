@@ -129,7 +129,7 @@
                         </span>
                     </td>
                     <td class="px-4 py-3 text-gray-600 hidden lg:table-cell">
-                        {{ $vacancy->remuneration ?? 'A combinar' }}
+                        {{ $vacancy->formatted_remuneration ?? 'A combinar' }}
                     </td>
                     <td class="px-4 py-3">
                         @php
@@ -251,7 +251,7 @@
                     </div>
                     <div>
                         <p class="text-xs font-semibold text-gray-400 uppercase mb-1">Remuneração</p>
-                        <p x-text="selectedVacancy.remuneration || 'A combinar'" class="text-gray-800"></p>
+                        <p x-text="selectedVacancy.formatted_remuneration || 'A combinar'" class="text-gray-800"></p>
                     </div>
                 </div>
 

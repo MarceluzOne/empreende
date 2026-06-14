@@ -28,7 +28,7 @@
     <form action="{{ route('job-vacancies.update', $vacancy) }}" method="POST"
         x-data="{
             cnpj: '{{ old('cnpj', $vacancy->formatted_cnpj) }}',
-            remuneration: '{{ old('remuneration', $vacancy->remuneration) }}',
+            remuneration: '{{ old('remuneration', $vacancy->formatted_remuneration) }}',
             maskCnpj(v) {
                 v = v.replace(/\D/g, '').slice(0, 14);
                 v = v.replace(/(\d{2})(\d)/, '$1.$2');
