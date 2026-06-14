@@ -1034,12 +1034,13 @@
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
                     {{-- CPF --}}
                     <div>
-                        <label style="display:block;font-size:.7rem;font-weight:900;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;font-family:'Plus Jakarta Sans',sans-serif">CPF (opcional)</label>
+                        <label style="display:block;font-size:.7rem;font-weight:900;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;font-family:'Plus Jakarta Sans',sans-serif">CPF / CNPJ (opcional)</label>
                         <input type="text" name="customer_cpf" id="pub_cpf" value="{{ old('customer_cpf') }}"
-                            style="width:100%;padding:14px 18px;background:#f9fafb;border:2px solid transparent;border-radius:14px;outline:none;font-weight:700;color:#1f2937;font-family:'Lato',sans-serif;box-sizing:border-box"
-                            placeholder="000.000.000-00"
+                            style="width:100%;padding:14px 18px;background:#f9fafb;border:2px solid {{ $errors->has('customer_cpf') ? '#ef4444' : 'transparent' }};border-radius:14px;outline:none;font-weight:700;color:#1f2937;font-family:'Lato',sans-serif;box-sizing:border-box"
+                            placeholder="CPF ou CNPJ"
                             onfocus="this.style.borderColor='#0763A0';this.style.background='#fff'"
                             onblur="this.style.borderColor='transparent';this.style.background='#f9fafb'">
+                        @error('customer_cpf') <span style="display:block;color:#ef4444;font-size:.75rem;margin-top:4px;font-family:'Lato',sans-serif">{{ $message }}</span> @enderror
                     </div>
                     {{-- Telefone --}}
                     <div>
@@ -1113,7 +1114,16 @@
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const cpf = document.getElementById('pub_cpf');
-    if (cpf) IMask(cpf, { mask: '000.000.000-00' });
+    if (cpf) IMask(cpf, {
+        mask: [
+            { mask: '000.000.000-00', maxLength: 11 },
+            { mask: '00.000.000/0000-00' }
+        ],
+        dispatch: function (appended, dynamicMasked) {
+            const number = (dynamicMasked.value + appended).replace(/\D/g, '');
+            return number.length > 11 ? dynamicMasked.compiledMasks[1] : dynamicMasked.compiledMasks[0];
+        }
+    });
     const phone = document.getElementById('pub_phone');
     if (phone) IMask(phone, { mask: [{mask:'(00) 00000-0000'},{mask:'(00) 0000-0000'}] });
 
