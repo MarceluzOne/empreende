@@ -145,7 +145,7 @@
     position:absolute;inset:0;
     width:100%;height:100%;
     object-fit:cover;
-    object-position:center;
+    object-position:75% center; /* enquadra mais à direita (pessoas do lado direito) */
   }
   .hero__overlay{
     position:absolute;inset:0;
@@ -693,7 +693,7 @@
     .tile{padding:22px;gap:16px}
     .tile__icon{width:54px;height:54px;font-size:20px;border-radius:14px}
     .tile__title{font-size:18px}
-    .hero{min-height:480px;height:72vh}
+    .hero{min-height:480px;height:60vh}
     .btn{padding:12px 18px;font-size:14px}
   }
 </style>
