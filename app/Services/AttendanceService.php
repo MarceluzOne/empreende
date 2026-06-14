@@ -49,6 +49,8 @@ class AttendanceService
         $isScheduled = filter_var($data['is_scheduled'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
         $attendance->update([
+            // Quem fez a atualização cadastral passa a ser o atendente registrado.
+            'user_id'        => Auth::id(),
             'customer_name'  => $data['customer_name'],
             'customer_cpf'   => $this->sanitizeCpf($data['customer_cpf'] ?? null),
             'customer_phone' => $this->sanitizePhone($data['customer_phone'] ?? null),

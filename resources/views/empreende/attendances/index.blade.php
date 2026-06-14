@@ -224,7 +224,7 @@
             {{-- QUEM REALIZOU O AGENDAMENTO --}}
             <div class="flex items-center text-sm text-gray-600 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
                 <span class="font-semibold mr-1">Atendente:</span>
-                <span x-text="selectedAttendance.user ? selectedAttendance.user.name : 'Não identificado'"></span>
+                <span x-text="selectedAttendance.user ? selectedAttendance.user.name : 'Agendamento pelo site'"></span>
             </div>
 
             <div class="flex justify-between text-[11px] text-gray-500 italic pt-2 border-t border-gray-100">

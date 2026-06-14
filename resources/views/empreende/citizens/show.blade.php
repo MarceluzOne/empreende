@@ -100,7 +100,7 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-500">
-                                    {{ optional($a->user)->name ?? 'Agendamento público' }}
+                                    {{ optional($a->user)->name ?? 'Agendamento pelo site' }}
                                 </td>
                             </tr>
                         @endforeach

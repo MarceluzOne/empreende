@@ -140,7 +140,8 @@ class AttendanceController extends Controller
 
     public function complete(Attendance $attendance)
     {
-        $attendance->update(['status' => 'completed']);
+        // Quem concluiu (atualização de status) passa a ser o atendente registrado.
+        $attendance->update(['status' => 'completed', 'user_id' => auth()->id()]);
         AuditService::log('updated', $attendance->fresh(), [['status' => 'completed']]);
 
         return back()->with('success', 'Atendimento concluído com sucesso!');
