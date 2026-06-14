@@ -11,6 +11,10 @@
 |
 | Portanto NÃO declare aqui prefixo de slug nem o middleware 'web'.
 |
+| Convenção: URLs em português (CLAUDE.md). Os NOMES das rotas (ex.:
+| 'attendances.index') são mantidos como identificadores internos para não
+| quebrar as chamadas route() espalhadas em views/controllers.
+|
 */
 
 use App\Http\Controllers\AttendanceController;
@@ -51,17 +55,17 @@ Route::get('/empresas-locais', [LandingController::class, 'empresasLocais'])->na
 /*
 | Auth funcionário
 */
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('/entrar', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/entrar', [AuthController::class, 'login'])->name('login.post');
+Route::post('/sair', [AuthController::class, 'logout'])->name('logout');
 
 /*
 | Reset de senha
 */
-Route::get('/forgot-password', [PasswordResetController::class, 'showForgotForm'])->name('password.request');
-Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
-Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
-Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.update');
+Route::get('/esqueci-senha', [PasswordResetController::class, 'showForgotForm'])->name('password.request');
+Route::post('/esqueci-senha', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
+Route::get('/redefinir-senha/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+Route::post('/redefinir-senha', [PasswordResetController::class, 'reset'])->name('password.update');
 
 /*
 | Setup (migrations via rota — ambiente FTP sem artisan)
@@ -71,20 +75,20 @@ Route::get('/setup-inicial', [RoleController::class, 'scriptConfiguration']);
 /*
 | Auth usuário (candidatos)
 */
-Route::get('/login/usuario', [UsuarioAuthController::class, 'showLogin'])->name('usuario.login');
-Route::post('/login/usuario', [UsuarioAuthController::class, 'login'])->name('usuario.login.post');
+Route::get('/entrar/usuario', [UsuarioAuthController::class, 'showLogin'])->name('usuario.login');
+Route::post('/entrar/usuario', [UsuarioAuthController::class, 'login'])->name('usuario.login.post');
 Route::get('/cadastro/usuario', [UsuarioAuthController::class, 'showRegister'])->name('usuario.register');
 Route::post('/cadastro/usuario', [UsuarioAuthController::class, 'register'])->name('usuario.register.post');
-Route::post('/logout/usuario', [UsuarioAuthController::class, 'logout'])->name('usuario.logout');
+Route::post('/sair/usuario', [UsuarioAuthController::class, 'logout'])->name('usuario.logout');
 
 /*
 | Auth empresa
 */
-Route::get('/login/empresa', [EmpresaAuthController::class, 'showLogin'])->name('empresa.login');
-Route::post('/login/empresa', [EmpresaAuthController::class, 'login'])->name('empresa.login.post');
+Route::get('/entrar/empresa', [EmpresaAuthController::class, 'showLogin'])->name('empresa.login');
+Route::post('/entrar/empresa', [EmpresaAuthController::class, 'login'])->name('empresa.login.post');
 Route::get('/cadastro/empresa', [EmpresaAuthController::class, 'showRegister'])->name('empresa.register');
 Route::post('/cadastro/empresa', [EmpresaAuthController::class, 'register'])->name('empresa.register.post');
-Route::post('/logout/empresa', [EmpresaAuthController::class, 'logout'])->name('empresa.logout');
+Route::post('/sair/empresa', [EmpresaAuthController::class, 'logout'])->name('empresa.logout');
 
 /*
 |--------------------------------------------------------------------------
@@ -92,47 +96,48 @@ Route::post('/logout/empresa', [EmpresaAuthController::class, 'logout'])->name('
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'check.user.type:funcionario'])->group(function () {
-    Route::get('/panel', [DashboardController::class, 'index'])->name('panel');
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/painel', [DashboardController::class, 'index'])->name('panel');
+    Route::get('/perfil', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/perfil', [ProfileController::class, 'update'])->name('profile.update');
 
-    Route::get('bookings/availability', [BookingController::class, 'availability'])->name('bookings.availability');
-    Route::resource('bookings', BookingController::class);
-    Route::delete('bookings', [BookingController::class, 'destroyMultiple'])->name('bookings.destroyMultiple');
+    Route::get('reservas/disponibilidade', [BookingController::class, 'availability'])->name('bookings.availability');
+    Route::resource('reservas', BookingController::class)->names('bookings')->parameters(['reservas' => 'booking']);
+    Route::delete('reservas', [BookingController::class, 'destroyMultiple'])->name('bookings.destroyMultiple');
 
-    Route::get('attendances/availability', [AttendanceController::class, 'availability'])->name('attendances.availability');
-    Route::resource('attendances', AttendanceController::class);
-    Route::patch('attendances/{attendance}/complete', [AttendanceController::class, 'complete'])->name('attendances.complete');
+    Route::get('atendimentos/disponibilidade', [AttendanceController::class, 'availability'])->name('attendances.availability');
+    Route::resource('atendimentos', AttendanceController::class)->names('attendances')->parameters(['atendimentos' => 'attendance']);
+    Route::patch('atendimentos/{attendance}/concluir', [AttendanceController::class, 'complete'])->name('attendances.complete');
 
-    Route::resource('services', ServiceProviderController::class);
+    Route::resource('prestadores', ServiceProviderController::class)->names('services')->parameters(['prestadores' => 'service']);
 
-    Route::resource('job-vacancies', JobVacancyController::class)->parameters(['job-vacancies' => 'jobVacancy']);
-    Route::post('job-vacancies/{jobVacancy}/notify', [JobVacancyController::class, 'notify'])->name('job-vacancies.notify');
+    Route::resource('vagas', JobVacancyController::class)->names('job-vacancies')->parameters(['vagas' => 'jobVacancy']);
+    Route::post('vagas/{jobVacancy}/notificar', [JobVacancyController::class, 'notify'])->name('job-vacancies.notify');
 
-    Route::resource('job-seekers', JobSeekerController::class)->parameters(['job-seekers' => 'jobSeeker']);
-    Route::get('job-seekers/{jobSeeker}/curriculo', [JobSeekerController::class, 'curriculo'])->name('job-seekers.curriculo');
+    Route::resource('candidatos', JobSeekerController::class)->names('job-seekers')->parameters(['candidatos' => 'jobSeeker']);
+    Route::get('candidatos/{jobSeeker}/curriculo', [JobSeekerController::class, 'curriculo'])->name('job-seekers.curriculo');
 
     // Cidadãos: lista consolidada por CPF (candidatos + atendidos)
     Route::get('cidadaos', [CitizenController::class, 'index'])->name('citizens.index');
     Route::get('cidadaos/{uuid}', [CitizenController::class, 'show'])->name('citizens.show');
 
-    Route::get('job-vacancies/{jobVacancy}/applicants', [JobApplicationController::class, 'applicants'])->name('job-vacancies.applicants');
-    Route::patch('job-applications/{application}/status', [JobApplicationController::class, 'updateStatus'])->name('job-applications.status');
+    Route::get('vagas/{jobVacancy}/candidatos', [JobApplicationController::class, 'applicants'])->name('job-vacancies.applicants');
+    Route::patch('candidaturas/{application}/status', [JobApplicationController::class, 'updateStatus'])->name('job-applications.status');
 
-    Route::resource('events', EventController::class);
-    Route::post('events/{event}/participants', [EventController::class, 'storeParticipant'])->name('events.participants.store');
-    Route::put('events/{event}/participants/{participant}', [EventController::class, 'updateParticipant'])->name('events.participants.update');
-    Route::delete('events/{event}/participants/{participant}', [EventController::class, 'destroyParticipant'])->name('events.participants.destroy');
-    Route::get('events/{event}/pdf', [EventController::class, 'pdf'])->name('events.pdf');
-    Route::patch('events/{event}/status', [EventController::class, 'updateStatus'])->name('events.status');
-    Route::get('events/{event}/participants/{participant}/certificate', [EventController::class, 'certificate'])->name('events.certificate');
+    Route::resource('eventos', EventController::class)->names('events')->parameters(['eventos' => 'event']);
+    Route::post('eventos/{event}/participantes', [EventController::class, 'storeParticipant'])->name('events.participants.store');
+    Route::put('eventos/{event}/participantes/{participant}', [EventController::class, 'updateParticipant'])->name('events.participants.update');
+    Route::delete('eventos/{event}/participantes/{participant}', [EventController::class, 'destroyParticipant'])->name('events.participants.destroy');
+    Route::get('eventos/{event}/pdf', [EventController::class, 'pdf'])->name('events.pdf');
+    Route::patch('eventos/{event}/status', [EventController::class, 'updateStatus'])->name('events.status');
+    Route::get('eventos/{event}/participantes/{participant}/certificado', [EventController::class, 'certificate'])->name('events.certificate');
 
-    Route::resource('speakers', SpeakerController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
-    Route::post('speakers/quick-store', [SpeakerController::class, 'quickStore'])->name('speakers.quick-store');
+    Route::resource('palestrantes', SpeakerController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy'])
+        ->names('speakers')->parameters(['palestrantes' => 'speaker']);
+    Route::post('palestrantes/cadastro-rapido', [SpeakerController::class, 'quickStore'])->name('speakers.quick-store');
 
     Route::middleware(['can:admin-only'])->group(function () {
-        Route::resource('users', UserController::class);
-        Route::get('audit', [AuditController::class, 'index'])->name('audit.index');
+        Route::resource('equipe', UserController::class)->names('users')->parameters(['equipe' => 'user']);
+        Route::get('auditoria', [AuditController::class, 'index'])->name('audit.index');
     });
 });
 
@@ -152,8 +157,8 @@ Route::middleware(['auth', 'check.user.type:usuario'])->group(function () {
     Route::delete('/portal/usuario/curriculo', [PortalUsuarioController::class, 'destroyCurriculo'])->name('portal.usuario.curriculo.destroy');
 
     // Candidaturas a vagas
-    Route::post('job-vacancies/{jobVacancy}/apply', [JobApplicationController::class, 'store'])->name('job-vacancies.apply');
-    Route::delete('job-vacancies/{jobVacancy}/apply', [JobApplicationController::class, 'destroy'])->name('job-vacancies.unapply');
+    Route::post('vagas/{jobVacancy}/candidatar', [JobApplicationController::class, 'store'])->name('job-vacancies.apply');
+    Route::delete('vagas/{jobVacancy}/candidatar', [JobApplicationController::class, 'destroy'])->name('job-vacancies.unapply');
 
     // Inscrição em eventos
     Route::post('/portal/usuario/eventos/{event}/inscrever', [PortalUsuarioController::class, 'inscreverEvento'])->name('portal.usuario.eventos.inscrever');
@@ -177,8 +182,8 @@ Route::middleware(['auth', 'check.user.type:empresa'])->group(function () {
     Route::patch('/portal/empresa/vagas/{vaga}/encerrar', [PortalEmpresaController::class, 'encerrarVaga'])->name('portal.empresa.vagas.encerrar');
 
     // Candidaturas
-    Route::get('job-vacancies/{jobVacancy}/applicants', [JobApplicationController::class, 'applicants'])->name('job-vacancies.applicants');
-    Route::patch('/portal/empresa/job-applications/{application}/status', [JobApplicationController::class, 'updateStatus'])->name('empresa.job-applications.status');
+    Route::get('vagas/{jobVacancy}/candidatos', [JobApplicationController::class, 'applicants'])->name('job-vacancies.applicants');
+    Route::patch('/portal/empresa/candidaturas/{application}/status', [JobApplicationController::class, 'updateStatus'])->name('empresa.job-applications.status');
 
     // Perfil do candidato (somente-leitura para empresa)
     Route::get('/portal/empresa/candidatos/{jobSeeker}', [PortalEmpresaController::class, 'showCandidato'])->name('portal.empresa.candidato.show');

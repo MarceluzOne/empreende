@@ -255,7 +255,7 @@
                 <div class="p-4 bg-gray-50 flex justify-end space-x-2 border-t">
                     <button @click="openModal = false"
                         class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-bold hover:bg-gray-300 transition text-sm">Fechar</button>
-                    <a :href="'/bookings/' + selectedBooking.id + '/edit'"
+                    <a :href="'{{ route('bookings.index') }}/' + selectedBooking.id + '/edit'"
                         class="bg-blue-900 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition text-sm">Editar Agora</a>
                 </div>
             </div>

@@ -159,7 +159,7 @@ document.addEventListener('alpine:init', () => {
         async fetchMonth() {
             this.loading = true;
             try {
-                const base = fetchUrl || '/bookings/availability';
+                const base = fetchUrl || '/reservas/disponibilidade';
                 const url = `${base}?resource_type=${this.resourceType}&year=${this.calYear}&month=${this.calMonth}`;
                 const resp = await fetch(url, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
