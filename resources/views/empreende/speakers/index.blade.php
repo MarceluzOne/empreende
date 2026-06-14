@@ -62,7 +62,7 @@
                                         <i class="fas fa-edit fa-lg"></i>
                                     </a>
                                     <button type="button"
-                                        onclick="confirmDelete({{ $speaker->id }}, '{{ addslashes($speaker->name) }}')"
+                                        onclick="confirmDelete('{{ $speaker->id }}', '{{ addslashes($speaker->name) }}')"
                                         class="text-red-600 hover:text-red-900 transition" title="Excluir">
                                         <i class="fas fa-trash-alt fa-lg"></i>
                                     </button>

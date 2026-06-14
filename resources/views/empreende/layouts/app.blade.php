@@ -72,6 +72,19 @@
         </script>
     @endif
 
+    @if(session('error'))
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Atenção',
+                    text: @json(session('error')),
+                    confirmButtonColor: '#0763A0'
+                });
+            });
+        </script>
+    @endif
+
     @stack('scripts')
 </body>
 </html>

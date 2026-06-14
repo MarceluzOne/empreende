@@ -76,6 +76,10 @@ class SpeakerController extends Controller
 
     public function destroy(Speaker $speaker)
     {
+        if ($speaker->events()->exists()) {
+            return back()->with('error', 'Não é possível excluir: este palestrante está vinculado a um ou mais eventos. Troque ou remova o palestrante desses eventos antes.');
+        }
+
         if ($speaker->photo_path) {
             Storage::disk('public')->delete($speaker->photo_path);
         }
