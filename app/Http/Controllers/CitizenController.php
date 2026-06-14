@@ -19,9 +19,9 @@ class CitizenController extends Controller
         ]);
     }
 
-    public function show(string $cpf)
+    public function show(string $uuid)
     {
-        $citizen = $this->service->detail($cpf);
+        $citizen = $this->service->detail($uuid);
 
         abort_if(!$citizen['candidato'] && $citizen['attendances']->isEmpty(), 404);
 

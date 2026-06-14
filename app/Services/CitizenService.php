@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\JobSeeker;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Ramsey\Uuid\Uuid;
 
 /**
  * Consolida "cidadãos" do sistema identificados pelo CPF, unindo duas fontes:
@@ -39,12 +40,24 @@ class CitizenService
     }
 
     /**
-     * Detalhe de um cidadão: perfil de candidato (se houver) e histórico de
-     * atendimentos, casados pelo CPF normalizado.
+     * Detalhe de um cidadão a partir do UUID (derivado do CPF): perfil de
+     * candidato (se houver) e histórico de atendimentos.
      */
-    public function detail(string $cpf): array
+    public function detail(string $uuid): array
     {
-        $digits = $this->onlyDigits($cpf);
+        $entry = collect($this->build())->first(fn ($e) => $e['uuid'] === $uuid);
+
+        if (!$entry) {
+            return [
+                'uuid'          => $uuid,
+                'cpf_formatted' => null,
+                'name'          => null,
+                'candidato'     => null,
+                'attendances'   => collect(),
+            ];
+        }
+
+        $digits = $entry['cpf'];
 
         $candidato = JobSeeker::with('user')->whereNotNull('cpf')->get()
             ->first(fn ($js) => $this->onlyDigits($js->cpf) === $digits);
@@ -54,14 +67,10 @@ class CitizenService
             ->sortByDesc('scheduled_at')
             ->values();
 
-        $name = $candidato->name
-            ?? optional($attendances->first())->customer_name
-            ?? null;
-
         return [
-            'cpf'           => $digits,
-            'cpf_formatted' => $this->formatDocument($digits),
-            'name'          => $name,
+            'uuid'          => $entry['uuid'],
+            'cpf_formatted' => $entry['cpf_formatted'],
+            'name'          => $entry['name'] ?? $candidato->name ?? optional($attendances->first())->customer_name,
             'candidato'     => $candidato,
             'attendances'   => $attendances,
         ];
@@ -114,6 +123,7 @@ class CitizenService
     {
         return $people[$cpf] ?? [
             'cpf'                => $cpf,
+            'uuid'               => $this->uuidForCpf($cpf),
             'cpf_formatted'      => $this->formatDocument($cpf),
             'name'               => null,
             'is_candidato'       => false,
@@ -141,6 +151,16 @@ class CitizenService
     private function onlyDigits(?string $value): string
     {
         return preg_replace('/\D/', '', (string) $value);
+    }
+
+    /**
+     * UUID determinístico (v5) derivado do CPF — estável para o mesmo CPF e
+     * não expõe o documento na URL. Não é reversível: o detalhe recompõe o
+     * mapa e casa pelo próprio UUID.
+     */
+    private function uuidForCpf(string $digits): string
+    {
+        return Uuid::uuid5(Uuid::NAMESPACE_OID, 'empreende-cidadao:'.$digits)->toString();
     }
 
     private function formatDocument(string $digits): string

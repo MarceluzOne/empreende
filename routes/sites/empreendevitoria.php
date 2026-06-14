@@ -114,7 +114,7 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->group(function () {
 
     // Cidadãos: lista consolidada por CPF (candidatos + atendidos)
     Route::get('cidadaos', [CitizenController::class, 'index'])->name('citizens.index');
-    Route::get('cidadaos/{cpf}', [CitizenController::class, 'show'])->name('citizens.show');
+    Route::get('cidadaos/{uuid}', [CitizenController::class, 'show'])->name('citizens.show');
 
     Route::get('job-vacancies/{jobVacancy}/applicants', [JobApplicationController::class, 'applicants'])->name('job-vacancies.applicants');
     Route::patch('job-applications/{application}/status', [JobApplicationController::class, 'updateStatus'])->name('job-applications.status');

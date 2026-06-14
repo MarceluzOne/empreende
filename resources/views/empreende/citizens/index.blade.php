@@ -66,7 +66,7 @@
                                 {{ $citizen->last_attendance_at ? $citizen->last_attendance_at->format('d/m/Y H:i') : '—' }}
                             </td>
                             <td class="px-6 py-4 text-right">
-                                <a href="{{ route('citizens.show', $citizen->cpf) }}"
+                                <a href="{{ route('citizens.show', $citizen->uuid) }}"
                                     class="inline-block text-blue-600 hover:text-blue-800 text-sm font-bold">
                                     Ver <i class="fas fa-arrow-right ml-1 text-xs"></i>
                                 </a>
