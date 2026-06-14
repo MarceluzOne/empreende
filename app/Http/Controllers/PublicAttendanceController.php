@@ -50,6 +50,13 @@ class PublicAttendanceController extends Controller
             'description'    => 'required|string',
             'scheduled_date' => 'required|date',
             'scheduled_time' => 'required',
+        ], [
+            'customer_name.required'  => 'Informe seu nome completo.',
+            'service_type.required'   => 'Selecione o serviço desejado.',
+            'description.required'    => 'Descreva sua situação.',
+            'scheduled_date.required' => 'Selecione o dia do atendimento no calendário.',
+            'scheduled_date.date'     => 'A data selecionada é inválida.',
+            'scheduled_time.required' => 'Selecione um horário disponível.',
         ]);
 
         $this->service->storePublic($request->all());

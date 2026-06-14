@@ -698,7 +698,7 @@
   }
 </style>
 </head>
-<body id="topo" x-data="{ openAgendamento: false, scheduledDate: '', scheduledTime: '' }" @date-selected.window="scheduledDate = $event.detail.date" @time-selected.window="scheduledTime = $event.detail.start" @open-agendamento.window="openAgendamento = true">
+<body id="topo" x-data="{ openAgendamento: {{ $errors->any() ? 'true' : 'false' }}, scheduledDate: '{{ old('scheduled_date') }}', scheduledTime: '{{ old('scheduled_time') }}' }" @date-selected.window="scheduledDate = $event.detail.date" @time-selected.window="scheduledTime = $event.detail.start" @open-agendamento.window="openAgendamento = true">
 
   <!-- ============ TOP NAV ============ -->
   <header class="topbar" id="topbar">
@@ -1083,7 +1083,7 @@
                 {{-- Calendário --}}
                 <div>
                     <label style="display:block;font-size:.7rem;font-weight:900;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-family:'Plus Jakarta Sans',sans-serif">Data e horário desejados *</label>
-                    @include('bookings.partials._calendar', ['calendarFetchUrl' => route('public.attendance.availability')])
+                    @include('bookings.partials._calendar', ['calendarFetchUrl' => route('public.attendance.availability'), 'singleSlot' => true])
                     <input type="hidden" name="scheduled_date" x-model="scheduledDate">
                     <input type="hidden" name="scheduled_time" x-model="scheduledTime">
 
@@ -1134,11 +1134,8 @@
     }, 5000);
     @endif
 
-    @if($errors->any())
-    document.addEventListener('alpine:initialized', function(){
-        window.dispatchEvent(new CustomEvent('open-agendamento'));
-    });
-    @endif
+    // O modal já abre via x-data (openAgendamento) quando há erros de validação,
+    // sem depender de evento (evita race com a inicialização do Alpine).
   });
 </script>
 
