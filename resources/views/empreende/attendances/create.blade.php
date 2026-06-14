@@ -45,11 +45,12 @@
 
                     {{-- CPF --}}
                     <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">CPF
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">CPF / CNPJ
                             (Opcional)</label>
                         <input type="text" name="customer_cpf" id="cpf_mask" value="{{ old('customer_cpf') }}"
-                            class="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-900 focus:bg-white rounded-2xl outline-none transition-all font-bold text-gray-800"
-                            placeholder="000.000.000-00">
+                            class="w-full px-5 py-4 bg-gray-50 border-2 border-transparent focus:border-blue-900 focus:bg-white rounded-2xl outline-none transition-all font-bold text-gray-800 @error('customer_cpf') border-red-500 @enderror"
+                            placeholder="CPF ou CNPJ">
+                        @error('customer_cpf') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                     </div>
 
                     {{-- Telefone (Opcional) --}}
@@ -148,10 +149,21 @@
         <script src="https://unpkg.com/imask"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                // Máscara de CPF
+                // Máscara dinâmica CPF / CNPJ (alterna conforme o nº de dígitos)
                 const cpfElement = document.getElementById('cpf_mask');
                 if (cpfElement) {
-                    IMask(cpfElement, { mask: '000.000.000-00' });
+                    IMask(cpfElement, {
+                        mask: [
+                            { mask: '000.000.000-00', maxLength: 11 },
+                            { mask: '00.000.000/0000-00' }
+                        ],
+                        dispatch: function (appended, dynamicMasked) {
+                            const number = (dynamicMasked.value + appended).replace(/\D/g, '');
+                            return number.length > 11
+                                ? dynamicMasked.compiledMasks[1]
+                                : dynamicMasked.compiledMasks[0];
+                        }
+                    });
                 }
                 // Máscara de Telefone
                 const phoneElement = document.getElementById('phone_mask');

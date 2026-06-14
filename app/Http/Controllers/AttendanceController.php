@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
+use App\Rules\CpfOrCnpj;
 use App\Services\AttendanceService;
 use App\Services\AuditService;
 use Carbon\Carbon;
@@ -49,7 +50,7 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'customer_name'  => 'required|string|max:255',
-            'customer_cpf'   => 'nullable|string|max:14',
+            'customer_cpf'   => ['nullable', 'string', new CpfOrCnpj],
             'customer_phone' => 'nullable|string|max:20',
             'service_type'   => 'required|string',
             'description'    => 'required|string',
@@ -86,6 +87,7 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'customer_name'  => 'required|string|max:255',
+            'customer_cpf'   => ['nullable', 'string', new CpfOrCnpj],
             'customer_phone' => 'nullable|string|max:20',
             'service_type'   => 'required',
             'description'    => 'required',
