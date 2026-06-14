@@ -54,7 +54,7 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-600">{{ $speaker->email ?? '—' }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-600">{{ $speaker->phone ?? '—' }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-600">{{ $speaker->formatted_phone ?? '—' }}</td>
                             <td class="px-6 py-4 text-center text-sm font-bold text-blue-700">{{ $speaker->events_count }}</td>
                             <td class="px-6 py-4 text-center">
                                 <div class="flex items-center justify-center gap-3">

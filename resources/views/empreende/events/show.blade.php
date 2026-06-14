@@ -181,7 +181,7 @@
                                         class="inline-flex items-center gap-1 text-green-600 hover:text-green-800 font-medium transition"
                                         title="Enviar mensagem pelo WhatsApp">
                                         <i class="fab fa-whatsapp"></i>
-                                        {{ $participant->whatsapp }}
+                                        {{ $participant->formatted_whatsapp }}
                                     </a>
                                 @else
                                     <span class="text-gray-400">—</span>

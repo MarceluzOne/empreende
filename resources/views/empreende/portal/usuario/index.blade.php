@@ -341,7 +341,7 @@
                 data-benefits="{{ e(implode(', ', $v->benefits ?? [])) }}"
                 data-candidatou="1"
                 data-apply-url="{{ route('job-vacancies.apply', $v) }}"
-                data-empresa-telefone="{{ $v->user->empresa->telefone ?? '' }}"
+                data-empresa-telefone="{{ optional($v->user->empresa)->formatted_telefone ?? '' }}"
                 data-empresa-cidade="{{ $v->user->empresa->cidade ?? '' }}"
                 data-empresa-descricao="{{ e($v->user->empresa->descricao ?? '') }}"
                 data-empresa-email="{{ $v->user->email ?? '' }}"
@@ -408,7 +408,7 @@
               data-benefits="{{ e(implode(', ', $vaga->benefits ?? [])) }}"
               data-candidatou="{{ $jaCandidatou ? '1' : '0' }}"
               data-apply-url="{{ route('job-vacancies.apply', $vaga) }}"
-              data-empresa-telefone="{{ $vaga->user->empresa->telefone ?? '' }}"
+              data-empresa-telefone="{{ optional($vaga->user->empresa)->formatted_telefone ?? '' }}"
               data-empresa-cidade="{{ $vaga->user->empresa->cidade ?? '' }}"
               data-empresa-descricao="{{ e($vaga->user->empresa->descricao ?? '') }}"
               data-empresa-email="{{ $vaga->user->email ?? '' }}">

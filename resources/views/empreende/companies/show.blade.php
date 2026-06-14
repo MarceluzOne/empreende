@@ -60,7 +60,7 @@
                     </div>
                     <div>
                         <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Telefone</span>
-                        {{ $empresa->telefone ?? '—' }}
+                        {{ $empresa->formatted_telefone ?? '—' }}
                     </div>
                     <div>
                         <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">E-mail</span>

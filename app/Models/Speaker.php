@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Phone;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,6 +12,11 @@ class Speaker extends Model
 {
     use HasUuids;
     protected $fillable = ['name', 'bio', 'email', 'phone', 'photo_path'];
+
+    public function getFormattedPhoneAttribute(): ?string
+    {
+        return Phone::format($this->phone);
+    }
 
     public function photoUrl(): ?string
     {
