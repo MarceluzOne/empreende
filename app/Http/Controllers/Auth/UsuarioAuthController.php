@@ -13,9 +13,22 @@ class UsuarioAuthController extends Controller
     public function showLogin()
     {
         if (Auth::check() && Auth::user()->type === 'usuario') {
-            return redirect()->route('portal.usuario');
+            return $this->redirectToPortal(request('evento'));
         }
-        return view('auth.usuario.login');
+        return view('auth.usuario.login', ['evento' => request('evento')]);
+    }
+
+    /**
+     * Redireciona para o portal do usuário. Se vier um id de evento (fluxo
+     * "Garantir minha vaga" vindo de /cursos), abre já a aba de eventos e o
+     * card do evento para inscrição.
+     */
+    private function redirectToPortal($evento)
+    {
+        if (!empty($evento)) {
+            return redirect()->to(route('portal.usuario', ['evento' => $evento]) . '#eventos-disponiveis');
+        }
+        return redirect()->route('portal.usuario');
     }
 
     public function login(Request $request)
@@ -32,16 +45,16 @@ class UsuarioAuthController extends Controller
             $message = $otherType
                 ? 'Este e-mail pertence a uma conta de empresa ou funcionário. Utilize o portal correto para acessar.'
                 : 'E-mail ou senha inválidos.';
-            return back()->withErrors(['email' => $message])->withInput($request->only('email'));
+            return back()->withErrors(['email' => $message])->withInput($request->only('email', 'evento'));
         }
 
         if (!Hash::check($request->password, $user->password)) {
-            return back()->withErrors(['email' => 'E-mail ou senha inválidos.'])->withInput($request->only('email'));
+            return back()->withErrors(['email' => 'E-mail ou senha inválidos.'])->withInput($request->only('email', 'evento'));
         }
 
         Auth::login($user);
 
-        return redirect()->route('portal.usuario');
+        return $this->redirectToPortal($request->input('evento'));
     }
 
     public function showRegister()

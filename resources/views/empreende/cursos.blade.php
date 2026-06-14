@@ -109,7 +109,9 @@
     background:#fff;border-bottom:1px solid var(--line);
     position:sticky;top:64px;z-index:40;
   }
-  .tabs{max-width:1280px;margin:0 auto;padding:0 32px;display:flex;gap:4px}
+  .tabs{max-width:1280px;margin:0 auto;padding:0 32px;display:flex;gap:4px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .tabs::-webkit-scrollbar{display:none}
   .tab-btn{
     padding:16px 22px;border:0;background:none;cursor:pointer;
     font-family:'Lato',sans-serif;font-weight:700;font-size:14px;color:var(--muted);
@@ -292,6 +294,8 @@
     .event-meta-row{grid-template-columns:1fr}
     .featured-info{padding:24px}
     .topbar{padding:12px 16px}
+    .footer-bar{grid-template-columns:1fr;text-align:center;gap:10px;padding:22px 20px}
+    .footer-bar__brand{justify-content:center}
   }
 </style>
 </head>
@@ -452,7 +456,7 @@
               @endif
             </div>
           </div>
-          <a href="{{ route('usuario.login') }}" class="btn-inscricao" style="align-self:flex-start">
+          <a href="{{ route('usuario.login', ['evento' => $featured->id]) }}" class="btn-inscricao" style="align-self:flex-start">
             <i class="fas fa-check"></i> Garantir minha vaga
           </a>
         </div>

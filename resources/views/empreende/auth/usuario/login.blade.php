@@ -125,6 +125,9 @@
 
       <form action="{{ route('usuario.login.post') }}" method="POST" x-data="{loading:false}" @submit="loading=true">
         @csrf
+        @if(old('evento', $evento ?? request('evento')))
+          <input type="hidden" name="evento" value="{{ old('evento', $evento ?? request('evento')) }}">
+        @endif
 
         <div class="form-group">
           <label for="email">E-mail</label>

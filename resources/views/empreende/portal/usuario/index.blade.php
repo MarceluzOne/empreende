@@ -528,6 +528,7 @@
             @endphp
             <div class="card" style="cursor:pointer"
               onclick="abrirDetalheEvento(this)"
+              data-evento-id="{{ $evento->id }}"
               data-title="{{ $evento->title }}"
               data-datas="{{ $datas }}"
               data-start-time="{{ $evento->start_time ? \Carbon\Carbon::createFromTimeString($evento->start_time)->format('H:i') : '' }}"
@@ -1004,6 +1005,19 @@
       activate('vagas');
     @endif
   @endif
+
+  // "Garantir minha vaga" (vindo de /cursos): abre a aba de eventos e o card
+  // do evento indicado por ?evento=ID, pronto para inscrição.
+  const _evParams = new URLSearchParams(location.search);
+  const _eventoId = _evParams.get('evento');
+  if (_eventoId) {
+    activate('eventos-disponiveis');
+    const _evCard = document.querySelector('.card[data-evento-id="' + _eventoId + '"]');
+    if (_evCard) {
+      _evCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      abrirDetalheEvento(_evCard);
+    }
+  }
 </script>
 
 </body>
