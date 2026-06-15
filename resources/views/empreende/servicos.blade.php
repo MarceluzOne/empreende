@@ -229,11 +229,6 @@
   }
   .btn-submit:hover{background:var(--brand-deep)}
   .btn-submit:disabled{background:var(--muted);cursor:not-allowed}
-  .form-feedback{
-    display:none;padding:14px 18px;border-radius:12px;margin-top:16px;font-size:14px;font-weight:700;
-  }
-  .form-feedback.success{background:#d1fae5;color:#065f46;display:block}
-  .form-feedback.error{background:#fee2e2;color:#991b1b;display:block}
 
   /* ====== CROP MODAL ====== */
   .crop-modal-backdrop{
@@ -501,7 +496,11 @@
           </div>
         </div>
       </form>
-      <div class="form-feedback" id="formFeedback"></div>
+      {{-- Toast de feedback (estilo do flash de agendamento da landing) --}}
+      <div id="formToast"
+           style="display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;color:#fff;padding:14px 24px;border-radius:12px;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,.2);font-family:'Plus Jakarta Sans',sans-serif;max-width:90vw;text-align:center">
+        <i id="formToastIcon" class="fas fa-check-circle" style="margin-right:8px"></i><span id="formToastMsg"></span>
+      </div>
     </div>
   </div>
 
@@ -666,14 +665,25 @@
   // ====== REGISTRATION FORM ======
   const form       = document.getElementById('registerForm');
   const submitBtn  = document.getElementById('submitBtn');
-  const feedback   = document.getElementById('formFeedback');
+
+  // Toast de feedback (mesmo visual do flash de agendamento da landing)
+  const toast     = document.getElementById('formToast');
+  const toastIcon = document.getElementById('formToastIcon');
+  const toastMsg  = document.getElementById('formToastMsg');
+  let   toastTimer;
+  function showToast(message, type) {
+    toastMsg.textContent = message;
+    toast.style.background = type === 'success' ? '#16a34a' : '#dc2626';
+    toastIcon.className = 'fas ' + (type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle');
+    toast.style.display = 'block';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 6000);
+  }
 
   form && form.addEventListener('submit', async function(e) {
     e.preventDefault();
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
-    feedback.className = 'form-feedback';
-    feedback.style.display = 'none';
 
     const data = {
       name:            document.getElementById('reg_name').value,
@@ -695,25 +705,21 @@
       const json = await resp.json();
 
       if (resp.ok && json.success) {
-        feedback.textContent = '✓ Cadastro enviado com sucesso! Após a aprovação da nossa equipe, ele será publicado no site.';
-        feedback.className = 'form-feedback success';
+        showToast('Cadastro enviado com sucesso! Após a aprovação da nossa equipe, ele será publicado no site.', 'success');
         form.reset();
         croppedBase64 = null;
         uploadPreview.style.display = 'none';
         uploadLabel.style.display = '';
       } else {
         const errs = json.errors ? Object.values(json.errors).flat().join(' ') : (json.message || 'Erro ao enviar.');
-        feedback.textContent = errs;
-        feedback.className = 'form-feedback error';
+        showToast(errs, 'error');
       }
     } catch {
-      feedback.textContent = 'Erro de conexão. Tente novamente.';
-      feedback.className = 'form-feedback error';
+      showToast('Erro de conexão. Tente novamente.', 'error');
     }
 
     submitBtn.disabled = false;
     submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar cadastro';
-    feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
 </script>
 </body>
