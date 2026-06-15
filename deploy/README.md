@@ -127,3 +127,50 @@ VALUES ('2026_06_14_120000_add_active_to_empresas_table',
 > Corresponde a `up()` em
 > `database/migrations/2026_06_14_120000_add_active_to_empresas_table.php`:
 > `$table->boolean('active')->default(true)->after('cidade');`
+
+---
+
+## Lições do switchover real (2026-06-15)
+
+Switchover feito direto no slug `empreendevitoria` (sem site de teste paralelo):
+a pasta antiga foi renomeada como backup e a nova subiu em `/www/empreendevitoria/`.
+Três pegadinhas que custaram tempo — registradas aqui porque o fix vive no
+`.env` do servidor (gitignored) e some do versionamento:
+
+1. **`DB_HOST`**: `web150` dá `ProxySQL Access denied` (sai pela rede). Use
+   `DB_HOST=localhost`.
+
+2. **`ASSET_URL` precisa estar no `.env`** = `host + /empreendevitoria`. O
+   `UrlGenerator` lê `app.asset_url` (← `env('ASSET_URL')`) **no boot** e fixa o
+   `assetRoot`; o `config(['app.asset_url'=>...])` em runtime no middleware
+   `ResolveSiteContext` **não** atualiza isso (Laravel 9 não tem `useAssetRoot`,
+   só `forceRootUrl` — por isso `route()`/`url()` funcionam via runtime mas
+   `asset()` não). Sem `ASSET_URL`, os assets caem no host do request (404).
+
+3. **Host canônico TEM que bater com o que o usuário acessa (com `www`).** O site
+   está atrás do **Cloudflare** servindo `www.prefeituradavitoria.pe.gov.br`. Se
+   `APP_URL`/`EMPREENDE_APP_URL` ficarem **sem** `www`, o login até autentica, mas
+   o `redirect()->intended(route('panel'))` aponta pro host **sem www** → o cookie
+   de sessão (host-only, gravado no `www.`) **não vai** pro outro host → a sessão
+   se perde e cai de volta no login ("loga mas não vai pro dashboard"). Fix:
+   ```
+   APP_URL=https://www.prefeituradavitoria.pe.gov.br
+   EMPREENDE_APP_URL=https://www.prefeituradavitoria.pe.gov.br
+   ASSET_URL=https://www.prefeituradavitoria.pe.gov.br/empreendevitoria
+   ```
+
+### Diagnóstico de sessão/login
+`deploy/diagnostics/login-debug.php` → subir em `/www/empreendevitoria/`, acessar,
+ver config efetiva de sessão, os `Set-Cookie` reais, banco em uso e se a tabela
+`sessions` existe. **Apagar depois.** (Sessão usa `SESSION_DRIVER=database`; a
+tabela `sessions` já existe no banco de produção.)
+
+### Reset de senha sem artisan (phpMyAdmin)
+Gerar o hash localmente (`php -r "echo password_hash('NOVA', PASSWORD_BCRYPT, ['cost'=>12]);"`)
+e `UPDATE users SET password='<hash>' WHERE email='...';`. Trocar a senha pelo
+sistema depois.
+
+### Checklist final de limpeza
+- Apagar de `/www/empreendevitoria/`: `check.php`, `probe.php`, `ping.php`, `login-debug.php`.
+- `APP_DEBUG=false` no `/laravel/.env`.
+- Garantir que não restou nenhuma rota `/_dbg/*` em `routes/sites/`.
