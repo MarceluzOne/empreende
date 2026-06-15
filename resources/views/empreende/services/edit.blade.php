@@ -21,7 +21,7 @@
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden"
          x-data="{
             providerType: '{{ old('provider_type', $service->provider_type) }}',
-            imagePreview: '{{ $service->business_image ? Storage::url($service->business_image) : '' }}',
+            imagePreview: '{{ $service->business_image ? Storage::disk('public')->url($service->business_image) : '' }}',
             imageError: '',
             cropModalOpen: false,
             _cropper: null,

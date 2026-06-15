@@ -387,7 +387,7 @@
         <div class="provider-card" data-search="{{ strtolower($p->name . ' ' . $p->service_title) }}">
           @if($p->business_image)
           <div class="provider-card__header has-image"
-               style="background-image:url('{{ Storage::url($p->business_image) }}')">
+               style="background-image:url('{{ Storage::disk('public')->url($p->business_image) }}')">
             <div class="provider-card__header-info-wrap">
               <div class="provider-avatar">{{ strtoupper(substr($p->name, 0, 1)) }}</div>
               <div class="provider-card__header-info">
