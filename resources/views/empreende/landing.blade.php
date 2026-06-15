@@ -804,7 +804,7 @@
       </div>
 
       <div class="photo">
-        <img src="https://www.prefeituradavitoria.pe.gov.br/empreendevitoria/wp-content/uploads/2023/08/222222222-1024x556.jpg"
+        <img src="{{ asset('assets/222222222-1024x556.jpg') }}"
              alt="Atendimento no Salão do Empreendedor"
              onerror="this.parentElement.style.background='repeating-linear-gradient(45deg,#e3ddd0,#e3ddd0 10px,#ede8dc 10px,#ede8dc 20px)'; this.style.display='none'">
       </div>
@@ -964,7 +964,7 @@
 
   <!-- ============ FOOTER OFICIAL ============ -->
   <div class="footer-banner">
-    <img src="https://www.prefeituradavitoria.pe.gov.br/empreendevitoria/wp-content/uploads/2023/06/rodape002-1.png"
+    <img src="{{ asset('assets/rodape002-1.png') }}"
          alt="Prefeitura da Vitória de Santo Antão — Empreende Vitória">
   </div>
   <div class="footer-bar">

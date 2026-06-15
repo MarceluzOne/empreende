@@ -530,7 +530,7 @@
 
 <!-- ====== FOOTER ====== -->
 <div class="footer-banner">
-  <img src="https://www.prefeituradavitoria.pe.gov.br/empreendevitoria/wp-content/uploads/2023/06/rodape002-1.png"
+  <img src="{{ asset('assets/rodape002-1.png') }}"
        alt="Prefeitura da Vitória de Santo Antão">
 </div>
 <div class="footer-bar">
