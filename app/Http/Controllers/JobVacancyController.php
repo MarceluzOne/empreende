@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\JobVacancy;
+use App\Services\AuditService;
 use App\Services\JobVacancyService;
 use Illuminate\Http\Request;
 
@@ -81,7 +82,8 @@ class JobVacancyController extends Controller
             'interest_area.required'  => 'Selecione uma área de interesse.',
         ]);
 
-        $this->service->store($request->all());
+        $vacancy = $this->service->store($request->all());
+        AuditService::log('created', $vacancy);
 
         return redirect()->route('job-vacancies.index')->with('success', 'Vaga cadastrada com sucesso!');
     }
@@ -112,6 +114,7 @@ class JobVacancyController extends Controller
         ]);
 
         $this->service->update($jobVacancy, $request->all());
+        AuditService::log('updated', $jobVacancy);
 
         return redirect()->route('job-vacancies.index')
             ->with('success', "Vaga \"{$jobVacancy->position}\" atualizada com sucesso!");
@@ -135,6 +138,7 @@ class JobVacancyController extends Controller
         $jobVacancy->update([
             'status' => $jobVacancy->status === 'active' ? 'inactive' : 'active',
         ]);
+        AuditService::log('updated', $jobVacancy, [['status' => $jobVacancy->status]]);
 
         return back()->with('success', $jobVacancy->status === 'active'
             ? 'Vaga habilitada.'
@@ -158,6 +162,7 @@ class JobVacancyController extends Controller
 
     public function destroy(JobVacancy $jobVacancy)
     {
+        AuditService::log('deleted', $jobVacancy);
         $this->service->destroy($jobVacancy);
 
         return redirect()->route('job-vacancies.index')->with('success', 'Vaga removida com sucesso!');

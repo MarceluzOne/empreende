@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Speaker;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -35,7 +36,8 @@ class SpeakerController extends Controller
             $data['photo_path'] = $this->storePhoto($request->file('photo'));
         }
 
-        Speaker::create($data);
+        $speaker = Speaker::create($data);
+        AuditService::log('created', $speaker);
 
         $redirectTo = $request->input('redirect_to');
         if ($redirectTo && str_starts_with($redirectTo, url('/'))) {
@@ -70,6 +72,7 @@ class SpeakerController extends Controller
         }
 
         $speaker->update($data);
+        AuditService::log('updated', $speaker);
 
         return redirect()->route('speakers.index')->with('success', 'Palestrante atualizado com sucesso!');
     }
@@ -83,6 +86,7 @@ class SpeakerController extends Controller
         if ($speaker->photo_path) {
             Storage::disk('public')->delete($speaker->photo_path);
         }
+        AuditService::log('deleted', $speaker);
         $speaker->delete();
 
         return redirect()->route('speakers.index')->with('success', 'Palestrante removido com sucesso!');
@@ -98,6 +102,7 @@ class SpeakerController extends Controller
         ]);
 
         $speaker = Speaker::create($validated);
+        AuditService::log('created', $speaker);
 
         return response()->json([
             'id'   => $speaker->id,

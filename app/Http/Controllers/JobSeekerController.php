@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\JobSeeker;
+use App\Services\AuditService;
 use App\Services\JobSeekerService;
 use Illuminate\Http\Request;
 
@@ -99,7 +100,8 @@ class JobSeekerController extends Controller
             'interest_area.required' => 'Selecione uma área de interesse.',
         ]);
 
-        $this->service->store($request->all());
+        $seeker = $this->service->store($request->all());
+        AuditService::log('created', $seeker);
 
         return redirect()->route('job-seekers.index')->with('success', 'Cadastro realizado com sucesso!');
     }
@@ -169,6 +171,7 @@ class JobSeekerController extends Controller
         ]);
 
         $this->service->update($jobSeeker, $request->all());
+        AuditService::log('updated', $jobSeeker);
 
         return redirect()->route('job-seekers.index')
             ->with('success', "Cadastro de {$jobSeeker->name} atualizado com sucesso!");
@@ -194,6 +197,7 @@ class JobSeekerController extends Controller
     public function destroy(JobSeeker $jobSeeker)
     {
         $name = $jobSeeker->name;
+        AuditService::log('deleted', $jobSeeker);
         $this->service->destroy($jobSeeker);
 
         return redirect()->route('job-seekers.index')

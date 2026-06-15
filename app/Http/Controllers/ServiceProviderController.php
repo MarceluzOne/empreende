@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ServiceProvider;
+use App\Services\AuditService;
 use App\Services\ServiceProviderService;
 use Illuminate\Http\Request;
 
@@ -50,7 +51,8 @@ class ServiceProviderController extends Controller
             'business_image.max'     => 'A imagem não pode ultrapassar 5MB.',
         ]);
 
-        $this->service->store($validated, $request->file('business_image'));
+        $provider = $this->service->store($validated, $request->file('business_image'));
+        AuditService::log('created', $provider);
 
         return redirect()->route('services.index')->with('success', 'Prestador cadastrado com sucesso!');
     }
@@ -80,6 +82,7 @@ class ServiceProviderController extends Controller
         ]);
 
         $this->service->update($service, $validated, $request->file('business_image'));
+        AuditService::log('updated', $service);
 
         return redirect()->route('services.index')->with('success', "Os dados de {$service->name} foram atualizados!");
     }
@@ -91,6 +94,7 @@ class ServiceProviderController extends Controller
 
     public function destroy(ServiceProvider $service)
     {
+        AuditService::log('deleted', $service);
         $this->service->destroy($service);
 
         return redirect()->route('services.index')->with('success', 'Registro removido conforme solicitado.');

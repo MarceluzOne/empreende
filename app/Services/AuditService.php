@@ -47,7 +47,7 @@ class AuditService
 
     private static function identifier(Model $model): string
     {
-        foreach (['name', 'title', 'customer_name', 'responsible_name'] as $field) {
+        foreach (['name', 'title', 'position', 'customer_name', 'responsible_name'] as $field) {
             if (!empty($model->{$field})) {
                 return ': ' . $model->{$field};
             }

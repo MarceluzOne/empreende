@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Role;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -37,6 +38,7 @@ class UserController extends Controller
         ]);
 
         $user->roles()->attach($validated['role_id']);
+        AuditService::log('created', $user);
 
         return redirect()->route('users.index')->with('success', 'Usuário criado!');
     }
@@ -69,6 +71,7 @@ class UserController extends Controller
     $user->save();
 
     $user->roles()->sync([$validated['role_id']]);
+    AuditService::log('updated', $user);
 
     return redirect()->route('users.index')
         ->with('success', "Usuário {$user->name} atualizado com sucesso!");
@@ -80,6 +83,7 @@ class UserController extends Controller
             return back()->with('error', 'Você não pode excluir a si mesmo!');
         }
 
+        AuditService::log('deleted', $user);
         $user->delete();
         return redirect()->route('users.index')->with('success', 'Usuário removido!');
     }
