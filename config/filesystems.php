@@ -38,10 +38,16 @@ return [
             'report' => false,
         ],
 
+        // Disco de uploads públicos (imagens de serviços/eventos/palestrantes etc.).
+        // No deploy em subpasta o Laravel roda atrás de um proxy em /www/{slug}/, e
+        // /laravel/storage/ fica ACIMA do docroot (não é servível pela web). Por isso
+        // em produção o root e a url são dirigidos por env, apontando direto para a
+        // pasta web /www/{slug}/storage e a URL /{slug}/storage. Em dev caem nos
+        // defaults (storage/app/public + APP_URL/storage via `artisan storage:link`).
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            'root' => env('PUBLIC_DISK_ROOT', storage_path('app/public')),
+            'url' => env('PUBLIC_DISK_URL', rtrim(env('APP_URL', 'http://localhost'), '/').'/storage'),
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
