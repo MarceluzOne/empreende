@@ -37,9 +37,9 @@ class ResolveSiteContext
         }
 
         // Sessão isolada por site: o isolamento vem do NOME único do cookie
-        // ({slug}_session). O path fica em '/' (não em '/{slug}') porque as rotas
-        // de API ficam em /api/{slug} — fora de /{slug} — e um cookie com
-        // Path=/{slug} não seria enviado para a API, quebrando sessão/CSRF (419).
+        // ({slug}_session). O path fica em '/' (e não em '/{slug}') para cobrir de
+        // forma uniforme a raiz pública, /{slug} e /{slug}/api com o mesmo cookie,
+        // evitando qualquer caso de cookie não enviado (sessão/CSRF 419).
         if (!empty($config['session_cookie'])) {
             config(['session.cookie' => $config['session_cookie']]);
         }

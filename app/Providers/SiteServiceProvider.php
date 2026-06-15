@@ -54,10 +54,14 @@ class SiteServiceProvider extends ServiceProvider
                 ->group($webRoutes);
         }
 
+        // API sob o MESMO prefixo do site ({slug}/api), não em /api/{slug}.
+        // No deploy o Laravel roda atrás de um proxy na pasta /www/{slug}/, que
+        // só atende caminhos sob /{slug}; um /api/{slug} cairia em /www/api/
+        // (inexistente) => 404. Mantendo /{slug}/api a API passa pelo mesmo proxy.
         $apiRoutes = base_path("routes/sites/$slug.api.php");
         if (file_exists($apiRoutes)) {
             Route::middleware('api')
-                ->prefix("api/$slug")
+                ->prefix("$slug/api")
                 ->group($apiRoutes);
         }
     }

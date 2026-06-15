@@ -6,7 +6,7 @@
 |--------------------------------------------------------------------------
 |
 | Carregadas pelo App\Providers\SiteServiceProvider com:
-|   - prefixo de URL:   /api/empreendevitoria
+|   - prefixo de URL:   /empreendevitoria/api
 |   - grupo middleware: api
 |
 */
