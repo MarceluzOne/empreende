@@ -522,7 +522,7 @@
           <div class="ico"><i class="fab fa-whatsapp"></i></div>
           <div>
             <h3>WhatsApp da Sala do Empreendedor</h3>
-            <a href="#">(81) 9 0000-0000</a>
+            <a href="#">(81) 9 8251-0723</a>
           </div>
         </div>
       </aside>
@@ -540,7 +540,7 @@
         <small>Secretaria de Desenvolvimento Econômico</small>
       </span>
     </div>
-    <div class="footer-bar__copy">© {{ date('Y') }} — Todos os direitos reservados</div><div></div>
+    <div class="footer-bar__copy">Desenvolvido por AGINTEC © {{ date('Y') }} — Todos os direitos reservados</div><div></div>
   </div>
 
   <script>

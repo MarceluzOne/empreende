@@ -521,7 +521,7 @@
       <small>Secretaria de Desenvolvimento Econômico</small>
     </span>
   </div>
-  <div class="footer-bar__copy">© {{ date('Y') }} — Todos os direitos reservados</div><div></div>
+  <div class="footer-bar__copy">Desenvolvido por AGINTEC © {{ date('Y') }} — Todos os direitos reservados</div><div></div>
 </div>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
