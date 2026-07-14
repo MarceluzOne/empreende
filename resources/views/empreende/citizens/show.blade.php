@@ -17,7 +17,12 @@
             </div>
             <div>
                 <h2 class="text-xl font-black text-gray-800">{{ $name ?? '—' }}</h2>
-                <p class="text-gray-500 font-mono text-sm">{{ $cpf_formatted }}</p>
+                <p class="text-gray-500 font-mono text-sm">CPF: {{ $cpf_formatted }}</p>
+                @if(!empty($cnpjs) && count($cnpjs))
+                    <p class="text-gray-400 font-mono text-xs mt-0.5">
+                        CNPJ: {{ $cnpjs->implode(' · ') }}
+                    </p>
+                @endif
             </div>
         </div>
 
@@ -75,6 +80,7 @@
                     <thead>
                         <tr class="bg-gray-50 border-b border-gray-200 text-left">
                             <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Serviço</th>
+                            <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">CNPJ</th>
                             <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Data</th>
                             <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Situação</th>
                             <th class="px-6 py-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">Atendente</th>
@@ -88,6 +94,9 @@
                                     @if($a->description)
                                         <div class="text-xs text-gray-400 truncate max-w-xs">{{ $a->description }}</div>
                                     @endif
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-600 font-mono">
+                                    {{ $a->customer_cnpj_formatted ?? '—' }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-600">
                                     {{ $a->scheduled_at ? $a->scheduled_at->format('d/m/Y H:i') : '—' }}

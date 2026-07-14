@@ -47,7 +47,12 @@
                             <td class="px-6 py-4">
                                 <div class="text-sm font-bold text-gray-900">{{ $citizen->name ?? '—' }}</div>
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-600 font-mono">{{ $citizen->cpf_formatted }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-600 font-mono">
+                                <div>{{ $citizen->cpf_formatted }}</div>
+                                @foreach($citizen->cnpjs ?? [] as $cnpj)
+                                    <div class="text-xs text-gray-400">CNPJ: {{ $cnpj }}</div>
+                                @endforeach
+                            </td>
                             <td class="px-6 py-4">
                                 <div class="flex flex-wrap gap-1.5">
                                     @if($citizen->is_candidato)

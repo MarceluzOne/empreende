@@ -15,7 +15,8 @@ class AttendanceService
         return Attendance::create([
             'user_id'        => Auth::id(),
             'customer_name'  => $data['customer_name'],
-            'customer_cpf'   => $this->sanitizeCpf($data['customer_cpf'] ?? null),
+            'customer_cpf'   => $this->sanitizeDocument($data['customer_cpf'] ?? null),
+            'customer_cnpj'  => $this->sanitizeDocument($data['customer_cnpj'] ?? null),
             'customer_phone' => $this->sanitizePhone($data['customer_phone'] ?? null),
             'service_type'   => $data['service_type'],
             'description'    => $data['description'],
@@ -35,7 +36,7 @@ class AttendanceService
         return Attendance::create([
             'user_id'        => null,
             'customer_name'  => $data['customer_name'],
-            'customer_cpf'   => $this->sanitizeCpf($data['customer_cpf'] ?? null),
+            'customer_cpf'   => $this->sanitizeDocument($data['customer_cpf'] ?? null),
             'customer_phone' => $this->sanitizePhone($data['customer_phone'] ?? null),
             'service_type'   => $data['service_type'],
             'description'    => $data['description'],
@@ -52,7 +53,8 @@ class AttendanceService
             // Quem fez a atualização cadastral passa a ser o atendente registrado.
             'user_id'        => Auth::id(),
             'customer_name'  => $data['customer_name'],
-            'customer_cpf'   => $this->sanitizeCpf($data['customer_cpf'] ?? null),
+            'customer_cpf'   => $this->sanitizeDocument($data['customer_cpf'] ?? null),
+            'customer_cnpj'  => $this->sanitizeDocument($data['customer_cnpj'] ?? null),
             'customer_phone' => $this->sanitizePhone($data['customer_phone'] ?? null),
             'service_type'   => $data['service_type'],
             'description'    => $data['description'],
@@ -65,7 +67,7 @@ class AttendanceService
         return $attendance;
     }
 
-    private function sanitizeCpf(?string $value): ?string
+    private function sanitizeDocument(?string $value): ?string
     {
         return $value ? preg_replace('/[^0-9]/', '', $value) : null;
     }

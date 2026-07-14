@@ -70,6 +70,19 @@
   .auth-footer a{color:var(--brand);font-weight:700}
   .auth-footer a:hover{text-decoration:underline}
 
+  /* Seletor de tipo de acesso */
+  .access-switch{margin-bottom:28px}
+  .access-switch>span{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px}
+  .access-seg{display:flex;gap:6px;background:var(--brand-soft);border-radius:14px;padding:5px}
+  .access-seg a{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 14px;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px;color:var(--muted);transition:background .15s,color .15s,box-shadow .15s}
+  .access-seg a.active{background:var(--paper);color:var(--ink);box-shadow:var(--shadow-sm)}
+  .access-seg a:not(.active):hover{color:var(--brand)}
+  .access-staff{margin-top:10px}
+  .access-staff a{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--muted);transition:color .15s}
+  .access-staff a:hover{color:var(--brand)}
+  .access-staff a.active{color:var(--brand);font-weight:700}
+  .access-staff i{font-size:9px;color:var(--yellow)}
+
   @media(max-width:820px){
     .auth-side{display:none}
     .auth-main{padding:32px 20px}
@@ -106,6 +119,17 @@
 
   <div class="auth-main">
     <div class="auth-card">
+      <div class="access-switch">
+        <span>Como você quer entrar?</span>
+        <div class="access-seg">
+          <a href="{{ route('usuario.login') }}"><i class="fas fa-user"></i> Candidato</a>
+          <a href="{{ route('empresa.login') }}"><i class="fas fa-building"></i> Empresa</a>
+        </div>
+        <div class="access-staff">
+          <a href="{{ route('login') }}" class="active">Sou funcionário</a>
+        </div>
+      </div>
+
       <div class="auth-card-header">
         <h1>Entrar como Funcionário</h1>
         <p>Acesso exclusivo para a equipe do Empreende Vitória.</p>
@@ -155,18 +179,6 @@
           <span x-show="loading" x-cloak><i class="fas fa-spinner fa-spin"></i> Aguarde...</span>
         </button>
       </form>
-
-      <div class="divider">ou</div>
-
-      <div class="auth-footer">
-        <a href="{{ route('usuario.login') }}" style="color:var(--muted)">
-          <i class="fas fa-user"></i> Sou candidato
-        </a>
-        &nbsp;·&nbsp;
-        <a href="{{ route('empresa.login') }}" style="color:var(--muted)">
-          <i class="fas fa-building"></i> Sou uma empresa
-        </a>
-      </div>
     </div>
   </div>
 </div>

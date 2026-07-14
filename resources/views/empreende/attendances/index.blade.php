@@ -94,7 +94,10 @@
                         <tr class="hover:bg-gray-50 transition">
                             <td class="px-6 py-4">
                                 <div class="text-sm font-bold text-gray-900">{{ $attendance->customer_name }}</div>
-                                <div class="text-xs text-gray-500 font-mono">{{ $attendance->customer_document_formatted ?? 'Sem CPF/CNPJ' }}</div>
+                                <div class="text-xs text-gray-500 font-mono">{{ $attendance->customer_cpf_formatted ?? 'Sem CPF' }}</div>
+                                @if($attendance->customer_cnpj_formatted)
+                                    <div class="text-xs text-gray-400 font-mono">CNPJ: {{ $attendance->customer_cnpj_formatted }}</div>
+                                @endif
                             </td>
                             <td class="px-6 py-4">
                                 <span class="text-sm text-gray-700 bg-gray-100 px-2 py-1 rounded-md font-semibold">
@@ -196,15 +199,26 @@
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">CPF / CNPJ</label>
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">CPF</label>
                     <p class="text-sm text-gray-700 font-mono mt-1"
                         x-text="(() => {
                             const d = (selectedAttendance.customer_cpf || '').replace(/\D/g, '');
                             if (d.length === 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-                            if (d.length === 14) return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
                             return 'Não informado';
                         })()">
                     </p>
+                    <template x-if="selectedAttendance.customer_cnpj">
+                        <div class="mt-2">
+                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">CNPJ</label>
+                            <p class="text-sm text-gray-700 font-mono mt-1"
+                                x-text="(() => {
+                                    const d = (selectedAttendance.customer_cnpj || '').replace(/\D/g, '');
+                                    if (d.length === 14) return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+                                    return d;
+                                })()">
+                            </p>
+                        </div>
+                    </template>
                 </div>
                 <div>
                     <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Telefone para Contato</label>

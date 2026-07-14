@@ -3,7 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
-use App\Rules\CpfOrCnpj;
+use App\Rules\Cnpj;
+use App\Rules\Cpf;
 use App\Services\AttendanceService;
 use App\Services\AuditService;
 use App\Support\BusinessDay;
@@ -82,13 +83,15 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'customer_name'  => 'required|string|max:255',
-            'customer_cpf'   => ['nullable', 'string', new CpfOrCnpj],
+            'customer_cpf'   => ['required', 'string', new Cpf],
+            'customer_cnpj'  => ['nullable', 'string', new Cnpj],
             'customer_phone' => 'nullable|string|max:20',
             'service_type'   => 'required|string',
             'description'    => 'required|string',
             'scheduled_date' => 'required_if:is_scheduled,true,1|nullable|date',
             'scheduled_time' => $this->scheduledTimeRule($request),
         ], [
+            'customer_cpf.required'      => 'Informe o CPF do cidadão.',
             'scheduled_date.required_if' => 'Selecione o dia do agendamento.',
             'scheduled_time.required_if' => 'Selecione o horário do agendamento.',
         ]);
@@ -123,12 +126,14 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'customer_name'  => 'required|string|max:255',
-            'customer_cpf'   => ['nullable', 'string', new CpfOrCnpj],
+            'customer_cpf'   => ['required', 'string', new Cpf],
+            'customer_cnpj'  => ['nullable', 'string', new Cnpj],
             'customer_phone' => 'nullable|string|max:20',
             'service_type'   => 'required',
             'description'    => 'required',
             'scheduled_time' => $this->scheduledTimeRule($request),
         ], [
+            'customer_cpf.required'      => 'Informe o CPF do cidadão.',
             'scheduled_time.required_if' => 'Selecione o horário do agendamento.',
         ]);
 

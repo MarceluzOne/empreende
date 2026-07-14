@@ -51,6 +51,7 @@ class CitizenService
             return [
                 'uuid'          => $uuid,
                 'cpf_formatted' => null,
+                'cnpjs'         => collect(),
                 'name'          => null,
                 'candidato'     => null,
                 'attendances'   => collect(),
@@ -67,9 +68,17 @@ class CitizenService
             ->sortByDesc('scheduled_at')
             ->values();
 
+        $cnpjs = $attendances
+            ->map(fn ($a) => $this->onlyDigits($a->customer_cnpj))
+            ->filter(fn ($c) => strlen($c) === 14)
+            ->unique()
+            ->map(fn ($c) => $this->formatDocument($c))
+            ->values();
+
         return [
             'uuid'          => $entry['uuid'],
             'cpf_formatted' => $entry['cpf_formatted'],
+            'cnpjs'         => $cnpjs,
             'name'          => $entry['name'] ?? $candidato->name ?? optional($attendances->first())->customer_name,
             'candidato'     => $candidato,
             'attendances'   => $attendances,
@@ -106,6 +115,13 @@ class CitizenService
             $entry = $this->ensure($people, $cpf);
             $entry['name'] = $entry['name'] ?: $a->customer_name;
             $entry['attendance_count']++;
+            $cnpj = $this->onlyDigits($a->customer_cnpj);
+            if (strlen($cnpj) === 14) {
+                $formatted = $this->formatDocument($cnpj);
+                if (!in_array($formatted, $entry['cnpjs'], true)) {
+                    $entry['cnpjs'][] = $formatted;
+                }
+            }
             if ($a->scheduled_at && (!$entry['last_attendance_at'] || $a->scheduled_at->gt($entry['last_attendance_at']))) {
                 $entry['last_attendance_at'] = $a->scheduled_at;
             }
@@ -125,6 +141,7 @@ class CitizenService
             'cpf'                => $cpf,
             'uuid'               => $this->uuidForCpf($cpf),
             'cpf_formatted'      => $this->formatDocument($cpf),
+            'cnpjs'              => [],
             'name'               => null,
             'is_candidato'       => false,
             'job_seeker_id'      => null,
