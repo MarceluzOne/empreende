@@ -128,7 +128,7 @@
                             <td>{{ $i + 1 }}</td>
                             <td>{{ $p->name }}</td>
                             <td style="font-family:monospace;">
-                                {{ $p->cpf ? preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $p->cpf) : '—' }}
+                                {{ $p->cpf ? $p->maskedCpf() : '—' }}
                             </td>
                             <td style="border-bottom:1px solid #9ca3af;"></td>
                         </tr>
@@ -167,7 +167,7 @@
                             <td>{{ $i + 1 }}</td>
                             <td>{{ $p->name }}</td>
                             <td style="font-family:monospace;">
-                                {{ $p->cpf ? preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $p->cpf) : '—' }}
+                                {{ $p->cpf ? $p->maskedCpf() : '—' }}
                             </td>
                             <td style="border-bottom:1px solid #9ca3af;"></td>
                         </tr>

@@ -461,8 +461,9 @@
             @if($participante->event)
               @php
                 $ev = $participante->event;
-                $datasEv = collect($ev->allDates())->map(fn($d) => \Carbon\Carbon::parse($d)->format('d/m/Y'))->join(', ');
+                $datasEv = $ev->datesLabel();
                 $vagasEv = $ev->availableSpots();
+                $certDisponivel = $ev->status === 'completed' && $participante->hasFullAttendance();
               @endphp
               <div class="card" style="cursor:pointer"
                 onclick="abrirDetalheEvento(this)"
@@ -478,6 +479,7 @@
                 data-image="{{ $ev->image_url ?? '' }}"
                 data-inscrito="1"
                 data-status="{{ $ev->status }}"
+                data-cert-disponivel="{{ $certDisponivel ? '1' : '0' }}"
                 data-cancelar-url="{{ route('portal.usuario.eventos.cancelar', $ev) }}"
                 data-certificado-url="{{ route('portal.usuario.eventos.certificado', $ev) }}">
                 <div class="card-badge badge-blue">
@@ -490,9 +492,15 @@
                 </div>
                 <div class="card-actions" onclick="event.stopPropagation()">
                   @if($ev->status === 'completed')
-                    <a href="{{ route('portal.usuario.eventos.certificado', $ev) }}" class="btn-sm btn-yellow" target="_blank">
-                      <i class="fas fa-certificate"></i> Certificado
-                    </a>
+                    @if($certDisponivel)
+                      <a href="{{ route('portal.usuario.eventos.certificado', $ev) }}" class="btn-sm btn-yellow" target="_blank">
+                        <i class="fas fa-certificate"></i> Certificado
+                      </a>
+                    @else
+                      <span class="btn-sm" style="background:var(--cream);color:var(--muted);cursor:default" title="Presença insuficiente para emissão do certificado">
+                        <i class="fas fa-certificate"></i> Presença incompleta
+                      </span>
+                    @endif
                   @else
                     <button type="button" class="btn-sm" style="background:#fee2e2;color:#991b1b;border:none;cursor:pointer"
                       onclick="abrirModalCancelarEvento('{{ route('portal.usuario.eventos.cancelar', $ev) }}', '{{ addslashes($ev->title) }}')">
@@ -953,13 +961,20 @@
     // botão de ação
     const mdeAction = document.getElementById('mde-action');
     if (d.inscrito === '1') {
-      const certBtn = d.status === 'completed'
-        ? `<a href="${d.certificadoUrl}" class="btn-sm btn-yellow" target="_blank" style="text-decoration:none">
-             <i class="fas fa-certificate"></i> Certificado
-           </a>`
-        : `<span class="btn-sm" style="background:var(--cream);color:var(--muted);cursor:default">
+      let certBtn;
+      if (d.status === 'completed') {
+        certBtn = d.certDisponivel === '1'
+          ? `<a href="${d.certificadoUrl}" class="btn-sm btn-yellow" target="_blank" style="text-decoration:none">
+               <i class="fas fa-certificate"></i> Certificado
+             </a>`
+          : `<span class="btn-sm" style="background:var(--cream);color:var(--muted);cursor:default">
+               <i class="fas fa-certificate"></i> Presença incompleta
+             </span>`;
+      } else {
+        certBtn = `<span class="btn-sm" style="background:var(--cream);color:var(--muted);cursor:default">
              <i class="fas fa-certificate"></i> Certificado disponível após conclusão
            </span>`;
+      }
       const cancelBtn = d.status !== 'completed'
         ? `<button type="button" class="btn-sm" style="background:#fee2e2;color:#991b1b;border:none;cursor:pointer"
              onclick="closeModal('modal-detalhe-evento');abrirModalCancelarEvento('${d.cancelarUrl}','${d.title.replace(/'/g,"\\'")}')" >

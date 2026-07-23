@@ -32,15 +32,23 @@ class AttendanceController extends Controller
 
     public function index(Request $request)
     {
+        // "proximas" (padrão): de hoje em diante. "passadas": histórico p/ busca.
+        $periodo = $request->input('periodo') === 'passadas' ? 'passadas' : 'proximas';
+        $today   = Carbon::today();
+
         $attendances = Attendance::with('user')
             ->when($request->search, fn($q) => $q->where('customer_name', 'like', '%'.$request->search.'%'))
             ->when($request->status, fn($q) => $q->where('status', $request->status))
             ->when($request->service_type, fn($q) => $q->where('service_type', $request->service_type))
-            ->latest()
+            ->when(
+                $periodo === 'passadas',
+                fn($q) => $q->whereDate('scheduled_at', '<', $today)->orderBy('scheduled_at', 'desc'),
+                fn($q) => $q->where(fn($w) => $w->whereDate('scheduled_at', '>=', $today)->orWhereNull('scheduled_at'))->latest()
+            )
             ->paginate(10)
             ->withQueryString();
 
-        return view('attendances.index', compact('attendances'))->with('serviceTypes', $this->serviceList());
+        return view('attendances.index', compact('attendances', 'periodo'))->with('serviceTypes', $this->serviceList());
     }
 
     public function create()

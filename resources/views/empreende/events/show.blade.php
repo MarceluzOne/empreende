@@ -21,6 +21,10 @@
                     {{ $event->status === 'completed' ? 'bg-green-100 text-green-700' : ($event->status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700') }}">
                     {{ $event->status_label }}
                 </span>
+                <span class="text-xs font-bold uppercase px-2 py-1 rounded-full
+                    {{ $event->isPrivate() ? 'bg-purple-100 text-purple-700' : 'bg-sky-100 text-sky-700' }}">
+                    <i class="fas {{ $event->isPrivate() ? 'fa-link' : 'fa-globe' }} mr-1"></i>{{ $event->isPrivate() ? 'Privado' : 'Público' }}
+                </span>
             </div>
             <p class="text-sm text-gray-400 mt-0.5">
                 {{ $event->date->format('d/m/Y') }} às {{ substr($event->start_time, 0, 5) }} —
@@ -72,6 +76,32 @@
             @else
                 <p class="text-sm font-semibold text-gray-400">Sem reserva registrada</p>
             @endif
+        </div>
+    </div>
+
+    {{-- Link de acesso / convite --}}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-xs text-gray-500 uppercase font-bold mb-1">
+            <i class="fas fa-link mr-1"></i>Link de acesso{{ $event->isPrivate() ? ' — evento privado' : '' }}
+        </p>
+        <p class="text-sm text-gray-600">
+            {{ $event->isPrivate()
+                ? 'Este evento não aparece no site. Compartilhe o link abaixo para receber inscrições.'
+                : 'Evento público (listado no site). O link direto abaixo também pode ser compartilhado.' }}
+        </p>
+        <div class="mt-3 flex items-center gap-2 flex-wrap">
+            <input type="text" id="shareLink" readonly value="{{ $event->share_url }}"
+                class="flex-1 min-w-[240px] px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono bg-gray-50 text-gray-700">
+            <button type="button" onclick="copyShareLink()"
+                class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+                <i class="fas fa-copy"></i> <span id="copyLabel">Copiar</span>
+            </button>
+            <button type="button"
+                onclick="document.getElementById('modal-regen-link').style.display='flex'"
+                title="Gera um novo link e invalida o atual"
+                class="inline-flex items-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition">
+                <i class="fas fa-sync-alt"></i> <span class="hidden sm:inline">Regenerar</span>
+            </button>
         </div>
     </div>
 
@@ -160,6 +190,7 @@
                         <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase">CPF</th>
                         <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase">WhatsApp</th>
                         <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase">E-mail</th>
+                        <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase text-center">Presença</th>
                         @if($event->status === 'completed')
                             <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase text-center">Certificado</th>
                         @endif
@@ -192,14 +223,38 @@
                                 @endif
                             </td>
                             <td class="px-6 py-3 text-sm text-gray-600">{{ $participant->email ?? '—' }}</td>
+                            <td class="px-6 py-3">
+                                @php $present = $participant->presentDates(); @endphp
+                                <div class="flex flex-wrap gap-1 justify-center">
+                                    @foreach($allDates as $d)
+                                        @php $isPresent = in_array($d, $present, true); @endphp
+                                        <form action="{{ route('events.participants.attendance', [$event, $participant]) }}" method="POST" class="inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="date" value="{{ $d }}">
+                                            <button type="submit"
+                                                title="{{ \Carbon\Carbon::parse($d)->format('d/m/Y') }} — {{ $isPresent ? 'presente (clique para remover)' : 'ausente (clique para confirmar)' }}"
+                                                class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full transition
+                                                {{ $isPresent ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200' }}">
+                                                <i class="fas {{ $isPresent ? 'fa-check' : 'fa-clock' }} text-[10px]"></i>
+                                                {{ \Carbon\Carbon::parse($d)->format('d/m') }}
+                                            </button>
+                                        </form>
+                                    @endforeach
+                                </div>
+                            </td>
                             @if($event->status === 'completed')
                                 <td class="px-6 py-3 text-center">
-                                    <a href="{{ route('events.certificate', [$event, $participant]) }}" target="_blank"
-                                        title="Visualizar certificado"
-                                        class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-800 transition">
-                                        <i class="fas fa-certificate"></i>
-                                        <span class="hidden md:inline">Certificado</span>
-                                    </a>
+                                    @if($participant->hasFullAttendance())
+                                        <a href="{{ route('events.certificate', [$event, $participant]) }}" target="_blank"
+                                            title="Visualizar certificado"
+                                            class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-800 transition">
+                                            <i class="fas fa-certificate"></i>
+                                            <span class="hidden md:inline">Certificado</span>
+                                        </a>
+                                    @else
+                                        <span class="text-xs text-gray-400 italic">Presença incompleta</span>
+                                    @endif
                                 </td>
                             @endif
                             <td class="px-6 py-3 text-right">
@@ -225,7 +280,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $event->status === 'completed' ? 7 : 6 }}" class="px-6 py-8 text-center text-gray-400 italic">Nenhum participante inscrito ainda.</td>
+                            <td colspan="{{ $event->status === 'completed' ? 8 : 7 }}" class="px-6 py-8 text-center text-gray-400 italic">Nenhum participante inscrito ainda.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -315,8 +370,54 @@
     </div>
 </div>
 
+{{-- Modal de confirmação de regeneração de link --}}
+<div id="modal-regen-link" style="display:none" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-sm mx-4">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                <i class="fas fa-sync-alt text-amber-500"></i>
+            </div>
+            <div>
+                <h2 class="text-base font-semibold text-gray-800">Regenerar link de acesso</h2>
+                <p class="text-sm text-gray-500">O link atual deixará de funcionar. Deseja continuar?</p>
+            </div>
+        </div>
+        <div class="flex justify-end gap-2 mt-4">
+            <button type="button"
+                onclick="document.getElementById('modal-regen-link').style.display='none'"
+                class="px-4 py-2 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition">
+                Cancelar
+            </button>
+            <form action="{{ route('events.link.regenerate', $event) }}" method="POST">
+                @csrf
+                @method('PATCH')
+                <button type="submit"
+                    class="px-4 py-2 text-sm rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition">
+                    Regenerar
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
+function copyShareLink() {
+    const el = document.getElementById('shareLink');
+    el.select();
+    el.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(el.value).then(function () {
+        const label = document.getElementById('copyLabel');
+        const original = label.textContent;
+        label.textContent = 'Copiado!';
+        setTimeout(function () { label.textContent = original; }, 1600);
+    });
+}
+
+document.getElementById('modal-regen-link').addEventListener('click', function (e) {
+    if (e.target === this) this.style.display = 'none';
+});
+
 document.addEventListener('DOMContentLoaded', function () {
     const cpfEl = document.getElementById('participant_cpf');
     if (cpfEl) IMask(cpfEl, { mask: '000.000.000-00' });

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Empresa;
 use App\Models\JobVacancy;
+use App\Services\AuditService;
 use App\Services\CompanyService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -46,6 +47,8 @@ class CompanyController extends Controller
 
         $empresa->update($data);
 
+        AuditService::log('updated', $empresa, null, "Atualizou os dados da empresa {$empresa->razao_social}");
+
         return redirect()
             ->route('companies.show', $this->service->uuidFor($empresa->cnpj))
             ->with('success', 'Dados da empresa atualizados.');
@@ -59,6 +62,9 @@ class CompanyController extends Controller
     public function toggleEmpresa(Empresa $empresa)
     {
         $empresa->update(['active' => ! $empresa->active]);
+
+        AuditService::log('updated', $empresa, null,
+            ($empresa->active ? 'Habilitou' : 'Desabilitou')." a empresa {$empresa->razao_social}");
 
         $digits = preg_replace('/\D/', '', (string) $empresa->cnpj);
         $from   = $empresa->active ? 'inactive' : 'active';

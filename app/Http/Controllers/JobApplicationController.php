@@ -6,6 +6,7 @@ use App\Mail\CandidaturaAceitaMail;
 use App\Models\JobApplication;
 use App\Models\JobSeeker;
 use App\Models\JobVacancy;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
@@ -101,6 +102,13 @@ class JobApplicationController extends Controller
                 $vacancy->status = 'active';
             }
             $vacancy->save();
+        }
+
+        // Audita apenas ações de funcionário (a mesma rota também é usada pela empresa).
+        if (auth()->user()?->type === 'funcionario') {
+            $statusLabel = ['pending' => 'Pendente', 'accepted' => 'Aceita', 'rejected' => 'Recusada'][$newStatus] ?? $newStatus;
+            AuditService::log('updated', $application, null,
+                "Alterou o status da candidatura de {$application->seeker->name} (vaga: {$vacancy->position}) para \"{$statusLabel}\"");
         }
 
         return back()->with('success', 'Status da candidatura atualizado.');

@@ -23,8 +23,21 @@
         </div>
     </div>
 
+    {{-- Abas: próximos (padrão) / anteriores (histórico p/ busca) --}}
+    <div class="flex gap-1 mb-4 border-b border-gray-200">
+        <a href="{{ request()->fullUrlWithQuery(['periodo' => 'proximas', 'page' => null]) }}"
+            class="px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition {{ $periodo === 'proximas' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
+            <i class="fas fa-calendar-day mr-1"></i> Próximos
+        </a>
+        <a href="{{ request()->fullUrlWithQuery(['periodo' => 'passadas', 'page' => null]) }}"
+            class="px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition {{ $periodo === 'passadas' ? 'border-blue-600 text-blue-700' : 'border-transparent text-gray-500 hover:text-gray-700' }}">
+            <i class="fas fa-history mr-1"></i> Anteriores
+        </a>
+    </div>
+
     {{-- Filtros --}}
     <form method="GET" action="{{ route('events.index') }}" class="mb-6">
+        <input type="hidden" name="periodo" value="{{ $periodo }}">
         <div class="flex flex-col md:flex-row gap-3">
             <input type="text" name="search" value="{{ request('search') }}"
                 placeholder="Buscar por título..."
@@ -35,7 +48,7 @@
                 <i class="fas fa-search mr-1"></i> Filtrar
             </button>
             @if(request()->hasAny(['search','date']))
-                <a href="{{ route('events.index') }}" class="px-5 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition flex items-center">
+                <a href="{{ route('events.index', ['periodo' => $periodo]) }}" class="px-5 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition flex items-center">
                     <i class="fas fa-times mr-1"></i> Limpar
                 </a>
             @endif
@@ -133,7 +146,9 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center text-gray-500 italic">Nenhum evento cadastrado.</td>
+                            <td colspan="6" class="px-6 py-12 text-center text-gray-500 italic">
+                                {{ $periodo === 'passadas' ? 'Nenhum evento anterior encontrado.' : 'Nenhum evento futuro.' }}
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>

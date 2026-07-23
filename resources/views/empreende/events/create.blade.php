@@ -334,6 +334,30 @@
                 </div>
             </div>
 
+            {{-- Visibilidade --}}
+            <div class="mb-5" x-data="{ visibility: '{{ old('visibility', 'public') }}' }">
+                <label class="block text-sm font-bold text-gray-700 mb-3 uppercase tracking-wide">Visibilidade</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <label class="flex items-start gap-2 p-3 border rounded-xl cursor-pointer transition hover:bg-gray-50"
+                        :class="visibility === 'public' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
+                        <input type="radio" name="visibility" value="public" x-model="visibility" class="mt-1">
+                        <span>
+                            <span class="block text-sm font-semibold"><i class="fas fa-globe mr-1 text-blue-500"></i>Público</span>
+                            <span class="block text-xs text-gray-500">Aparece na página de eventos do site.</span>
+                        </span>
+                    </label>
+                    <label class="flex items-start gap-2 p-3 border rounded-xl cursor-pointer transition hover:bg-gray-50"
+                        :class="visibility === 'private' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'">
+                        <input type="radio" name="visibility" value="private" x-model="visibility" class="mt-1">
+                        <span>
+                            <span class="block text-sm font-semibold"><i class="fas fa-link mr-1 text-purple-500"></i>Privado</span>
+                            <span class="block text-xs text-gray-500">Não aparece no site. Acesso apenas pelo link gerado.</span>
+                        </span>
+                    </label>
+                </div>
+                @error('visibility') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+            </div>
+
             {{-- Calendário --}}
             <div class="mb-5">
                 <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">

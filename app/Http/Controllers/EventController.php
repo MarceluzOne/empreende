@@ -3,31 +3,55 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreEventParticipantRequest;
-use App\Models\Booking;
+use App\Http\Requests\StoreEventRequest;
+use App\Http\Requests\UpdateEventRequest;
 use App\Models\Event;
 use App\Models\EventParticipant;
 use App\Models\Speaker;
 use App\Services\AuditService;
-use App\Services\BookingService;
-use Carbon\Carbon;
+use App\Services\CertificateService;
+use App\Services\EventService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 
 class EventController extends Controller
 {
+    public function __construct(private EventService $events) {}
+
     public function index(Request $request)
     {
+        // "proximas" (padrão): que ainda não terminaram. "passadas": já encerrados.
+        // Filtro pela ÚLTIMA data do evento (correto para eventos de vários dias).
+        $periodo = $request->input('periodo') === 'passadas' ? 'passadas' : 'proximas';
+        $today   = \Carbon\Carbon::today();
+
         $events = Event::with(['speaker', 'participants'])
             ->when($request->search, fn($q) => $q->where('title', 'like', '%'.$request->search.'%'))
             ->when($request->date, fn($q) => $q->whereDate('date', $request->date))
-            ->orderBy('date', 'asc')
-            ->paginate(10)
-            ->withQueryString();
+            ->get()
+            ->filter(function ($e) use ($periodo, $today) {
+                $isPast = \Carbon\Carbon::parse(max($e->allDates()))->lt($today);
+                return $periodo === 'passadas' ? $isPast : !$isPast;
+            })
+            ->sortBy(fn($e) => max($e->allDates()), SORT_REGULAR, $periodo === 'passadas')
+            ->values();
 
+        $events   = $this->paginateCollection($events, 10);
         $speakers = Speaker::orderBy('name')->get();
 
-        return view('events.index', compact('events', 'speakers'));
+        return view('events.index', compact('events', 'speakers', 'periodo'));
+    }
+
+    private function paginateCollection(\Illuminate\Support\Collection $items, int $perPage): \Illuminate\Pagination\LengthAwarePaginator
+    {
+        $page = \Illuminate\Pagination\LengthAwarePaginator::resolveCurrentPage();
+
+        return new \Illuminate\Pagination\LengthAwarePaginator(
+            $items->forPage($page, $perPage)->values(),
+            $items->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
     }
 
     public function create()
@@ -36,80 +60,17 @@ class EventController extends Controller
         return view('events.create', compact('speakers'));
     }
 
-    public function store(Request $request, BookingService $bookingService)
+    public function store(StoreEventRequest $request)
     {
-        $type = $request->input('type', 'single');
-
-        $request->validate([
-            'title'            => 'required|string|max:255',
-            'type'             => 'required|in:single,consecutive,alternated',
-            'start_time'       => 'required',
-            'end_time'         => 'required|after:start_time',
-            'max_capacity'     => 'required|integer|min:1',
-            'speaker_id'       => 'required|exists:speakers,id',
-            'single_date'      => 'required_if:type,single|nullable|date',
-            'start_date'       => 'required_if:type,consecutive|nullable|date',
-            'end_date_period'  => 'required_if:type,consecutive|nullable|date|after_or_equal:start_date',
-            'selected_dates'   => 'required_if:type,alternated|nullable|array',
-            'selected_dates.*' => 'date',
-        ]);
-
-        $startTime = $request->input('start_time');
-        $endTime   = $request->input('end_time');
-        $duration  = (int) $request->input('duration_minutes') ?: Carbon::createFromTimeString($startTime)->diffInMinutes(Carbon::createFromTimeString($endTime));
-
-        $beforeIds = Booking::where('resource_type', 'auditorio')->pluck('id');
-
         try {
-            $bookingService->createBookings([
-                'resource_type'    => 'auditorio',
-                'responsible_name' => $request->input('title'),
-                'type'             => $type,
-                'start_time'       => $startTime,
-                'end_time'         => $endTime,
-                'single_date'      => $request->input('single_date'),
-                'start_date'       => $request->input('start_date'),
-                'end_date_period'  => $request->input('end_date_period'),
-                'selected_dates'   => $request->input('selected_dates', []),
-                'guests_count'     => $request->input('max_capacity'),
-                'reason'           => 'evento',
-                'observation'      => 'Reserva automática — Evento: '.$request->input('title'),
-            ]);
+            $event = $this->events->create($request->all(), $request->file('image'));
         } catch (\Exception $e) {
             return back()->withErrors($e->getMessage())->withInput();
         }
 
-        $createdBookings = Booking::where('resource_type', 'auditorio')
-            ->whereNotIn('id', $beforeIds)
-            ->orderBy('booking_date')
-            ->get();
-
-        $firstBooking = $createdBookings->first();
-        $firstDate    = $firstBooking->booking_date->format('Y-m-d');
-
-        $extraDates = $createdBookings->skip(1)->map(fn($b) => $b->booking_date->format('Y-m-d'))->values()->all();
-
-        $imagePath = $request->hasFile('image')
-            ? $this->storeEventImage($request->file('image'))
-            : null;
-
-        $event = Event::create([
-            'title'            => $request->input('title'),
-            'date'             => $firstDate,
-            'start_time'       => $startTime,
-            'duration_minutes' => $duration,
-            'max_capacity'     => $request->input('max_capacity'),
-            'speaker_id'       => $request->input('speaker_id'),
-            'booking_id'       => $firstBooking->id,
-            'type'             => $type,
-            'extra_dates'      => count($extraDates) ? $extraDates : null,
-            'image_path'       => $imagePath,
-        ]);
-
-        $event->bookings()->attach($createdBookings->pluck('id'));
         AuditService::log('created', $event);
 
-        $totalDias = $createdBookings->count();
+        $totalDias = count($event->allDates());
         $msg = $totalDias > 1
             ? "Evento criado com {$totalDias} dias reservados no auditório!"
             : 'Evento criado com sucesso!';
@@ -119,7 +80,7 @@ class EventController extends Controller
 
     public function show(Event $event)
     {
-        $event->load(['speaker', 'participants', 'booking']);
+        $event->load(['speaker', 'participants.attendances', 'booking']);
         return view('events.show', compact('event'));
     }
 
@@ -129,85 +90,14 @@ class EventController extends Controller
         return view('events.edit', compact('event', 'speakers'));
     }
 
-    public function update(Request $request, Event $event, BookingService $bookingService)
+    public function update(UpdateEventRequest $request, Event $event)
     {
-        $type = $request->input('type', 'single');
-
-        $request->validate([
-            'title'            => 'required|string|max:255',
-            'type'             => 'required|in:single,consecutive,alternated',
-            'start_time'       => 'required',
-            'end_time'         => 'required|after:start_time',
-            'max_capacity'     => 'required|integer|min:'.$event->participants()->count(),
-            'speaker_id'       => 'required|exists:speakers,id',
-            'single_date'      => 'required_if:type,single|nullable|date',
-            'start_date'       => 'required_if:type,consecutive|nullable|date',
-            'end_date_period'  => 'required_if:type,consecutive|nullable|date|after_or_equal:start_date',
-            'selected_dates'   => 'required_if:type,alternated|nullable|array',
-            'selected_dates.*' => 'date',
-        ]);
-
-        $startTime = $request->input('start_time');
-        $endTime   = $request->input('end_time');
-        $duration  = (int) $request->input('duration_minutes') ?: Carbon::createFromTimeString($startTime)->diffInMinutes(Carbon::createFromTimeString($endTime));
-
-        // Apaga todos os bookings antigos do evento
-        $event->bookings()->each(fn($b) => $b->delete());
-        $event->booking?->delete();
-        $event->bookings()->detach();
-
-        $beforeIds = Booking::where('resource_type', 'auditorio')->pluck('id');
-
         try {
-            $bookingService->createBookings([
-                'resource_type'    => 'auditorio',
-                'responsible_name' => $request->input('title'),
-                'type'             => $type,
-                'start_time'       => $startTime,
-                'end_time'         => $endTime,
-                'single_date'      => $request->input('single_date'),
-                'start_date'       => $request->input('start_date'),
-                'end_date_period'  => $request->input('end_date_period'),
-                'selected_dates'   => $request->input('selected_dates', []),
-                'guests_count'     => $request->input('max_capacity'),
-                'reason'           => 'evento',
-                'observation'      => 'Reserva automática — Evento: '.$request->input('title'),
-            ]);
+            $this->events->update($event, $request->all(), $request->file('image'));
         } catch (\Exception $e) {
             return back()->withErrors($e->getMessage())->withInput();
         }
 
-        $createdBookings = Booking::where('resource_type', 'auditorio')
-            ->whereNotIn('id', $beforeIds)
-            ->orderBy('booking_date')
-            ->get();
-
-        $firstBooking = $createdBookings->first();
-        $firstDate    = $firstBooking->booking_date->format('Y-m-d');
-        $extraDates   = $createdBookings->skip(1)->map(fn($b) => $b->booking_date->format('Y-m-d'))->values()->all();
-
-        $updateData = [
-            'title'            => $request->input('title'),
-            'date'             => $firstDate,
-            'start_time'       => $startTime,
-            'duration_minutes' => $duration,
-            'max_capacity'     => $request->input('max_capacity'),
-            'speaker_id'       => $request->input('speaker_id'),
-            'booking_id'       => $firstBooking->id,
-            'type'             => $type,
-            'extra_dates'      => count($extraDates) ? $extraDates : null,
-        ];
-
-        if ($request->hasFile('image')) {
-            if ($event->image_path) {
-                Storage::disk('public')->delete($event->image_path);
-            }
-            $updateData['image_path'] = $this->storeEventImage($request->file('image'));
-        }
-
-        $event->update($updateData);
-
-        $event->bookings()->attach($createdBookings->pluck('id'));
         AuditService::log('updated', $event);
 
         return redirect()->route('events.show', $event)->with('success', 'Evento atualizado com sucesso!');
@@ -218,14 +108,7 @@ class EventController extends Controller
         abort_unless(auth()->user()->roles->contains('name', 'admin'), 403);
 
         AuditService::log('deleted', $event);
-        $event->bookings()->each(fn($b) => $b->delete());
-        if ($event->booking && !$event->bookings->contains($event->booking)) {
-            $event->booking?->delete();
-        }
-        if ($event->image_path) {
-            Storage::disk('public')->delete($event->image_path);
-        }
-        $event->delete();
+        $this->events->delete($event);
 
         return redirect()->route('events.index')->with('success', 'Evento excluído com sucesso!');
     }
@@ -238,12 +121,14 @@ class EventController extends Controller
 
         $cpf = $request->cpf ? preg_replace('/[^0-9]/', '', $request->cpf) : null;
 
-        $event->participants()->create([
+        $participant = $event->participants()->create([
             'name'     => $request->name,
             'email'    => $request->email,
             'cpf'      => $cpf,
             'whatsapp' => $request->whatsapp,
         ]);
+
+        AuditService::log('created', $participant, null, "Inscreveu o participante {$participant->name} no evento {$event->title}");
 
         return redirect()->route('events.show', $event)->with('success', 'Participante inscrito com sucesso!');
     }
@@ -266,15 +151,52 @@ class EventController extends Controller
             'email'    => $request->email,
         ]);
 
+        AuditService::log('updated', $participant, null, "Atualizou o participante {$participant->name} no evento {$event->title}");
+
         return redirect()->route('events.show', $event)->with('success', 'Participante atualizado com sucesso!');
     }
 
     public function destroyParticipant(Event $event, EventParticipant $participant)
     {
         abort_if($participant->event_id !== $event->id, 404);
+
+        AuditService::log('deleted', $participant, null, "Removeu o participante {$participant->name} do evento {$event->title}");
         $participant->delete();
 
         return redirect()->route('events.show', $event)->with('success', 'Participante removido com sucesso!');
+    }
+
+    public function toggleAttendance(Request $request, Event $event, EventParticipant $participant)
+    {
+        abort_if($participant->event_id !== $event->id, 404);
+
+        $date = $request->input('date');
+        abort_unless(in_array($date, $event->allDates(), true), 422, 'Data inválida para este evento.');
+
+        $existing = $participant->attendances()->whereDate('event_date', $date)->first();
+        $dateLabel = \Carbon\Carbon::parse($date)->format('d/m/Y');
+
+        if ($existing) {
+            $existing->delete();
+            $msg = 'Presença removida em '.$dateLabel.'.';
+            AuditService::log('updated', $participant, null, "Removeu a presença de {$participant->name} em {$dateLabel} — evento {$event->title}");
+        } else {
+            $participant->attendances()->create(['event_date' => $date, 'checked_in_at' => now()]);
+            $msg = 'Presença confirmada em '.$dateLabel.'.';
+            AuditService::log('updated', $participant, null, "Confirmou a presença de {$participant->name} em {$dateLabel} — evento {$event->title}");
+        }
+
+        return redirect()->route('events.show', $event)->with('success', $msg);
+    }
+
+    public function regenerateLink(Event $event)
+    {
+        $event->update(['share_token' => Event::uniqueShareToken()]);
+
+        AuditService::log('updated', $event, null, "Regenerou o link de acesso do evento {$event->title}");
+
+        return redirect()->route('events.show', $event)
+            ->with('success', 'Link de acesso regenerado. O link anterior deixou de funcionar.');
     }
 
     public function updateStatus(Request $request, Event $event)
@@ -283,13 +205,17 @@ class EventController extends Controller
         $event->update(['status' => $request->status]);
 
         $label = $event->fresh()->status_label;
-        return redirect()->back()->with('success', "Status do evento atualizado para \"{$label}\".");
+
+        AuditService::log('updated', $event, null, "Alterou o status do evento {$event->title} para \"{$label}\"");
+
+        return redirect()->back()->with("success", "Status do evento atualizado para \"{$label}\".");
     }
 
-    public function certificate(Event $event, EventParticipant $participant, \App\Services\CertificateService $certificates)
+    public function certificate(Event $event, EventParticipant $participant, CertificateService $certificates)
     {
         abort_if($event->status !== 'completed', 403, 'Certificados disponíveis apenas para eventos concluídos.');
         abort_if($participant->event_id !== $event->id, 404);
+        abort_unless($participant->hasFullAttendance(), 403, 'Certificado disponível apenas para quem teve presença em todos os dias do evento.');
 
         // stream = exibe o PDF inline no navegador (visualizar, não baixar).
         return $certificates->pdf($event, $participant)->stream($certificates->filename($participant));
@@ -299,35 +225,6 @@ class EventController extends Controller
     {
         $event->load(['speaker', 'participants', 'booking']);
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('events.pdf', compact('event'));
-        return $pdf->download('ata-evento-'.$event->id.'.pdf');
-    }
-
-    private function storeEventImage(\Illuminate\Http\UploadedFile $file): string
-    {
-        $size = 1024;
-        $mime = $file->getMimeType();
-
-        $src = match (true) {
-            str_contains($mime, 'png')  => imagecreatefrompng($file->getRealPath()),
-            str_contains($mime, 'webp') => imagecreatefromwebp($file->getRealPath()),
-            default                     => imagecreatefromjpeg($file->getRealPath()),
-        };
-
-        $w    = imagesx($src);
-        $h    = imagesy($src);
-        $side = min($w, $h);
-        $x    = (int)(($w - $side) / 2);
-        $y    = (int)(($h - $side) / 2);
-
-        $dst = imagecreatetruecolor($size, $size);
-        imagecopyresampled($dst, $src, 0, 0, $x, $y, $size, $size, $side, $side);
-        imagedestroy($src);
-
-        $filename = 'events/' . \Illuminate\Support\Str::uuid() . '.webp';
-        Storage::disk('public')->makeDirectory('events');
-        imagewebp($dst, Storage::disk('public')->path($filename), 82);
-        imagedestroy($dst);
-
-        return $filename;
+        return $pdf->download('ata-evento-'.\Illuminate\Support\Str::slug($event->title).'.pdf');
     }
 }

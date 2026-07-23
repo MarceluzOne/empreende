@@ -514,7 +514,7 @@
           <div class="ico"><i class="far fa-clock"></i></div>
           <div>
             <h3>Atendimento presencial</h3>
-            <p>Segunda à Sexta · 8h às 14h<br>Atendimento por agendamento na dashboard.</p>
+            <p>Segunda à Sexta · 8h às 14h<br>Atendimento por agendamento.</p>
           </div>
         </div>
 
@@ -522,7 +522,7 @@
           <div class="ico"><i class="fab fa-whatsapp"></i></div>
           <div>
             <h3>WhatsApp da Sala do Empreendedor</h3>
-            <a href="#">(81) 9 8251-0723</a>
+            <a href="https://wa.me/5581982510723?text=Ol%C3%A1,%20gostaria%20de%20tirar%20uma%20d%C3%BAvida." target="_blank" rel="noopener noreferrer">(81) 9 8251-0723</a>
           </div>
         </div>
       </aside>

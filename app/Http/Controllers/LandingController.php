@@ -47,6 +47,7 @@ class LandingController extends Controller
         $today = Carbon::today();
 
         $upcoming = Event::with('speaker')
+            ->where('visibility', 'public')
             ->where('status', 'active')
             ->where('date', '>=', $today)
             ->orderBy('date')
@@ -57,6 +58,7 @@ class LandingController extends Controller
         $thisMonth = $upcoming->filter(fn($e) => $e->date->month === $today->month && $e->date->year === $today->year);
 
         $completed = Event::with('speaker')
+            ->where('visibility', 'public')
             ->where(function ($q) use ($today) {
                 $q->where('status', 'completed')
                   ->orWhere(function ($q2) use ($today) {

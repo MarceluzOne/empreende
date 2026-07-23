@@ -90,48 +90,22 @@
     }
     .body-text .event-title { font-weight: bold; color: #1a2238; }
 
-    /* Bloco carga horária / conclusão */
-    .meta {
+    /* Bloco carga horária (centralizado) */
+    .meta-single {
         margin: 9mm auto 0;
-    }
-    .meta td {
-        padding: 0 12mm;
         text-align: center;
-        vertical-align: top;
     }
-    .meta .label {
+    .meta-single .label {
         font-size: 8pt;
         color: #6b7280;
         letter-spacing: 2px;
         text-transform: uppercase;
     }
-    .meta .value {
+    .meta-single .value {
         font-size: 13pt;
         font-weight: bold;
         color: #1a2238;
         margin-top: 2mm;
-    }
-
-    /* Assinatura (inferior esquerda) */
-    .signature {
-        position: absolute;
-        bottom: 22mm; left: 26mm;
-        width: 75mm;
-        text-align: center;
-    }
-    .signature .sig-line {
-        border-top: 1px solid #1a2238;
-        margin-bottom: 2mm;
-    }
-    .signature .sig-name {
-        font-size: 11pt;
-        font-weight: bold;
-        color: #1a2238;
-    }
-    .signature .sig-role {
-        font-size: 8.5pt;
-        color: #6b7280;
-        margin-top: 1mm;
     }
 
     /* Rodapé central */
@@ -167,35 +141,20 @@
         <hr class="name-rule">
 
         <div class="body-text">
-            concluiu com aproveitamento o
-            <span class="event-title">{{ $event->title }}</span>,
+            @if($cpfFormatted)com CPF {{ $cpfFormatted }}, @endif concluiu com aproveitamento o curso
+            <span class="event-title">{{ $event->title }}</span>
+            {{ $datesText }}@if($event->speaker), ministrado por <span class="event-title">{{ $event->speaker->name }}</span>@endif,
             promovido pelo Empreende Vitória — Salão do Empreendedor.
         </div>
 
-        <table class="meta" align="center">
-            <tr>
-                <td>
-                    <div class="label">Carga Horária</div>
-                    <div class="value">{{ number_format($totalHours, 0) }} horas</div>
-                </td>
-                <td>
-                    <div class="label">Concluído em</div>
-                    <div class="value">{{ $concludedLong }}</div>
-                </td>
-            </tr>
-        </table>
+        <div class="meta-single">
+            <div class="label">Carga Horária</div>
+            <div class="value">{{ number_format($totalHours, 0) }} horas</div>
+        </div>
     </div>
 
-    @if($event->speaker)
-        <div class="signature">
-            <div class="sig-line"></div>
-            <div class="sig-name">{{ $event->speaker->name }}</div>
-            <div class="sig-role">Palestrante responsável</div>
-        </div>
-    @endif
-
     <div class="validation">
-        Código de validação: {{ $validationCode }}@if($cpfFormatted) &nbsp;·&nbsp; CPF: {{ $cpfFormatted }}@endif
+        Código de validação: {{ $validationCode }}
     </div>
 </div>
 </body>

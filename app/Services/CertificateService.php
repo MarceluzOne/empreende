@@ -24,6 +24,11 @@ class CertificateService
         $lastDate   = Carbon::parse(end($dates));
         $totalHours = $event->totalHours();
 
+        // Texto das datas de realização como intervalo (não lista todos os dias).
+        $datesText = count($dates) === 1
+            ? 'realizado no dia '.$event->datesLabel()
+            : 'realizado no período '.$event->datesLabel();
+
         // Data de conclusão por extenso (ex.: "12 de junho de 2026").
         $concludedLong = $lastDate->locale('pt_BR')->isoFormat('D [de] MMMM [de] YYYY');
         $sealYear      = $lastDate->format('Y');
@@ -41,7 +46,7 @@ class CertificateService
 
         return Pdf::loadView('events.certificate', compact(
             'event', 'participant', 'startDate', 'endDate', 'totalHours',
-            'cpfFormatted', 'concludedLong', 'sealYear', 'validationCode'
+            'cpfFormatted', 'concludedLong', 'sealYear', 'validationCode', 'datesText'
         ))->setPaper('a4', 'landscape');
     }
 

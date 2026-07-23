@@ -36,6 +36,8 @@ use App\Http\Controllers\PortalEmpresaController;
 use App\Http\Controllers\PortalUsuarioController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicAttendanceController;
+use App\Http\Controllers\PublicCertificateController;
+use App\Http\Controllers\PublicEventController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ServiceProviderController;
 use App\Http\Controllers\SpeakerController;
@@ -50,6 +52,10 @@ Route::get('/agendamento/disponibilidade', [PublicAttendanceController::class, '
 Route::post('/agendamento', [PublicAttendanceController::class, 'store'])->name('public.attendance.store');
 Route::get('/contato', [LandingController::class, 'contato'])->name('contato');
 Route::get('/cursos', [LandingController::class, 'cursos'])->name('cursos');
+Route::get('/eventos/convite/{event:share_token}', [PublicEventController::class, 'create'])->name('public.events.register');
+Route::post('/eventos/convite/{event:share_token}', [PublicEventController::class, 'store'])->name('public.events.register.store');
+Route::get('/certificados', [PublicCertificateController::class, 'index'])->middleware('throttle:20,1')->name('public.certificates');
+Route::get('/certificados/{participant}/baixar', [PublicCertificateController::class, 'download'])->name('public.certificates.download');
 Route::get('/servicos', [LandingController::class, 'servicos'])->name('servicos');
 Route::get('/empresas-locais', [LandingController::class, 'empresasLocais'])->name('empresas-locais');
 
@@ -138,8 +144,10 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->prefix('portal/funci
     Route::post('eventos/{event}/participantes', [EventController::class, 'storeParticipant'])->name('events.participants.store');
     Route::put('eventos/{event}/participantes/{participant}', [EventController::class, 'updateParticipant'])->name('events.participants.update');
     Route::delete('eventos/{event}/participantes/{participant}', [EventController::class, 'destroyParticipant'])->name('events.participants.destroy');
+    Route::patch('eventos/{event}/participantes/{participant}/presenca', [EventController::class, 'toggleAttendance'])->name('events.participants.attendance');
     Route::get('eventos/{event}/pdf', [EventController::class, 'pdf'])->name('events.pdf');
     Route::patch('eventos/{event}/status', [EventController::class, 'updateStatus'])->name('events.status');
+    Route::patch('eventos/{event}/link', [EventController::class, 'regenerateLink'])->name('events.link.regenerate');
     Route::get('eventos/{event}/participantes/{participant}/certificado', [EventController::class, 'certificate'])->name('events.certificate');
 
     Route::resource('palestrantes', SpeakerController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy'])

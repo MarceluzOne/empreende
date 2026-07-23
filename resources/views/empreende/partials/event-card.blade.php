@@ -52,11 +52,11 @@
         <span class="btn-inscricao btn-inscricao--disabled">Encerrado</span>
       @elseif($event->isFull())
         <span class="spots-info spots-full">Esgotado · {{ $event->max_capacity }} inscritos</span>
-        <a href="{{ route('login') }}" class="btn-inscricao" style="background:var(--muted)">Lista de espera</a>
+        <span class="btn-inscricao btn-inscricao--disabled">Esgotado</span>
       @else
         <span class="spots-info"><span>{{ $event->availableSpots() }}</span> de {{ $event->max_capacity }} vagas</span>
         @if($showActions ?? true)
-          <a href="{{ route('login') }}" class="btn-inscricao">Inscrever-se <i class="fas fa-arrow-right"></i></a>
+          <a href="{{ route('public.events.register', $event->share_token) }}" class="btn-inscricao">Inscrever-se <i class="fas fa-arrow-right"></i></a>
         @endif
       @endif
     </div>

@@ -12,6 +12,18 @@ class StoreEventParticipantRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Normaliza o CPF para apenas dígitos antes de validar, para que a checagem
+     * de unicidade compare com o valor efetivamente gravado (sem máscara).
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('cpf')) {
+            $digits = preg_replace('/\D/', '', (string) $this->cpf);
+            $this->merge(['cpf' => $digits !== '' ? $digits : null]);
+        }
+    }
+
     public function rules(): array
     {
         $event = $this->route('event');

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class Event extends Model
 {
@@ -24,12 +25,48 @@ class Event extends Model
         'extra_dates',
         'status',
         'image_path',
+        'visibility',
+        'share_token',
     ];
 
     protected $casts = [
         'date'        => 'date',
         'extra_dates' => 'array',
     ];
+
+    protected static function booted(): void
+    {
+        // Todo evento nasce com um token de acesso (link de convite).
+        static::creating(function (Event $event) {
+            if (empty($event->share_token)) {
+                $event->share_token = self::uniqueShareToken();
+            }
+        });
+    }
+
+    public static function uniqueShareToken(): string
+    {
+        do {
+            $token = Str::random(12);
+        } while (self::where('share_token', $token)->exists());
+
+        return $token;
+    }
+
+    public function isPublic(): bool
+    {
+        return $this->visibility === 'public';
+    }
+
+    public function isPrivate(): bool
+    {
+        return $this->visibility === 'private';
+    }
+
+    public function getShareUrlAttribute(): string
+    {
+        return route('public.events.register', $this->share_token);
+    }
 
     public function speaker(): BelongsTo
     {
@@ -125,6 +162,41 @@ class Event extends Model
     public function getImageUrlAttribute(): ?string
     {
         return $this->image_path ? Storage::disk('public')->url($this->image_path) : null;
+    }
+
+    /**
+     * Rótulo amigável do período do evento, como intervalo (não lista todos os
+     * dias). Ex.: "de 23 a 31 de julho de 2026".
+     */
+    public function datesLabel(): string
+    {
+        $dates = collect($this->allDates())->map(fn ($d) => Carbon::parse($d))->sort()->values();
+        $first = $dates->first();
+        $last  = $dates->last();
+
+        if (!$first) {
+            return '';
+        }
+
+        if ($dates->count() === 1) {
+            return $first->locale('pt_BR')->isoFormat('D [de] MMMM [de] YYYY');
+        }
+
+        // Mesmo mês e ano: "de 23 a 31 de julho de 2026".
+        if ($first->isSameMonth($last)) {
+            return 'de '.$first->format('d').' a '.$last->format('d')
+                 .' de '.$first->locale('pt_BR')->isoFormat('MMMM [de] YYYY');
+        }
+
+        // Mesmo ano, meses diferentes: "de 23 de julho a 3 de agosto de 2026".
+        if ($first->year === $last->year) {
+            return 'de '.$first->locale('pt_BR')->isoFormat('D [de] MMMM')
+                 .' a '.$last->locale('pt_BR')->isoFormat('D [de] MMMM [de] YYYY');
+        }
+
+        // Anos diferentes: inclui o ano nas duas pontas.
+        return 'de '.$first->locale('pt_BR')->isoFormat('D [de] MMMM [de] YYYY')
+             .' a '.$last->locale('pt_BR')->isoFormat('D [de] MMMM [de] YYYY');
     }
 
     public function totalHours(): float

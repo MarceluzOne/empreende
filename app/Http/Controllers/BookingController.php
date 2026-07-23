@@ -14,15 +14,23 @@ class BookingController extends Controller
 
     public function index(Request $request)
     {
+        // "proximas" (padrão): de hoje em diante. "passadas": histórico p/ busca.
+        $periodo = $request->input('periodo') === 'passadas' ? 'passadas' : 'proximas';
+        $today   = Carbon::today();
+
         $bookings = Booking::with('user')
             ->when($request->search, fn($q) => $q->where('responsible_name', 'like', '%'.$request->search.'%'))
             ->when($request->resource_type, fn($q) => $q->where('resource_type', $request->resource_type))
             ->when($request->date, fn($q) => $q->whereDate('booking_date', $request->date))
-            ->orderBy('booking_date', 'asc')
+            ->when(
+                $periodo === 'passadas',
+                fn($q) => $q->whereDate('booking_date', '<', $today)->orderBy('booking_date', 'desc'),
+                fn($q) => $q->whereDate('booking_date', '>=', $today)->orderBy('booking_date', 'asc')
+            )
             ->paginate(10)
             ->withQueryString();
 
-        return view('bookings.index', compact('bookings'));
+        return view('bookings.index', compact('bookings', 'periodo'));
     }
 
     public function create()

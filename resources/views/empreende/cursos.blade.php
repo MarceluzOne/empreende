@@ -316,6 +316,7 @@
     <a href="{{ route('home') }}#servicos">Serviços</a>
     <a href="{{ route('home') }}#vagas">Vagas</a>
     <a href="{{ route('cursos') }}" class="active">Cursos</a>
+    <a href="{{ route('public.certificates') }}">Certificados</a>
     <a href="{{ route('contato') }}">Contato</a>
     <a href="{{ route('usuario.login') }}" class="nav-login"><i class="fas fa-user-lock"></i> Entrar</a>
   </nav>
@@ -332,6 +333,7 @@
   <a href="{{ route('home') }}#servicos">Serviços <i class="fas fa-chevron-right"></i></a>
   <a href="{{ route('home') }}#vagas">Vagas <i class="fas fa-chevron-right"></i></a>
   <a href="{{ route('cursos') }}" class="active">Cursos <i class="fas fa-chevron-right"></i></a>
+  <a href="{{ route('public.certificates') }}">Certificados <i class="fas fa-chevron-right"></i></a>
   <a href="{{ route('contato') }}">Contato <i class="fas fa-chevron-right"></i></a>
   <a href="{{ route('usuario.login') }}" style="margin-top:12px;background:var(--brand);color:#fff;justify-content:center">Entrar</a>
 </aside>

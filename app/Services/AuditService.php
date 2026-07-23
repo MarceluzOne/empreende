@@ -16,17 +16,24 @@ class AuditService
     ];
 
     private static array $modelNames = [
-        'Attendance'      => 'Atendimento',
-        'Booking'         => 'Reserva',
-        'Event'           => 'Evento',
-        'Speaker'         => 'Palestrante',
-        'JobVacancy'      => 'Vaga de Emprego',
-        'JobSeeker'       => 'Candidato',
-        'ServiceProvider' => 'Prestador de Serviço',
-        'User'            => 'Usuário',
+        'Attendance'       => 'Atendimento',
+        'Booking'          => 'Reserva',
+        'Event'            => 'Evento',
+        'EventParticipant' => 'Participante',
+        'Speaker'          => 'Palestrante',
+        'JobVacancy'       => 'Vaga de Emprego',
+        'JobSeeker'        => 'Candidato',
+        'JobApplication'   => 'Candidatura',
+        'Empresa'          => 'Empresa',
+        'ServiceProvider'  => 'Prestador de Serviço',
+        'User'             => 'Usuário',
     ];
 
-    public static function log(string $action, Model $model, ?array $changes = null): void
+    /**
+     * @param string|null $description Descrição customizada. Quando informada,
+     *                                 sobrepõe a descrição padrão "{verbo} {modelo}: {id}".
+     */
+    public static function log(string $action, Model $model, ?array $changes = null, ?string $description = null): void
     {
         $shortClass = class_basename($model);
         $modelName  = self::$modelNames[$shortClass] ?? $shortClass;
@@ -39,7 +46,7 @@ class AuditService
             'action'     => $action,
             'model_type' => get_class($model),
             'model_id'   => (string) $model->getKey(),
-            'description'=> "{$verb} {$modelName}{$identifier}",
+            'description'=> $description ?? "{$verb} {$modelName}{$identifier}",
             'changes'    => $changes,
             'ip'         => Request::ip(),
         ]);

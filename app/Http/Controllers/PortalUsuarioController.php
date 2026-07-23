@@ -29,21 +29,25 @@ class PortalUsuarioController extends Controller
     {
         $user = auth()->user();
 
-        $meusEventos = EventParticipant::where('email', $user->email)
-            ->with('event.speaker')
+        $perfil = JobSeeker::where('user_id', $user->id)
+            ->orWhere('email', $user->email)
+            ->first();
+
+        $cpf = $this->profileCpf($perfil);
+
+        // Casa participações por e-mail OU CPF, para reconhecer a mesma pessoa
+        // mesmo que ela tenha se inscrito no evento usando outro e-mail.
+        $meusEventos = EventParticipant::where(fn($q) => $this->matchUser($q, $user, $cpf))
+            ->with(['event.speaker', 'attendances'])
             ->latest()
             ->get();
 
         $eventosDisponiveis = Event::where('status', 'active')
-            ->whereDoesntHave('participants', fn($q) => $q->where('email', $user->email))
+            ->whereNotIn('id', $meusEventos->pluck('event_id'))
             ->with('speaker')
             ->latest()
             ->take(6)
             ->get();
-
-        $perfil = JobSeeker::where('user_id', $user->id)
-            ->orWhere('email', $user->email)
-            ->first();
 
         $minhasCandidaturas = $perfil
             ? JobApplication::where('job_seeker_id', $perfil->id)
@@ -210,8 +214,10 @@ class PortalUsuarioController extends Controller
             ->orWhere('email', $user->email)
             ->first();
 
+        $cpf = $this->profileCpf($perfil);
+
         $jaInscrito = EventParticipant::where('event_id', $event->id)
-            ->where('email', $user->email)
+            ->where(fn($q) => $this->matchUser($q, $user, $cpf))
             ->exists();
 
         if ($jaInscrito) {
@@ -222,7 +228,7 @@ class PortalUsuarioController extends Controller
             'event_id' => $event->id,
             'name'     => $perfil->name ?? $user->name,
             'email'    => $user->email,
-            'cpf'      => $perfil->cpf ?? null,
+            'cpf'      => $cpf,
             'whatsapp' => $perfil->phone ?? null,
         ]);
 
@@ -231,27 +237,61 @@ class PortalUsuarioController extends Controller
 
     public function cancelarEvento(Event $event)
     {
-        $participant = EventParticipant::where('event_id', $event->id)
-            ->where('email', auth()->user()->email)
-            ->firstOrFail();
-
-        $participant->delete();
+        $this->findParticipant($event)->delete();
 
         return redirect()->route('portal.usuario')->with('success', 'Inscrição cancelada.');
     }
 
     /**
-     * Certificado do próprio candidato (PDF inline). Só do participante cujo
-     * e-mail é o do usuário logado, e apenas para eventos concluídos.
+     * Certificado do próprio candidato (PDF inline). Reconhece o participante
+     * pelo e-mail OU CPF do usuário logado, e apenas para eventos concluídos.
      */
     public function certificado(Event $event, \App\Services\CertificateService $certificates)
     {
         abort_if($event->status !== 'completed', 403, 'Certificado disponível apenas para eventos concluídos.');
 
-        $participant = EventParticipant::where('event_id', $event->id)
-            ->where('email', auth()->user()->email)
-            ->firstOrFail();
+        $participant = $this->findParticipant($event);
+
+        abort_unless($participant->hasFullAttendance(), 403, 'Certificado disponível apenas para quem teve presença em todos os dias do evento.');
 
         return $certificates->pdf($event, $participant)->stream($certificates->filename($participant));
+    }
+
+    /**
+     * CPF do perfil normalizado (apenas dígitos), pois o JobSeeker guarda com
+     * máscara e o EventParticipant guarda sem.
+     */
+    private function profileCpf(?JobSeeker $perfil): ?string
+    {
+        $digits = $perfil && $perfil->cpf ? preg_replace('/\D/', '', $perfil->cpf) : '';
+
+        return $digits !== '' ? $digits : null;
+    }
+
+    /**
+     * Fecho de query que casa um participante pelo e-mail OU CPF do usuário.
+     */
+    private function matchUser($query, $user, ?string $cpf): void
+    {
+        $query->where('email', $user->email);
+        if ($cpf) {
+            $query->orWhere('cpf', $cpf);
+        }
+    }
+
+    /**
+     * Localiza o participante do evento correspondente ao usuário logado,
+     * pelo e-mail OU CPF do perfil.
+     */
+    private function findParticipant(Event $event): EventParticipant
+    {
+        $user   = auth()->user();
+        $perfil = JobSeeker::where('user_id', $user->id)
+            ->orWhere('email', $user->email)
+            ->first();
+
+        return EventParticipant::where('event_id', $event->id)
+            ->where(fn($q) => $this->matchUser($q, $user, $this->profileCpf($perfil)))
+            ->firstOrFail();
     }
 }
