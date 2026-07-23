@@ -85,13 +85,14 @@ class Event extends Model
 
     public function allDates(): array
     {
-        return match ($this->type) {
-            'alternated'  => $this->extra_dates ?? [$this->date->format('Y-m-d')],
-            'consecutive' => $this->extra_dates
-                ? array_merge([$this->date->format('Y-m-d')], $this->extra_dates)
-                : [$this->date->format('Y-m-d')],
-            default => [$this->date->format('Y-m-d')],
-        };
+        // Armazenamento é o mesmo para todos os tipos: `date` = primeira data e
+        // `extra_dates` = as demais. Então a lista completa é sempre a primeira
+        // data seguida das extras (corrige "alternated", que perdia a primeira).
+        $first = $this->date->format('Y-m-d');
+
+        return empty($this->extra_dates)
+            ? [$first]
+            : array_merge([$first], $this->extra_dates);
     }
 
     public function participants(): HasMany
