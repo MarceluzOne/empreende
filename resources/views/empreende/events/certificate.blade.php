@@ -2,160 +2,235 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+@php
+    $font = function (string $file) {
+        return str_replace('\\', '/', public_path('assets/fonts/' . $file));
+    };
+@endphp
 <style>
     @page { margin: 0; }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-        font-family: 'DejaVu Sans', sans-serif;
-        color: #1a2238;
+
+    @font-face {
+        font-family: 'Poppins';
+        font-style: normal;
+        font-weight: normal;
+        src: url("{{ $font('Poppins-SemiBold.ttf') }}") format("truetype");
     }
+    @font-face {
+        font-family: 'Poppins';
+        font-style: normal;
+        font-weight: bold;
+        src: url("{{ $font('Poppins-Bold.ttf') }}") format("truetype");
+    }
+    @font-face {
+        font-family: 'PoppinsExtraBold';
+        font-style: normal;
+        font-weight: normal;
+        src: url("{{ $font('Poppins-ExtraBold.ttf') }}") format("truetype");
+    }
+    @font-face {
+        font-family: 'MrsSaintDelafield';
+        font-style: normal;
+        font-weight: normal;
+        src: url("{{ $font('MrsSaintDelafield-Regular.ttf') }}") format("truetype");
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { font-family: 'Poppins', sans-serif; color: #1478C4; }
+
     /* position:fixed ancora à página inteira e mantém o conteúdo fora do fluxo,
-       evitando que o DomPDF gere uma 2ª página por estouro de altura/largura. */
+       evitando que o DomPDF gere uma 2ª página por estouro de altura/largura.
+       Medidas em px seguem o handoff (A4 paisagem = 1123x794px a 96dpi). */
     .sheet {
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
-        background: #fbfbf9;
-    }
-    /* Moldura azul externa + moldura interna */
-    .frame {
-        position: absolute;
-        top: 7mm; left: 7mm; right: 7mm; bottom: 7mm;
-        border: 2px solid #1e3a5f;
-    }
-    .frame-inner {
-        position: absolute;
-        top: 11mm; left: 11mm; right: 11mm; bottom: 11mm;
-        border: 1px solid #c9d4e3;
         background: #ffffff;
     }
-    /* Cantos dourados */
-    .corner {
-        position: absolute;
-        width: 26px; height: 26px;
-        z-index: 5;
-    }
-    .corner.tl { top: 9mm;  left: 9mm;  border-top: 3px solid #c9a227; border-left: 3px solid #c9a227; }
-    .corner.tr { top: 9mm;  right: 9mm; border-top: 3px solid #c9a227; border-right: 3px solid #c9a227; }
-    .corner.bl { bottom: 9mm; left: 9mm;  border-bottom: 3px solid #c9a227; border-left: 3px solid #c9a227; }
-    .corner.br { bottom: 9mm; right: 9mm; border-bottom: 3px solid #c9a227; border-right: 3px solid #c9a227; }
+
+    /* Moldura: barras navy no topo/esquerda e faixa dupla (ciano + navy) à direita. */
+    .bar { position: absolute; }
+    .bar-top   { top: 0; left: 0; width: 1023px; height: 10px; background: #0F3D73; }
+    .bar-left  { top: 0; left: 0; width: 10px; height: 794px; background: #0F3D73; }
+    .bar-cyan  { top: 0; left: 1074px; width: 20px; height: 794px; background: #3FB6E8; }
+    .bar-navy  { top: 0; left: 1094px; width: 29px; height: 794px; background: #0F3D73; }
+
+    /* Marca d'água (ícone da logo). O alfa de 8% e o cinza já vêm gravados no PNG:
+       o DomPDF não suporta filter: grayscale() nem opacity confiável em <img>. */
+    .watermark { position: absolute; bottom: -20px; width: 130px; height: 130px; }
+    .watermark.left  { left: -20px; }
+    .watermark.right { left: 973px; }
 
     .content {
         position: absolute;
-        top: 16mm; left: 22mm; right: 22mm;
+        top: 36px; left: 100px;
+        width: 933px;
         text-align: center;
     }
-    .logo-badge {
-        margin: 0 auto 6mm;
-    }
-    .logo-badge img {
-        height: 95px; width: auto;
-        object-fit: contain;
-    }
+
+    .logo { height: 96px; width: auto; margin-top: 6px; }
+
     .title-cert {
-        font-family: 'DejaVu Serif', serif;
-        font-size: 38pt;
-        color: #1a2238;
-        margin: 3mm 0 2mm;
+        font-family: 'PoppinsExtraBold', sans-serif;
+        font-size: 40px;
+        color: #12ABE0;
+        letter-spacing: 2px;
+        margin-top: 22px;
     }
-    .title-rule {
-        width: 70px;
-        border: none;
-        border-top: 2px solid #c9a227;
-        margin: 0 auto 7mm;
-    }
-    .lead {
-        font-size: 11pt;
-        color: #4b5563;
-        margin-bottom: 3mm;
-    }
-    .name {
-        font-family: 'DejaVu Serif', serif;
-        font-size: 30pt;
-        font-weight: bold;
-        color: #1e3a5f;
-        margin-bottom: 3mm;
-    }
-    .name-rule {
-        width: 320px;
-        border: none;
-        border-top: 1px solid #b8bcc4;
-        margin: 0 auto 7mm;
-    }
-    .body-text {
-        font-size: 11pt;
-        color: #374151;
-        line-height: 1.7;
-        max-width: 200mm;
-        margin: 0 auto;
-    }
-    .body-text .event-title { font-weight: bold; color: #1a2238; }
 
-    /* Bloco carga horária (centralizado) */
-    .meta-single {
-        margin: 9mm auto 0;
+    /* ATENÇÃO ao line-height: o DomPDF não usa o valor declarado como altura da
+       linha — ele calcula `alturaNaturalDaFonte * (line-height / font-size)`.
+       Como o Poppins tem altura natural ~1,65em, os valores abaixo já vêm
+       divididos por 1,65 para render o espaçamento do handoff.
+       Ex.: body = 19px com entrelinha 38px  ->  38 / 1,65 = 23px. */
+    .body-text {
+        margin-top: 34px;
+        font-size: 19px;
+        line-height: 23px; /* = 38px reais */
+        font-weight: bold;
+        color: #1478C4;
+        text-align: left;
+    }
+    /* Sem `height` de propósito: com box-sizing: border-box uma altura fixa
+       menor que a linha de 34px do script espreme a caixa, e o DomPDF desenha a
+       border-bottom no fim da caixa espremida — a régua saía cortando o nome ao
+       meio, com os glifos vazando por baixo. Deixando a altura automática, a
+       régua cai na base do texto e o nome se apoia sobre ela. */
+    .body-text .name {
+        display: inline-block;
+        width: 600px;
+        line-height: 34px;
+        font-family: 'MrsSaintDelafield', cursive;
+        font-weight: normal;
+        font-size: 34px;
+        color: #0F3D73;
+        border-bottom: 1.5px solid #6EC6E8;
+        padding: 0 6px 2px;
         text-align: center;
     }
-    .meta-single .label {
-        font-size: 8pt;
-        color: #6b7280;
-        letter-spacing: 2px;
-        text-transform: uppercase;
+
+    /* Blocos de baixo ancorados por `top`: o DomPDF não resolve `bottom` para
+       elementos absolutos cuja altura só é conhecida depois do layout. */
+
+    /* Assinaturas: 280px cada, separadas por 90px (total 650px, centralizado). */
+    .signatures {
+        position: absolute;
+        top: 548px; left: 100px;
+        width: 933px;
+        text-align: center;
     }
-    .meta-single .value {
-        font-size: 13pt;
+    .signatures table { margin: 0 auto; border-collapse: collapse; }
+    .signatures .block { width: 280px; text-align: center; vertical-align: bottom; }
+    .signatures .gap   { width: 90px; }
+    .sig-space { height: 70px; text-align: center; vertical-align: bottom; }
+    .sig-space img { max-height: 70px; max-width: 260px; width: auto; }
+    .sig-line {
+        border-top: 1.5px solid #6EC6E8;
+        padding-top: 8px;
+    }
+    .sig-name { font-size: 16px; line-height: 13px; font-weight: bold; color: #0F3D73; letter-spacing: 0.5px; }
+    .sig-role { font-size: 13px; line-height: 11px; font-weight: normal; color: #7FB9DE; letter-spacing: 0.5px; }
+
+    /* Selo institucional (rodapé). */
+    .institutional {
+        position: absolute;
+        top: 696px; left: 100px;
+        width: 933px;
+        text-align: center;
+    }
+    .institutional table { margin: 0 auto; border-collapse: collapse; }
+    .institutional td { vertical-align: middle; }
+    .institutional .brasao { height: 64px; width: auto; }
+    .institutional .sec {
+        text-align: left;
+        padding-left: 14px;
+        font-size: 11px;
         font-weight: bold;
-        color: #1a2238;
-        margin-top: 2mm;
+        color: #0F3D73;
+        letter-spacing: 0.3px;
+        line-height: 9px; /* = ~15px reais */
     }
 
-    /* Rodapé central */
     .validation {
         position: absolute;
-        bottom: 13mm; left: 0; right: 0;
+        top: 772px; left: 100px;
+        width: 933px;
         text-align: center;
-        font-size: 7.5pt;
-        color: #9ca3af;
+        font-size: 7px;
+        font-weight: normal;
+        color: #b9c6d4;
+        letter-spacing: 0.3px;
     }
 </style>
 </head>
 <body>
 <div class="sheet">
-    <div class="frame"></div>
-    <div class="frame-inner"></div>
+    <div class="bar bar-top"></div>
+    <div class="bar bar-left"></div>
 
-    <div class="corner tl"></div>
-    <div class="corner tr"></div>
-    <div class="corner bl"></div>
-    <div class="corner br"></div>
+    <img class="watermark left"  src="{{ public_path('assets/empreende-watermark.png') }}" alt="">
+    <img class="watermark right" src="{{ public_path('assets/empreende-watermark.png') }}" alt="">
+
+    {{-- As faixas da direita vêm depois para cobrirem a marca d'água daquele canto. --}}
+    <div class="bar bar-cyan"></div>
+    <div class="bar bar-navy"></div>
 
     <div class="content">
-        <div class="logo-badge">
-            <img src="{{ public_path('assets/empreende-vitoria-logo.png') }}" alt="Empreende Vitória — Salão do Empreendedor">
-        </div>
+        <img class="logo" src="{{ public_path('assets/empreende-logo-horizontal.png') }}" alt="Empreende Vitória — Salão do Empreendedor">
 
-        <div class="title-cert">Certificado</div>
-        <hr class="title-rule">
-
-        <div class="lead">Certificamos que</div>
-        <div class="name">{{ $participant->name }}</div>
-        <hr class="name-rule">
+        <div class="title-cert">CERTIFICADO</div>
 
         <div class="body-text">
-            @if($cpfFormatted)com CPF {{ $cpfFormatted }}, @endif concluiu com aproveitamento o curso
-            <span class="event-title">{{ $event->title }}</span>
-            {{ $datesText }}@if($event->speaker), ministrado por <span class="event-title">{{ $event->speaker->name }}</span>@endif,
-            promovido pelo Empreende Vitória — Salão do Empreendedor.
-        </div>
-
-        <div class="meta-single">
-            <div class="label">Carga Horária</div>
-            <div class="value">{{ number_format($totalHours, 0) }} horas</div>
+            CERTIFICAMOS QUE <span class="name">{{ $participant->name }}</span>,
+            @if($cpfFormatted)  INSCRITO SOB O CPF DE Nº {{ $cpfFormatted }}, @endif
+            PARTICIPOU DO {{ $courseLabel }}, REALIZADO NO EMPREENDE VITÓRIA,
+            COM A CARGA HORÁRIA DE {{ number_format($totalHours, 0, ',', '.') }} HORAS AULA,
+            @if($startDate === $endDate)
+                REALIZADO NO DIA {{ $startDate }}.
+            @else
+                COM INÍCIO NO DIA {{ $startDate }} E ENCERRAMENTO NO DIA {{ $endDate }}.
+            @endif
         </div>
     </div>
 
-    <div class="validation">
-        Código de validação: {{ $validationCode }}
+    {{-- Blocos montados no CertificateService: o diretor assina sempre e o
+         palestrante só entra quando não é o próprio diretor. --}}
+    <div class="signatures">
+        <table style="width: {{ count($signatures) * 280 + (count($signatures) - 1) * 90 }}px;">
+            <tr>
+                @foreach($signatures as $signature)
+                    @if(!$loop->first)<td class="gap"></td>@endif
+                    <td class="block">
+                        <table style="width:100%;border-collapse:collapse;">
+                            <tr>
+                                <td class="sig-space">
+                                    @if($signature['image'])
+                                        <img src="{{ $signature['image'] }}" alt="Assinatura">
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="sig-line">
+                                    <div class="sig-name">{{ $signature['name'] }}</div>
+                                    <div class="sig-role">{{ $signature['role'] }}</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                @endforeach
+            </tr>
+        </table>
     </div>
+
+    <div class="institutional">
+        <table>
+            <tr>
+                <td><img class="brasao" src="{{ public_path('assets/Brasão_vitoria.png') }}" alt="Prefeitura de Vitória"></td>
+                <td class="sec">SECRETARIA DE<br>DESENVOLVIMENTO<br>ECONÔMICO</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="validation">Código de validação: {{ $validationCode }}</div>
 </div>
 </body>
 </html>

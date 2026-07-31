@@ -93,6 +93,50 @@
                 </div>
             </div>
 
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">CPF</label>
+                <input type="text" name="cpf" id="speaker_cpf" value="{{ old('cpf') }}"
+                    class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono @error('cpf') border-red-500 @enderror"
+                    placeholder="000.000.000-00">
+                @error('cpf') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+            </div>
+
+            <div x-data="signatureUpload(null)">
+                <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Assinatura</label>
+                <div class="flex items-center gap-4 flex-wrap">
+                    <div class="w-52 h-24 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden shrink-0"
+                        style="background-image:linear-gradient(45deg,#eee 25%,transparent 25%),linear-gradient(-45deg,#eee 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eee 75%),linear-gradient(-45deg,transparent 75%,#eee 75%);background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0;">
+                        <template x-if="preview"><img :src="preview" class="max-w-full max-h-full object-contain p-1"></template>
+                        <template x-if="!preview"><span class="text-gray-400 text-xs text-center px-2">Prévia da assinatura</span></template>
+                    </div>
+                    <div>
+                        <input type="file" name="signature" accept="image/png,image/*" class="hidden" x-ref="sigInput" @change="onPick($event)">
+                        <button type="button" @click="$refs.sigInput.click()"
+                            class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition">Escolher assinatura</button>
+                        <p class="text-xs text-gray-400 mt-1">PNG com fundo transparente, até 2MB.</p>
+                    </div>
+                </div>
+                @error('signature') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+            </div>
+
+            {{-- Só administrador define o diretor. Para funcionário o campo nem
+                 é renderizado e o SpeakerController grava false. --}}
+            @if(auth()->user()->isAdmin())
+            <div class="border-t pt-6">
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="is_director" value="1" @checked(old('is_director'))
+                        class="mt-1 h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <span>
+                        <span class="block text-sm font-bold text-gray-700 uppercase tracking-wide">Diretor do Empreende Vitória</span>
+                        <span class="block text-xs text-gray-500 mt-1">
+                            A assinatura deste palestrante sai em todos os certificados emitidos.
+                            Apenas um palestrante pode ser o diretor — ao marcar este, o anterior é desmarcado.
+                        </span>
+                    </span>
+                </label>
+            </div>
+            @endif
+
             <div class="flex items-center justify-end space-x-4 border-t pt-6">
                 <a href="{{ route('speakers.index') }}" class="text-gray-500 font-semibold hover:text-gray-700">Cancelar</a>
                 <button type="submit"
@@ -118,7 +162,20 @@
 document.addEventListener('DOMContentLoaded', function () {
     const phoneEl = document.getElementById('speaker_phone');
     if (phoneEl) IMask(phoneEl, { mask: '(00)0 0000-0000' });
+    const cpfEl = document.getElementById('speaker_cpf');
+    if (cpfEl) IMask(cpfEl, { mask: '000.000.000-00' });
 });
+
+function signatureUpload(initial) {
+    return {
+        preview: initial,
+        onPick(e) {
+            const f = e.target.files[0];
+            if (!f) return;
+            this.preview = URL.createObjectURL(f);
+        }
+    };
+}
 
 function speakerPhotoCropper() {
     return {

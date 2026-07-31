@@ -60,6 +60,7 @@ class User extends Authenticatable
         return $this->hasOne(Empresa::class);
     }
 
+    public function isAdmin(): bool { return $this->roles->contains('name', 'admin'); }
     public function isFuncionario(): bool { return $this->type === 'funcionario'; }
     public function isUsuario(): bool { return $this->type === 'usuario'; }
     public function isEmpresa(): bool { return $this->type === 'empresa'; }

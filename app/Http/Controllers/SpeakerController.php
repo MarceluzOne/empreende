@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Speaker;
+use App\Rules\Cpf;
 use App\Services\AuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -24,19 +25,32 @@ class SpeakerController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name'  => 'required|string|max:255',
-            'bio'   => 'nullable|string',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:20',
-            'photo' => 'nullable|image|max:4096',
+            'name'      => 'required|string|max:255',
+            'bio'       => 'nullable|string',
+            'email'     => 'nullable|email|max:255',
+            'phone'     => 'nullable|string|max:20',
+            'cpf'       => ['nullable', 'string', 'max:14', new Cpf],
+            'photo'       => 'nullable|image|max:4096',
+            'signature'   => 'nullable|image|mimes:png,jpg,jpeg,webp|max:2048',
+            'is_director' => 'nullable|boolean',
         ]);
 
         $data = $request->only(['name', 'bio', 'email', 'phone']);
+        $data['cpf'] = $request->cpf ? preg_replace('/\D/', '', $request->cpf) : null;
+
+        // Quem é o diretor só o administrador define; o campo nem aparece para
+        // funcionário, e ignorá-lo aqui impede que um POST forjado o marque.
+        $data['is_director'] = auth()->user()->isAdmin() && $request->boolean('is_director');
+
         if ($request->hasFile('photo')) {
             $data['photo_path'] = $this->storePhoto($request->file('photo'));
         }
+        if ($request->hasFile('signature')) {
+            $data['signature_path'] = $this->storeSignature($request->file('signature'));
+        }
 
         $speaker = Speaker::create($data);
+        $this->syncDirectorFlag($speaker);
         AuditService::log('created', $speaker);
 
         $redirectTo = $request->input('redirect_to');
@@ -55,14 +69,24 @@ class SpeakerController extends Controller
     public function update(Request $request, Speaker $speaker)
     {
         $request->validate([
-            'name'  => 'required|string|max:255',
-            'bio'   => 'nullable|string',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:20',
-            'photo' => 'nullable|image|max:4096',
+            'name'      => 'required|string|max:255',
+            'bio'       => 'nullable|string',
+            'email'     => 'nullable|email|max:255',
+            'phone'     => 'nullable|string|max:20',
+            'cpf'       => ['nullable', 'string', 'max:14', new Cpf],
+            'photo'       => 'nullable|image|max:4096',
+            'signature'   => 'nullable|image|mimes:png,jpg,jpeg,webp|max:2048',
+            'is_director' => 'nullable|boolean',
         ]);
 
         $data = $request->only(['name', 'bio', 'email', 'phone']);
+        $data['cpf'] = $request->cpf ? preg_replace('/\D/', '', $request->cpf) : null;
+
+        // Fora do administrador o campo não é enviado: mantém o valor atual, para
+        // que um funcionário editando o diretor não desmarque a flag sem querer.
+        if (auth()->user()->isAdmin()) {
+            $data['is_director'] = $request->boolean('is_director');
+        }
 
         if ($request->hasFile('photo')) {
             if ($speaker->photo_path) {
@@ -70,8 +94,15 @@ class SpeakerController extends Controller
             }
             $data['photo_path'] = $this->storePhoto($request->file('photo'));
         }
+        if ($request->hasFile('signature')) {
+            if ($speaker->signature_path) {
+                Storage::disk('public')->delete($speaker->signature_path);
+            }
+            $data['signature_path'] = $this->storeSignature($request->file('signature'));
+        }
 
         $speaker->update($data);
+        $this->syncDirectorFlag($speaker);
         AuditService::log('updated', $speaker);
 
         return redirect()->route('speakers.index')->with('success', 'Palestrante atualizado com sucesso!');
@@ -85,6 +116,9 @@ class SpeakerController extends Controller
 
         if ($speaker->photo_path) {
             Storage::disk('public')->delete($speaker->photo_path);
+        }
+        if ($speaker->signature_path) {
+            Storage::disk('public')->delete($speaker->signature_path);
         }
         AuditService::log('deleted', $speaker);
         $speaker->delete();
@@ -108,6 +142,16 @@ class SpeakerController extends Controller
             'id'   => $speaker->id,
             'name' => $speaker->name,
         ], 201);
+    }
+
+    /**
+     * Garante um único diretor: ao marcar um palestrante, desmarca os demais.
+     */
+    private function syncDirectorFlag(Speaker $speaker): void
+    {
+        if ($speaker->is_director) {
+            Speaker::director()->whereKeyNot($speaker->getKey())->update(['is_director' => false]);
+        }
     }
 
     private function storePhoto(\Illuminate\Http\UploadedFile $file): string
@@ -135,6 +179,20 @@ class SpeakerController extends Controller
         Storage::disk('public')->makeDirectory('speakers');
         imagewebp($dst, Storage::disk('public')->path($filename), 85);
         imagedestroy($dst);
+
+        return $filename;
+    }
+
+    /**
+     * Guarda a assinatura como veio (sem cortar/redimensionar), para preservar
+     * a transparência do PNG.
+     */
+    private function storeSignature(\Illuminate\Http\UploadedFile $file): string
+    {
+        $ext      = strtolower($file->getClientOriginalExtension() ?: 'png');
+        $filename = 'signatures/' . Str::uuid() . '.' . $ext;
+
+        Storage::disk('public')->putFileAs('signatures', $file, basename($filename));
 
         return $filename;
     }
