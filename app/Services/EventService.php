@@ -65,6 +65,26 @@ class EventService
     }
 
     /**
+     * Aplica o status escolhido pelo admin.
+     *
+     * Voltar para "Em andamento" um evento que já passou da data é uma
+     * reabertura: sem gravar o marcador, a conclusão automática assumiria de
+     * novo no próximo carregamento da tela. Concluir ou cancelar desfaz a
+     * reabertura anterior.
+     */
+    public function changeStatus(Event $event, string $status): Event
+    {
+        $reopening = $status === 'active' && $event->hasEnded();
+
+        $event->update([
+            'status'      => $status,
+            'reopened_at' => $reopening ? now() : null,
+        ]);
+
+        return $event;
+    }
+
+    /**
      * Inscreve um participante no evento (usado pela inscrição pública e portal).
      * As regras de bloqueio (encerrado, lotado, CPF duplicado) são validadas
      * antes, no Form Request.

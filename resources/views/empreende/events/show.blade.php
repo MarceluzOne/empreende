@@ -17,8 +17,7 @@
         <div>
             <div class="flex items-center gap-3 flex-wrap">
                 <h1 class="text-2xl font-bold text-gray-900">{{ $event->title }}</h1>
-                <span class="text-xs font-bold uppercase px-2 py-1 rounded-full
-                    {{ $event->status === 'completed' ? 'bg-green-100 text-green-700' : ($event->status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700') }}">
+                <span class="text-xs font-bold uppercase px-2 py-1 rounded-full {{ $event->status_color }}">
                     {{ $event->status_label }}
                 </span>
                 <span class="text-xs font-bold uppercase px-2 py-1 rounded-full
@@ -105,12 +104,9 @@
         </div>
     </div>
 
-    {{-- Formulário de inscrição: oculto quando encerrado, concluído ou cancelado --}}
+    {{-- Formulário de inscrição: oculto quando concluído (manual/automático) ou cancelado --}}
     @if($event->registrationsClosed())
-        @php
-            $motivo = $event->status === 'completed' ? 'Evento concluído'
-                    : ($event->status === 'cancelled' ? 'Evento cancelado' : 'Evento encerrado');
-        @endphp
+        @php $motivo = $event->isCancelled() ? 'Evento cancelado' : 'Evento concluído'; @endphp
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex items-center gap-2 text-sm text-gray-600">
             <i class="fas fa-lock"></i> {{ $motivo }} — inscrições indisponíveis.
         </div>
@@ -191,7 +187,7 @@
                         <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase">WhatsApp</th>
                         <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase">E-mail</th>
                         <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase text-center">Presença</th>
-                        @if($event->status === 'completed')
+                        @if($event->isCompleted())
                             <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase text-center">Certificado</th>
                         @endif
                         <th class="px-6 py-3"></th>
@@ -243,7 +239,7 @@
                                     @endforeach
                                 </div>
                             </td>
-                            @if($event->status === 'completed')
+                            @if($event->isCompleted())
                                 <td class="px-6 py-3 text-center">
                                     @if($participant->hasFullAttendance())
                                         <a href="{{ route('events.certificate', [$event, $participant]) }}" target="_blank"
@@ -280,7 +276,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $event->status === 'completed' ? 8 : 7 }}" class="px-6 py-8 text-center text-gray-400 italic">Nenhum participante inscrito ainda.</td>
+                            <td colspan="{{ $event->isCompleted() ? 8 : 7 }}" class="px-6 py-8 text-center text-gray-400 italic">Nenhum participante inscrito ainda.</td>
                         </tr>
                     @endforelse
                 </tbody>

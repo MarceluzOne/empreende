@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreEventParticipantRequest;
 use App\Http\Requests\StoreEventRequest;
 use App\Http\Requests\UpdateEventRequest;
+use App\Http\Requests\UpdateEventStatusRequest;
 use App\Models\Event;
 use App\Models\EventParticipant;
 use App\Models\Speaker;
@@ -199,21 +200,25 @@ class EventController extends Controller
             ->with('success', 'Link de acesso regenerado. O link anterior deixou de funcionar.');
     }
 
-    public function updateStatus(Request $request, Event $event)
+    public function updateStatus(UpdateEventStatusRequest $request, Event $event)
     {
-        $request->validate(['status' => 'required|in:active,completed,cancelled']);
-        $event->update(['status' => $request->status]);
+        $this->events->changeStatus($event, $request->status);
 
-        $label = $event->fresh()->status_label;
+        $label   = $event->status_label;
+        $message = $event->isReopened()
+            ? "Evento reaberto — voltou para \"{$label}\" e os certificados foram suspensos."
+            : "Status do evento atualizado para \"{$label}\".";
 
-        AuditService::log('updated', $event, null, "Alterou o status do evento {$event->title} para \"{$label}\"");
+        AuditService::log('updated', $event, null, $event->isReopened()
+            ? "Reabriu o evento {$event->title}, que estava concluído pela data"
+            : "Alterou o status do evento {$event->title} para \"{$label}\"");
 
-        return redirect()->back()->with("success", "Status do evento atualizado para \"{$label}\".");
+        return redirect()->back()->with('success', $message);
     }
 
     public function certificate(Event $event, EventParticipant $participant, CertificateService $certificates)
     {
-        abort_if($event->status !== 'completed', 403, 'Certificados disponíveis apenas para eventos concluídos.');
+        abort_unless($event->isCompleted(), 403, 'Certificados disponíveis apenas para eventos concluídos.');
         abort_if($participant->event_id !== $event->id, 404);
         abort_unless($participant->hasFullAttendance(), 403, 'Certificado disponível apenas para quem teve presença em todos os dias do evento.');
 

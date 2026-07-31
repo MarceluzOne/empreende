@@ -24,6 +24,7 @@ class Event extends Model
         'type',
         'extra_dates',
         'status',
+        'reopened_at',
         'image_path',
         'visibility',
         'share_token',
@@ -32,6 +33,7 @@ class Event extends Model
     protected $casts = [
         'date'        => 'date',
         'extra_dates' => 'array',
+        'reopened_at' => 'datetime',
     ];
 
     protected static function booted(): void
@@ -111,39 +113,80 @@ class Event extends Model
     }
 
     /**
+     * Momento em que o evento termina: última data + horário de início + duração.
+     */
+    public function endsAt(): ?Carbon
+    {
+        $dates = $this->allDates();
+        if (empty($dates)) {
+            return null;
+        }
+
+        // Datas em 'Y-m-d' — max() coincide com a ordem cronológica.
+        return Carbon::parse(max($dates).' '.$this->start_time)
+            ->addMinutes((int) $this->duration_minutes);
+    }
+
+    /**
      * Indica se o evento já terminou (última data + horário de término no passado).
      * Usado para derivar o status automaticamente, sem depender de cron/agendador.
      */
     public function hasEnded(): bool
     {
-        $dates = $this->allDates();
-        if (empty($dates)) {
-            return false;
-        }
+        return (bool) $this->endsAt()?->isPast();
+    }
 
-        // Datas em 'Y-m-d' — max() coincide com a ordem cronológica.
-        $lastDate = max($dates);
-
-        return Carbon::parse($lastDate.' '.$this->start_time)
-            ->addMinutes((int) $this->duration_minutes)
-            ->isPast();
+    public function isCancelled(): bool
+    {
+        return $this->status === 'cancelled';
     }
 
     /**
-     * Inscrições fechadas: evento concluído, cancelado ou já encerrado por data.
+     * Reaberto: o admin devolveu o evento para "Em andamento" depois de ele já
+     * ter encerrado pela data. A reabertura só vale para o encerramento que ela
+     * desfez — se o evento for remarcado para uma data posterior, `reopened_at`
+     * fica no passado em relação ao novo fim e a conclusão automática volta a
+     * valer, sem precisar limpar a coluna.
+     */
+    public function isReopened(): bool
+    {
+        $endsAt = $this->endsAt();
+
+        return $this->reopened_at !== null && $endsAt !== null && $this->reopened_at->gte($endsAt);
+    }
+
+    /**
+     * Evento concluído: marcado manualmente como 'completed' OU encerrado
+     * automaticamente pela data/horário. Cancelado e reaberto nunca contam
+     * como concluído.
+     *
+     * É esta a condição que libera a emissão de certificados — usar sempre este
+     * método no lugar de comparar `status === 'completed'`, senão os eventos
+     * concluídos automaticamente ficam sem certificado.
+     */
+    public function isCompleted(): bool
+    {
+        if ($this->status === 'completed') {
+            return true;
+        }
+
+        return !$this->isCancelled() && !$this->isReopened() && $this->hasEnded();
+    }
+
+    /**
+     * Inscrições fechadas: evento concluído (manual ou automático) ou cancelado.
      */
     public function registrationsClosed(): bool
     {
-        return in_array($this->status, ['completed', 'cancelled'], true) || $this->hasEnded();
+        return $this->isCompleted() || $this->isCancelled();
     }
 
     public function getStatusLabelAttribute(): string
     {
         return match (true) {
-            $this->status === 'cancelled' => 'Cancelado',
-            $this->status === 'completed' => 'Concluído',
-            $this->hasEnded()             => 'Encerrado',
-            default                       => 'Em andamento',
+            $this->isCancelled() => 'Cancelado',
+            $this->isCompleted() => 'Concluído',
+            default              => 'Em andamento',
         };
     }
 
@@ -153,10 +196,9 @@ class Event extends Model
     public function getStatusColorAttribute(): string
     {
         return match (true) {
-            $this->status === 'cancelled' => 'bg-red-100 text-red-700',
-            $this->status === 'completed' => 'bg-green-100 text-green-700',
-            $this->hasEnded()             => 'bg-gray-100 text-gray-600',
-            default                       => 'bg-blue-100 text-blue-700',
+            $this->isCancelled() => 'bg-red-100 text-red-700',
+            $this->isCompleted() => 'bg-green-100 text-green-700',
+            default              => 'bg-blue-100 text-blue-700',
         };
     }
 

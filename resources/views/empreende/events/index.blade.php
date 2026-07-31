@@ -105,20 +105,28 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-center">
-                                @php $autoEnded = $event->status === 'active' && $event->hasEnded(); @endphp
-                                @if(auth()->user()->roles->contains('name', 'admin') && ! $autoEnded)
+                                @php
+                                    // Status efetivo: evento concluído pela data aparece como "Concluído"
+                                    // mesmo com 'active' gravado. Escolher "Em andamento" aqui o reabre.
+                                    $autoEnded = $event->status !== 'completed' && $event->isCompleted();
+                                    $selected  = $event->isCancelled() ? 'cancelled' : ($event->isCompleted() ? 'completed' : 'active');
+                                    $hint      = $autoEnded ? 'Concluído automaticamente (data/horário já passou). Selecione "Em andamento" para reabrir.'
+                                               : ($event->isReopened() ? 'Reaberto manualmente em '.$event->reopened_at->format('d/m/Y H:i') : '');
+                                @endphp
+                                @if(auth()->user()->roles->contains('name', 'admin'))
                                     <form action="{{ route('events.status', $event) }}" method="POST">
                                         @csrf @method('PATCH')
                                         <select name="status" onchange="this.form.submit()"
+                                            @if($hint) title="{{ $hint }}" @endif
                                             class="text-xs font-semibold rounded-full px-2 py-1 border-0 outline-none cursor-pointer {{ $event->status_color }}">
-                                            <option value="active"    {{ $event->status === 'active'    ? 'selected' : '' }}>Em andamento</option>
-                                            <option value="completed" {{ $event->status === 'completed' ? 'selected' : '' }}>Concluído</option>
-                                            <option value="cancelled" {{ $event->status === 'cancelled' ? 'selected' : '' }}>Cancelado</option>
+                                            <option value="active"    {{ $selected === 'active'    ? 'selected' : '' }}>Em andamento</option>
+                                            <option value="completed" {{ $selected === 'completed' ? 'selected' : '' }}>Concluído</option>
+                                            <option value="cancelled" {{ $selected === 'cancelled' ? 'selected' : '' }}>Cancelado</option>
                                         </select>
                                     </form>
                                 @else
                                     <span class="text-[10px] font-bold uppercase px-2 py-1 rounded-full {{ $event->status_color }}"
-                                        @if($autoEnded) title="Encerrado automaticamente (data/horário já passou)" @endif>
+                                        @if($hint) title="{{ $hint }}" @endif>
                                         {{ $event->status_label }}
                                     </span>
                                 @endif

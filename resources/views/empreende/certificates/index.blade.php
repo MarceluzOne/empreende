@@ -89,7 +89,7 @@
               $periodo = count($dates) > 1
                   ? \Carbon\Carbon::parse($dates[0])->format('d/m/Y').' a '.\Carbon\Carbon::parse(end($dates))->format('d/m/Y')
                   : ($event ? $event->date->format('d/m/Y') : '—');
-              $completed = $event && $event->status === 'completed';
+              $completed = $event && $event->isCompleted();
               $fullAttendance = $completed && $p->hasFullAttendance();
             @endphp
             <div class="cert-item">

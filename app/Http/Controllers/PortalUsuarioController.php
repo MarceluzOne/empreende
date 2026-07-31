@@ -248,7 +248,7 @@ class PortalUsuarioController extends Controller
      */
     public function certificado(Event $event, \App\Services\CertificateService $certificates)
     {
-        abort_if($event->status !== 'completed', 403, 'Certificado disponível apenas para eventos concluídos.');
+        abort_unless($event->isCompleted(), 403, 'Certificado disponível apenas para eventos concluídos.');
 
         $participant = $this->findParticipant($event);
 

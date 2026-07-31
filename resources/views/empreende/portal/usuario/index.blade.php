@@ -463,7 +463,8 @@
                 $ev = $participante->event;
                 $datasEv = $ev->datesLabel();
                 $vagasEv = $ev->availableSpots();
-                $certDisponivel = $ev->status === 'completed' && $participante->hasFullAttendance();
+                $eventoConcluido = $ev->isCompleted();
+                $certDisponivel  = $eventoConcluido && $participante->hasFullAttendance();
               @endphp
               <div class="card" style="cursor:pointer"
                 onclick="abrirDetalheEvento(this)"
@@ -478,7 +479,7 @@
                 data-speaker-bio="{{ e($ev->speaker->bio ?? '') }}"
                 data-image="{{ $ev->image_url ?? '' }}"
                 data-inscrito="1"
-                data-status="{{ $ev->status }}"
+                data-status="{{ $eventoConcluido ? 'completed' : $ev->status }}"
                 data-cert-disponivel="{{ $certDisponivel ? '1' : '0' }}"
                 data-cancelar-url="{{ route('portal.usuario.eventos.cancelar', $ev) }}"
                 data-certificado-url="{{ route('portal.usuario.eventos.certificado', $ev) }}">
@@ -491,7 +492,7 @@
                   <span><i class="fas fa-user-check"></i> Inscrito como: {{ $participante->name }}</span>
                 </div>
                 <div class="card-actions" onclick="event.stopPropagation()">
-                  @if($ev->status === 'completed')
+                  @if($eventoConcluido)
                     @if($certDisponivel)
                       <a href="{{ route('portal.usuario.eventos.certificado', $ev) }}" class="btn-sm btn-yellow" target="_blank">
                         <i class="fas fa-certificate"></i> Certificado

@@ -40,7 +40,7 @@ class PublicCertificateController extends Controller
     {
         $event = $participant->event;
 
-        abort_if(!$event || $event->status !== 'completed', 403, 'Certificado disponível apenas para eventos concluídos.');
+        abort_if(!$event || !$event->isCompleted(), 403, 'Certificado disponível apenas para eventos concluídos.');
         abort_unless($participant->hasFullAttendance(), 403, 'Certificado disponível apenas para quem teve presença em todos os dias do evento.');
 
         return $certificates->pdf($event, $participant)->download($certificates->filename($participant));

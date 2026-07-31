@@ -15,7 +15,7 @@
       <div class="month">{{ $event->date->translatedFormat('M') }}</div>
       <div class="day">{{ $event->date->format('d') }}</div>
     </div>
-    @if($event->status === 'completed')
+    @if($event->isCompleted())
       <div class="status-badge status-badge--completed"><i class="fas fa-check-circle"></i> Realizado</div>
     @endif
   </div>
@@ -47,9 +47,9 @@
       </div>
     </div>
     <div class="event-card__footer">
-      @if($event->status === 'completed')
+      @if($event->registrationsClosed())
         <span class="spots-info">{{ $event->participants->count() }} inscritos</span>
-        <span class="btn-inscricao btn-inscricao--disabled">Encerrado</span>
+        <span class="btn-inscricao btn-inscricao--disabled">Inscrições encerradas</span>
       @elseif($event->isFull())
         <span class="spots-info spots-full">Esgotado · {{ $event->max_capacity }} inscritos</span>
         <span class="btn-inscricao btn-inscricao--disabled">Esgotado</span>
