@@ -131,24 +131,7 @@
     .sig-role { font-size: 13px; line-height: 11px; font-weight: normal; color: #7FB9DE; letter-spacing: 0.5px; }
 
     /* Selo institucional (rodapé). */
-    .institutional {
-        position: absolute;
-        top: 696px; left: 100px;
-        width: 933px;
-        text-align: center;
-    }
-    .institutional table { margin: 0 auto; border-collapse: collapse; }
-    .institutional td { vertical-align: middle; }
-    .institutional .brasao { height: 64px; width: auto; }
-    .institutional .sec {
-        text-align: left;
-        padding-left: 14px;
-        font-size: 11px;
-        font-weight: bold;
-        color: #0F3D73;
-        letter-spacing: 0.3px;
-        line-height: 9px; /* = ~15px reais */
-    }
+    
 
     .validation {
         position: absolute;
@@ -221,14 +204,7 @@
         </table>
     </div>
 
-    <div class="institutional">
-        <table>
-            <tr>
-                <td><img class="brasao" src="{{ public_path('assets/Brasão_vitoria.png') }}" alt="Prefeitura de Vitória"></td>
-                <td class="sec">SECRETARIA DE<br>DESENVOLVIMENTO<br>ECONÔMICO</td>
-            </tr>
-        </table>
-    </div>
+
 
     <div class="validation">Código de validação: {{ $validationCode }}</div>
 </div>
