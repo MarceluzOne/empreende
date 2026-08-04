@@ -85,6 +85,28 @@ class EventService
     }
 
     /**
+     * Alterna a presença do participante em uma data: a existência da linha em
+     * event_attendances significa "presente naquele dia".
+     *
+     * @return bool presença DEPOIS da alternância
+     */
+    public function toggleAttendance(EventParticipant $participant, string $date): bool
+    {
+        $existing = $participant->attendances()->whereDate('event_date', $date)->first();
+
+        if ($existing) {
+            $existing->delete();
+        } else {
+            $participant->attendances()->create(['event_date' => $date, 'checked_in_at' => now()]);
+        }
+
+        // A relação já carregada ficaria desatualizada para hasFullAttendance().
+        $participant->unsetRelation('attendances');
+
+        return !$existing;
+    }
+
+    /**
      * Inscreve um participante no evento (usado pela inscrição pública e portal).
      * As regras de bloqueio (encerrado, lotado, CPF duplicado) são validadas
      * antes, no Form Request.

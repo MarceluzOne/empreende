@@ -202,7 +202,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse($event->participants as $i => $participant)
-                        <tr class="hover:bg-gray-50">
+                        <tr class="hover:bg-gray-50" data-participant-row>
                             <td class="px-6 py-3 text-sm text-gray-400">{{ $i + 1 }}</td>
                             <td class="px-6 py-3 text-sm font-semibold text-gray-800">{{ $participant->name }}</td>
                             <td class="px-6 py-3 text-sm font-mono text-gray-600">
@@ -231,11 +231,13 @@
                                 <div class="flex flex-wrap gap-1 justify-center">
                                     @foreach($allDates as $d)
                                         @php $isPresent = in_array($d, $present, true); @endphp
-                                        <form action="{{ route('events.participants.attendance', [$event, $participant]) }}" method="POST" class="inline">
+                                        <form action="{{ route('events.participants.attendance', [$event, $participant]) }}" method="POST"
+                                              class="inline" data-attendance-form
+                                              data-label="{{ \Carbon\Carbon::parse($d)->format('d/m/Y') }}">
                                             @csrf
                                             @method('PATCH')
                                             <input type="hidden" name="date" value="{{ $d }}">
-                                            <button type="submit"
+                                            <button type="submit" data-attendance-btn
                                                 title="{{ \Carbon\Carbon::parse($d)->format('d/m/Y') }} — {{ $isPresent ? 'presente (clique para remover)' : 'ausente (clique para confirmar)' }}"
                                                 class="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full transition
                                                 {{ $isPresent ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-gray-100 text-gray-500 hover:bg-gray-200' }}">
@@ -247,7 +249,7 @@
                                 </div>
                             </td>
                             @if($event->isCompleted())
-                                <td class="px-6 py-3 text-center">
+                                <td class="px-6 py-3 text-center" data-cert-cell>
                                     @if($participant->hasFullAttendance())
                                         <a href="{{ route('events.certificate', [$event, $participant]) }}" target="_blank"
                                             title="Visualizar certificado"
@@ -461,6 +463,72 @@ function openDeleteModal(url, name) {
 
 document.getElementById('modal-delete-participant').addEventListener('click', function (e) {
     if (e.target === this) this.style.display = 'none';
+});
+
+/* Presença sem recarregar a página: o clique era um POST + redirect, o que
+   devolvia a tela no topo a cada marcação. Aqui o form é enviado por fetch e
+   só o botão (e a célula do certificado) mudam de estado. Sem JS, o submit
+   nativo continua funcionando pelo redirect do controller. */
+const PRESENT_CLASSES = ['bg-emerald-100', 'text-emerald-700', 'hover:bg-emerald-200'];
+const ABSENT_CLASSES  = ['bg-gray-100', 'text-gray-500', 'hover:bg-gray-200'];
+
+function paintAttendanceButton(btn, present, dateLabel) {
+    btn.classList.remove(...(present ? ABSENT_CLASSES : PRESENT_CLASSES));
+    btn.classList.add(...(present ? PRESENT_CLASSES : ABSENT_CLASSES));
+
+    const icon = btn.querySelector('i');
+    icon.classList.toggle('fa-check', present);
+    icon.classList.toggle('fa-clock', !present);
+
+    btn.title = dateLabel + ' — ' + (present
+        ? 'presente (clique para remover)'
+        : 'ausente (clique para confirmar)');
+}
+
+function updateCertificateCell(row, data) {
+    const cell = row.querySelector('[data-cert-cell]');
+    if (!cell) return; // evento ainda não concluído: a coluna nem existe
+
+    cell.innerHTML = data.certificate_url
+        ? '<a href="' + data.certificate_url + '" target="_blank" title="Visualizar certificado"' +
+          ' class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-800 transition">' +
+          '<i class="fas fa-certificate"></i><span class="hidden md:inline">Certificado</span></a>'
+        : '<span class="text-xs text-gray-400 italic">Presença incompleta</span>';
+}
+
+const attendanceToast = Swal.mixin({
+    toast: true, position: 'top-end', showConfirmButton: false, timer: 2200, timerProgressBar: true
+});
+
+document.querySelectorAll('[data-attendance-form]').forEach(function (form) {
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const btn = form.querySelector('[data-attendance-btn]');
+        if (btn.disabled) return;
+        btn.disabled = true;
+
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function (res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+        })
+        .then(function (data) {
+            paintAttendanceButton(btn, data.present, form.dataset.label);
+            updateCertificateCell(form.closest('[data-participant-row]'), data);
+            attendanceToast.fire({ icon: 'success', title: data.message });
+        })
+        .catch(function () {
+            // Falhou o caminho assíncrono: refaz pelo submit nativo, que
+            // recarrega mas mostra o erro real em vez de silenciar a ação.
+            form.submit();
+        })
+        .finally(function () { btn.disabled = false; });
+    });
 });
 
 </script>

@@ -174,17 +174,26 @@ class EventController extends Controller
         $date = $request->input('date');
         abort_unless(in_array($date, $event->allDates(), true), 422, 'Data inválida para este evento.');
 
-        $existing = $participant->attendances()->whereDate('event_date', $date)->first();
+        $present   = $this->events->toggleAttendance($participant, $date);
         $dateLabel = \Carbon\Carbon::parse($date)->format('d/m/Y');
+        $msg       = $present ? 'Presença confirmada em '.$dateLabel.'.' : 'Presença removida em '.$dateLabel.'.';
+        $verb      = $present ? 'Confirmou' : 'Removeu';
 
-        if ($existing) {
-            $existing->delete();
-            $msg = 'Presença removida em '.$dateLabel.'.';
-            AuditService::log('updated', $participant, null, "Removeu a presença de {$participant->name} em {$dateLabel} — evento {$event->title}");
-        } else {
-            $participant->attendances()->create(['event_date' => $date, 'checked_in_at' => now()]);
-            $msg = 'Presença confirmada em '.$dateLabel.'.';
-            AuditService::log('updated', $participant, null, "Confirmou a presença de {$participant->name} em {$dateLabel} — evento {$event->title}");
+        AuditService::log('updated', $participant, null, "{$verb} a presença de {$participant->name} em {$dateLabel} — evento {$event->title}");
+
+        // A tela do evento marca presença via fetch, para não recarregar a
+        // página e perder a posição da rolagem. Sem JS, o form cai no redirect.
+        if ($request->wantsJson()) {
+            $full = $participant->hasFullAttendance();
+
+            return response()->json([
+                'present'         => $present,
+                'message'         => $msg,
+                'full'            => $full,
+                'certificate_url' => $full && $event->isCompleted()
+                    ? route('events.certificate', [$event, $participant])
+                    : null,
+            ]);
         }
 
         return redirect()->route('events.show', $event)->with('success', $msg);
