@@ -53,6 +53,13 @@
             @if($event->speaker->email)
                 <p class="text-xs text-gray-500 mt-1">{{ $event->speaker->email }}</p>
             @endif
+            @if($event->isCompleted())
+                <a href="{{ route('events.speaker-certificate', $event) }}" target="_blank"
+                    title="Certificado de quem ministrou o curso"
+                    class="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-emerald-600 hover:text-emerald-800 transition">
+                    <i class="fas fa-certificate"></i> Certificado do palestrante
+                </a>
+            @endif
         </div>
         <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
             <p class="text-xs text-gray-500 uppercase font-bold mb-1">Vagas</p>

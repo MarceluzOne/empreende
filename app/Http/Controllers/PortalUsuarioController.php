@@ -254,7 +254,7 @@ class PortalUsuarioController extends Controller
 
         abort_unless($participant->hasFullAttendance(), 403, 'Certificado disponível apenas para quem teve presença em todos os dias do evento.');
 
-        return $certificates->pdf($event, $participant)->stream($certificates->filename($participant));
+        return $certificates->pdf($event, $participant)->stream($certificates->filename($participant->name));
     }
 
     /**

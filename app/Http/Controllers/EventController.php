@@ -223,7 +223,20 @@ class EventController extends Controller
         abort_unless($participant->hasFullAttendance(), 403, 'Certificado disponível apenas para quem teve presença em todos os dias do evento.');
 
         // stream = exibe o PDF inline no navegador (visualizar, não baixar).
-        return $certificates->pdf($event, $participant)->stream($certificates->filename($participant));
+        return $certificates->pdf($event, $participant)->stream($certificates->filename($participant->name));
+    }
+
+    /**
+     * Certificado do palestrante do evento: mesmo layout, assinado só pelo
+     * diretor e com o texto de quem ministrou. Sem presença a conferir.
+     */
+    public function speakerCertificate(Event $event, CertificateService $certificates)
+    {
+        abort_unless($event->isCompleted(), 403, 'Certificados disponíveis apenas para eventos concluídos.');
+        abort_unless($event->speaker, 404, 'Este evento não tem palestrante cadastrado.');
+
+        return $certificates->speakerPdf($event, $event->speaker)
+            ->stream($certificates->filename($event->speaker->name));
     }
 
     public function pdf(Event $event)

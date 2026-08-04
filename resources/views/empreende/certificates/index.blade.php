@@ -38,6 +38,10 @@
   .cert-item{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-md);
     padding:18px 20px;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap}
   .cert-info h3{font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:800;margin-bottom:6px}
+  .role-tag{display:inline-flex;align-items:center;gap:5px;vertical-align:middle;margin-left:8px;
+    background:var(--brand-soft);color:var(--brand-deep);border-radius:999px;padding:3px 10px;
+    font-family:'Lato',sans-serif;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+  .role-tag--speaker{background:#fef3c7;color:#92400e}
   .cert-metas{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--ink-soft)}
   .cert-metas span{display:inline-flex;align-items:center;gap:6px}
   .cert-metas i{color:var(--brand);width:14px;text-align:center}
@@ -60,7 +64,7 @@
 
   <div class="wrap">
     <h1 class="headline">Meus certificados</h1>
-    <p class="subline">Informe o CPF usado na inscrição para consultar e baixar seus certificados.</p>
+    <p class="subline">Informe o CPF para consultar e baixar seus certificados — de participação ou de palestrante.</p>
 
     <div class="card">
       <form action="{{ route('public.certificates') }}" method="GET" class="form">
@@ -78,38 +82,43 @@
       @if($results->isEmpty())
         <div class="empty">
           <i class="fas fa-folder-open"></i>
-          Nenhuma participação encontrada para este CPF.
+          Nenhum evento encontrado para este CPF, como participante ou palestrante.
         </div>
       @else
         <div class="results">
-          @foreach($results as $p)
+          @foreach($results as $item)
             @php
-              $event = $p->event;
-              $dates = $event ? $event->allDates() : [];
+              $event = $item['event'];
+              $dates = $event->allDates();
               $periodo = count($dates) > 1
                   ? \Carbon\Carbon::parse($dates[0])->format('d/m/Y').' a '.\Carbon\Carbon::parse(end($dates))->format('d/m/Y')
-                  : ($event ? $event->date->format('d/m/Y') : '—');
-              $completed = $event && $event->isCompleted();
-              $fullAttendance = $completed && $p->hasFullAttendance();
+                  : $event->date->format('d/m/Y');
+              $isSpeaker = $item['kind'] === 'speaker';
+              $downloadUrl = $isSpeaker
+                  ? route('public.certificates.speaker', $event)
+                  : route('public.certificates.download', $item['participant']);
             @endphp
             <div class="cert-item">
               <div class="cert-info">
-                <h3>{{ $event->title ?? 'Evento removido' }}</h3>
+                <h3>
+                  {{ $event->title }}
+                  <span class="role-tag {{ $isSpeaker ? 'role-tag--speaker' : '' }}">
+                    <i class="fas {{ $isSpeaker ? 'fa-chalkboard-user' : 'fa-user-check' }}"></i> {{ $item['role'] }}
+                  </span>
+                </h3>
                 <div class="cert-metas">
                   <span><i class="fas fa-calendar"></i> {{ $periodo }}</span>
-                  @if($event && $event->speaker)
+                  @if($event->speaker && !$isSpeaker)
                     <span><i class="fas fa-user"></i> {{ $event->speaker->name }}</span>
                   @endif
-                  @if($event)
-                    <span><i class="fas fa-clock"></i> {{ number_format($event->totalHours(), 0) }}h</span>
-                  @endif
+                  <span><i class="fas fa-clock"></i> {{ number_format($event->totalHours(), 0) }}h</span>
                 </div>
               </div>
-              @if($fullAttendance)
-                <a href="{{ route('public.certificates.download', $p) }}" class="btn-dl">
+              @if($item['available'])
+                <a href="{{ $downloadUrl }}" class="btn-dl">
                   <i class="fas fa-download"></i> Baixar certificado
                 </a>
-              @elseif(!$completed)
+              @elseif($item['blocked'] === 'waiting')
                 <span class="status-tag status-tag--wait"><i class="fas fa-hourglass-half"></i> Aguardando conclusão do evento</span>
               @else
                 <span class="status-tag status-tag--miss"><i class="fas fa-exclamation-circle"></i> Presença incompleta</span>

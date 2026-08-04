@@ -56,6 +56,7 @@ Route::get('/eventos/convite/{event:share_token}', [PublicEventController::class
 Route::post('/eventos/convite/{event:share_token}', [PublicEventController::class, 'store'])->name('public.events.register.store');
 Route::get('/certificados', [PublicCertificateController::class, 'index'])->middleware('throttle:20,1')->name('public.certificates');
 Route::get('/certificados/{participant}/baixar', [PublicCertificateController::class, 'download'])->name('public.certificates.download');
+Route::get('/certificados/palestrante/{event}/baixar', [PublicCertificateController::class, 'downloadSpeaker'])->name('public.certificates.speaker');
 Route::get('/servicos', [LandingController::class, 'servicos'])->name('servicos');
 Route::get('/empresas-locais', [LandingController::class, 'empresasLocais'])->name('empresas-locais');
 
@@ -149,6 +150,7 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->prefix('portal/funci
     Route::patch('eventos/{event}/status', [EventController::class, 'updateStatus'])->name('events.status');
     Route::patch('eventos/{event}/link', [EventController::class, 'regenerateLink'])->name('events.link.regenerate');
     Route::get('eventos/{event}/participantes/{participant}/certificado', [EventController::class, 'certificate'])->name('events.certificate');
+    Route::get('eventos/{event}/palestrante/certificado', [EventController::class, 'speakerCertificate'])->name('events.speaker-certificate');
 
     Route::resource('palestrantes', SpeakerController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy'])
         ->names('speakers')->parameters(['palestrantes' => 'speaker']);

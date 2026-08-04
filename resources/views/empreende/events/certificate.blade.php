@@ -162,10 +162,14 @@
 
         <div class="title-cert">CERTIFICADO</div>
 
+        {{-- $action e $roleClause vêm do CertificateService: o participante
+             "PARTICIPOU DO" curso; o palestrante "MINISTROU O" curso, com a
+             cláusula extra registrando a condição. --}}
         <div class="body-text">
-            CERTIFICAMOS QUE <span class="name">{{ $participant->name }}</span>,
+            CERTIFICAMOS QUE <span class="name">{{ $recipientName }}</span>,
             @if($cpfFormatted)  INSCRITO SOB O CPF DE Nº {{ $cpfFormatted }}, @endif
-            PARTICIPOU DO {{ $courseLabel }}, REALIZADO NO EMPREENDE VITÓRIA,
+            {{ $action }} {{ $courseLabel }}, REALIZADO NO EMPREENDE VITÓRIA,
+            @if($roleClause) {{ $roleClause }}, @endif
             COM A CARGA HORÁRIA DE {{ number_format($totalHours, 0, ',', '.') }} HORAS AULA,
             @if($startDate === $endDate)
                 REALIZADO NO DIA {{ $startDate }}.
@@ -175,8 +179,9 @@
         </div>
     </div>
 
-    {{-- Blocos montados no CertificateService: o diretor assina sempre e o
-         palestrante só entra quando não é o próprio diretor. --}}
+    {{-- Blocos montados no CertificateService: o diretor assina sempre; o
+         palestrante só entra no certificado de participação, e ainda assim
+         apenas quando não é o próprio diretor. --}}
     <div class="signatures">
         <table style="width: {{ count($signatures) * 280 + (count($signatures) - 1) * 90 }}px;">
             <tr>
