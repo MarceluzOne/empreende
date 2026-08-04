@@ -366,7 +366,8 @@
                 </label>
                 {{-- Input hidden para o calendário ler resource_type --}}
                 <input type="hidden" name="resource_type" value="auditorio">
-                @include('bookings.partials._calendar')
+                {{-- Eventos podem ocupar o auditório além do expediente, até as 18h --}}
+                @include('bookings.partials._calendar', ['endHour' => 18])
             </div>
 
             {{-- Hidden inputs para submissão --}}

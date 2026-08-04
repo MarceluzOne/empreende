@@ -230,10 +230,12 @@
                     <span x-text="type === 'single' ? 'clique em um dia' : (type === 'consecutive' ? 'clique no início e depois no fim' : 'clique para adicionar dias')"></span>
                 </label>
                 <input type="hidden" name="resource_type" value="auditorio">
+                {{-- Eventos podem ocupar o auditório além do expediente, até as 18h --}}
                 @include('bookings.partials._calendar', [
                     'preselectedDate'  => $preDate,
                     'preselectedStart' => $preStart,
                     'preselectedEnd'   => $preEnd,
+                    'endHour'          => 18,
                 ])
             </div>
 

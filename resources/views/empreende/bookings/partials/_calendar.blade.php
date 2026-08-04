@@ -4,6 +4,8 @@
       $preselectedDate  (string Y-m-d) — pré-seleciona data no modo edição
       $preselectedStart (string H:i)   — pré-seleciona horário início
       $preselectedEnd   (string H:i)   — pré-seleciona horário fim
+      $startHour        (int)          — primeira hora da grade (padrão 7)
+      $endHour          (int)          — hora limite da grade (padrão 15; eventos usam 18)
 --}}
 <div
     x-data="bookingCalendar(
@@ -13,7 +15,8 @@
         '{{ $calendarFetchUrl  ?? '' }}',
         {{ isset($singleSlot) && $singleSlot ? 'true' : 'false' }},
         '{{ $minDate ?? '' }}',
-        {{ (int) ($startHour ?? 7) }}
+        {{ (int) ($startHour ?? 7) }},
+        {{ (int) ($endHour ?? 15) }}
     )"
     x-init="init()"
     @resource-changed.window="onResourceChanged($event.detail.value)"
@@ -105,7 +108,7 @@
 
 <script>
 document.addEventListener('alpine:init', () => {
-    Alpine.data('bookingCalendar', (preselectedDate = '', preselectedStart = '', preselectedEnd = '', fetchUrl = '', singleSlot = false, minDate = '', startHour = 7) => ({
+    Alpine.data('bookingCalendar', (preselectedDate = '', preselectedStart = '', preselectedEnd = '', fetchUrl = '', singleSlot = false, minDate = '', startHour = 7, endHour = 15) => ({
         calYear:  new Date().getFullYear(),
         calMonth: new Date().getMonth() + 1,
         bookingsByDate: {},
@@ -202,8 +205,8 @@ document.addEventListener('alpine:init', () => {
         },
 
         isCoveredFully(slots) {
-            const workStart = 7 * 60;  // 07:00
-            const workEnd   = 15 * 60; // 15:00
+            const workStart = startHour * 60;
+            const workEnd   = endHour * 60;
             // Mescla ranges e verifica cobertura total
             const merged = this.mergeRanges(
                 slots.filter(s => s.end).map(s => [this.toMinutes(s.start), this.toMinutes(s.end)])
@@ -270,7 +273,7 @@ document.addEventListener('alpine:init', () => {
 
         buildTimeSlots(dateStr) {
             const slots = [];
-            for (let h = startHour; h < 15; h++) {
+            for (let h = startHour; h < endHour; h++) {
                 for (let m = 0; m < 60; m += 30) {
                     const time = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
                     slots.push({ time, occupied: this.isOccupied(dateStr, time) });
