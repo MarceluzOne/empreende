@@ -465,6 +465,14 @@
             <input type="text" id="reg_whatsapp" name="whatsapp" placeholder="(81) 99999-9999" required>
           </div>
           <div class="form-group full">
+            <label for="reg_cpf">CPF *</label>
+            <input type="text" id="reg_cpf" name="cpf" placeholder="000.000.000-00" inputmode="numeric" maxlength="14" required>
+            <span style="font-size:12px;color:var(--muted)">
+              <i class="fas fa-lock" style="margin-right:4px"></i>
+              Usado apenas para vincular este cadastro à sua conta e permitir que você mesmo edite depois. Não aparece no site.
+            </span>
+          </div>
+          <div class="form-group full">
             <label for="reg_instagram">Instagram <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
             <input type="text" id="reg_instagram" name="instagram" placeholder="@seuinstagram">
           </div>
@@ -550,6 +558,16 @@
     if (v.length > 6) v = '(' + v.slice(0,2) + ') ' + v.slice(2,7) + '-' + v.slice(7);
     else if (v.length > 2) v = '(' + v.slice(0,2) + ') ' + v.slice(2);
     else if (v.length > 0) v = '(' + v;
+    e.target.value = v;
+  });
+
+  // CPF mask 000.000.000-00
+  const cpfInput = document.getElementById('reg_cpf');
+  cpfInput && cpfInput.addEventListener('input', function(e) {
+    let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+    if (v.length > 9)      v = v.slice(0,3) + '.' + v.slice(3,6) + '.' + v.slice(6,9) + '-' + v.slice(9);
+    else if (v.length > 6) v = v.slice(0,3) + '.' + v.slice(3,6) + '.' + v.slice(6);
+    else if (v.length > 3) v = v.slice(0,3) + '.' + v.slice(3);
     e.target.value = v;
   });
 
@@ -690,6 +708,7 @@
       provider_type:   'individual',
       service_title:   document.getElementById('reg_service_title').value,
       email:           document.getElementById('reg_email').value,
+      cpf:             document.getElementById('reg_cpf').value,
       whatsapp:        document.getElementById('reg_whatsapp').value,
       instagram:       document.getElementById('reg_instagram').value || null,
       optional_info:   document.getElementById('reg_optional_info').value || null,

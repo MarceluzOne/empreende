@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ServiceProvider;
+use App\Rules\Cnpj;
+use App\Rules\Cpf;
 use App\Services\ServiceProviderService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 class ServiceApiController extends Controller
 {
@@ -28,10 +28,24 @@ class ServiceApiController extends Controller
             'provider_type'  => 'required|in:individual,company',
             'service_title'  => 'required|string|max:255',
             'email'          => 'required|email',
+            // Documento por tipo: prestador individual manda CPF, empresa
+            // manda CNPJ. É a chave que liga o cadastro à conta no portal.
+            'cpf'            => ['required_if:provider_type,individual', 'nullable', new Cpf],
+            'cnpj'           => ['required_if:provider_type,company', 'nullable', new Cnpj],
             'whatsapp'       => 'required|string',
             'instagram'      => 'nullable|string|max:255',
             'optional_info'  => 'nullable|string|max:2000',
             'business_image' => 'nullable|string',
+        ], [
+            // O projeto não tem lang/pt_BR/validation.php: sem estas mensagens
+            // o formulário mostraria "validation.required" no toast.
+            'name.required'          => 'Informe seu nome completo.',
+            'service_title.required' => 'Informe o que você oferece.',
+            'email.required'         => 'Informe seu e-mail.',
+            'email.email'            => 'Informe um e-mail válido.',
+            'cpf.required_if'        => 'Informe seu CPF.',
+            'cnpj.required_if'       => 'Informe o CNPJ da empresa.',
+            'whatsapp.required'      => 'Informe seu WhatsApp.',
         ]);
 
         if ($validator->fails()) {
@@ -43,16 +57,20 @@ class ServiceApiController extends Controller
 
         $serviceData = $validator->validated();
         $serviceData['status'] = 'pending';
+        // Documentos chegam com máscara do formulário e são gravados só em
+        // dígitos: é assim que o portal casa o cadastro com a conta.
+        foreach (['cpf', 'cnpj'] as $documento) {
+            if (!empty($serviceData[$documento])) {
+                $serviceData[$documento] = preg_replace('/\D/', '', $serviceData[$documento]);
+            }
+        }
 
         try {
             if (!empty($serviceData['business_image'])) {
-                $base64 = $serviceData['business_image'];
-                if (preg_match('/^data:image\/(\w+);base64,/', $base64, $matches)) {
-                    $ext      = strtolower($matches[1]) === 'jpeg' ? 'jpg' : strtolower($matches[1]);
-                    $data     = base64_decode(substr($base64, strpos($base64, ',') + 1));
-                    $filename = 'service_images/' . Str::uuid() . '.' . $ext;
-                    Storage::disk('public')->put($filename, $data);
-                    $serviceData['business_image'] = $filename;
+                $path = $this->serviceProviderService->storeBase64Image($serviceData['business_image']);
+
+                if ($path) {
+                    $serviceData['business_image'] = $path;
                 } else {
                     unset($serviceData['business_image']);
                 }
