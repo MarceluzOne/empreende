@@ -94,10 +94,10 @@
             </div>
 
             <div>
-                <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">CPF</label>
+                <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">CPF *</label>
                 <input type="text" name="cpf" id="speaker_cpf" value="{{ old('cpf') }}"
                     class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono @error('cpf') border-red-500 @enderror"
-                    placeholder="000.000.000-00">
+                    placeholder="000.000.000-00" required>
                 @error('cpf') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
             </div>
 

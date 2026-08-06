@@ -8,6 +8,7 @@ use App\Services\AuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class SpeakerController extends Controller
 {
@@ -24,19 +25,20 @@ class SpeakerController extends Controller
 
     public function store(Request $request)
     {
+        $this->normalizeCpf($request);
+
         $request->validate([
             'name'      => 'required|string|max:255',
             'bio'       => 'nullable|string',
             'email'     => 'nullable|email|max:255',
             'phone'     => 'nullable|string|max:20',
-            'cpf'       => ['nullable', 'string', 'max:14', new Cpf],
+            'cpf'       => ['required', 'string', 'max:14', new Cpf, Rule::unique('speakers', 'cpf')],
             'photo'       => 'nullable|image|max:4096',
             'signature'   => 'nullable|image|mimes:png,jpg,jpeg,webp|max:2048',
             'is_director' => 'nullable|boolean',
-        ]);
+        ], $this->cpfMessages());
 
-        $data = $request->only(['name', 'bio', 'email', 'phone']);
-        $data['cpf'] = $request->cpf ? preg_replace('/\D/', '', $request->cpf) : null;
+        $data = $request->only(['name', 'bio', 'email', 'phone', 'cpf']);
 
         // Quem é o diretor só o administrador define; o campo nem aparece para
         // funcionário, e ignorá-lo aqui impede que um POST forjado o marque.
@@ -68,19 +70,20 @@ class SpeakerController extends Controller
 
     public function update(Request $request, Speaker $speaker)
     {
+        $this->normalizeCpf($request);
+
         $request->validate([
             'name'      => 'required|string|max:255',
             'bio'       => 'nullable|string',
             'email'     => 'nullable|email|max:255',
             'phone'     => 'nullable|string|max:20',
-            'cpf'       => ['nullable', 'string', 'max:14', new Cpf],
+            'cpf'       => ['required', 'string', 'max:14', new Cpf, Rule::unique('speakers', 'cpf')->ignore($speaker->getKey())],
             'photo'       => 'nullable|image|max:4096',
             'signature'   => 'nullable|image|mimes:png,jpg,jpeg,webp|max:2048',
             'is_director' => 'nullable|boolean',
-        ]);
+        ], $this->cpfMessages());
 
-        $data = $request->only(['name', 'bio', 'email', 'phone']);
-        $data['cpf'] = $request->cpf ? preg_replace('/\D/', '', $request->cpf) : null;
+        $data = $request->only(['name', 'bio', 'email', 'phone', 'cpf']);
 
         // Fora do administrador o campo não é enviado: mantém o valor atual, para
         // que um funcionário editando o diretor não desmarque a flag sem querer.
@@ -128,20 +131,59 @@ class SpeakerController extends Controller
 
     public function quickStore(Request $request)
     {
-        $validated = $request->validate([
-            'name'  => 'required|string|max:255',
-            'bio'   => 'nullable|string',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:20',
-        ]);
+        $this->normalizeCpf($request);
 
-        $speaker = Speaker::create($validated);
+        $request->validate([
+            'name'        => 'required|string|max:255',
+            'bio'         => 'nullable|string',
+            'email'       => 'nullable|email|max:255',
+            'phone'       => 'nullable|string|max:20',
+            'cpf'         => ['required', 'string', 'max:14', new Cpf, Rule::unique('speakers', 'cpf')],
+            'photo'       => 'nullable|image|max:4096',
+            'signature'   => 'nullable|image|mimes:png,jpg,jpeg,webp|max:2048',
+            'is_director' => 'nullable|boolean',
+        ], $this->cpfMessages());
+
+        $data = $request->only(['name', 'bio', 'email', 'phone', 'cpf']);
+
+        // Mesma regra do cadastro completo: só administrador define o diretor.
+        $data['is_director'] = auth()->user()->isAdmin() && $request->boolean('is_director');
+
+        if ($request->hasFile('photo')) {
+            $data['photo_path'] = $this->storePhoto($request->file('photo'));
+        }
+        if ($request->hasFile('signature')) {
+            $data['signature_path'] = $this->storeSignature($request->file('signature'));
+        }
+
+        $speaker = Speaker::create($data);
+        $this->syncDirectorFlag($speaker);
         AuditService::log('created', $speaker);
 
         return response()->json([
             'id'   => $speaker->id,
             'name' => $speaker->name,
         ], 201);
+    }
+
+    /**
+     * Tira a máscara do CPF antes de validar, para que `unique` compare com o
+     * formato guardado no banco (só dígitos).
+     */
+    private function normalizeCpf(Request $request): void
+    {
+        $request->merge([
+            'cpf' => preg_replace('/\D/', '', (string) $request->input('cpf')),
+        ]);
+    }
+
+    private function cpfMessages(): array
+    {
+        // Sem lang/pt_BR/validation.php as mensagens padrão sairiam em inglês.
+        return [
+            'cpf.required' => 'Informe o CPF do palestrante.',
+            'cpf.unique'   => 'Já existe um palestrante cadastrado com este CPF.',
+        ];
     }
 
     /**

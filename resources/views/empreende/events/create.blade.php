@@ -91,37 +91,68 @@
 
         // Modal novo palestrante
         speakerModal: false,
-        speakerForm: { name: '', bio: '', email: '', phone: '' },
+        speakerForm: { name: '', bio: '', email: '', phone: '', cpf: '', is_director: false },
+        speakerPhotoPreview: null,
+        speakerSignaturePreview: null,
         speakerErrors: {},
         speakerLoading: false,
         openSpeakerModal() {
-            this.speakerForm = { name: '', bio: '', email: '', phone: '' };
+            this.speakerForm = { name: '', bio: '', email: '', phone: '', cpf: '', is_director: false };
             this.speakerErrors = {};
+            this.speakerPhotoPreview = null;
+            this.speakerSignaturePreview = null;
             this.speakerModal = true;
             this.$nextTick(() => {
-                const el = this.$refs.speakerPhone;
-                if (el && !el._imask) {
-                    el._imask = IMask(el, { mask: '(00) 00000-0000' });
-                    el.addEventListener('input', () => {
-                        this.speakerForm.phone = el._imask.value;
-                    });
-                } else if (el && el._imask) {
-                    el._imask.value = '';
-                }
+                if (this.$refs.speakerPhotoInput) this.$refs.speakerPhotoInput.value = '';
+                if (this.$refs.speakerSignatureInput) this.$refs.speakerSignatureInput.value = '';
+                this.initSpeakerMask(this.$refs.speakerPhone, '(00) 00000-0000', 'phone');
+                this.initSpeakerMask(this.$refs.speakerCpf, '000.000.000-00', 'cpf');
             });
+        },
+        initSpeakerMask(el, mask, field) {
+            if (!el) return;
+            if (!el._imask) {
+                el._imask = IMask(el, { mask: mask });
+                el.addEventListener('input', () => {
+                    this.speakerForm[field] = el._imask.value;
+                });
+            } else {
+                el._imask.value = '';
+            }
+        },
+        onSpeakerPhotoPick(e) {
+            const file = e.target.files[0];
+            this.speakerPhotoPreview = file ? URL.createObjectURL(file) : null;
+        },
+        onSpeakerSignaturePick(e) {
+            const file = e.target.files[0];
+            this.speakerSignaturePreview = file ? URL.createObjectURL(file) : null;
         },
         async saveSpeaker() {
             this.speakerErrors = {};
             this.speakerLoading = true;
             try {
+                // FormData (e não JSON) porque foto e assinatura são arquivos.
+                const body = new FormData();
+                body.append('name', this.speakerForm.name);
+                body.append('bio', this.speakerForm.bio ?? '');
+                body.append('email', this.speakerForm.email ?? '');
+                body.append('phone', this.speakerForm.phone ?? '');
+                body.append('cpf', this.speakerForm.cpf ?? '');
+                body.append('is_director', this.speakerForm.is_director ? '1' : '0');
+
+                const photo = this.$refs.speakerPhotoInput?.files?.[0];
+                if (photo) body.append('photo', photo);
+                const signature = this.$refs.speakerSignatureInput?.files?.[0];
+                if (signature) body.append('signature', signature);
+
                 const res = await fetch('{{ route('speakers.quick-store') }}', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
                         'Accept': 'application/json',
                     },
-                    body: JSON.stringify(this.speakerForm),
+                    body: body,
                 });
                 const data = await res.json();
                 if (!res.ok) {
@@ -248,7 +279,7 @@
                 <div x-show="speakerModal" x-cloak
                     class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
                     @keydown.escape.window="speakerModal = false">
-                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6"
+                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 max-h-[90vh] overflow-y-auto"
                         @click.outside="speakerModal = false">
                         <div class="flex justify-between items-center mb-5">
                             <h3 class="text-lg font-bold text-gray-800">Novo Palestrante</h3>
@@ -258,6 +289,21 @@
                         </div>
 
                         <div class="space-y-4">
+                            {{-- Foto: enviada sem corte; o SpeakerController centraliza e recorta. --}}
+                            <div class="flex flex-col items-center gap-2">
+                                <div class="w-20 h-20 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 overflow-hidden flex items-center justify-center">
+                                    <template x-if="speakerPhotoPreview">
+                                        <img :src="speakerPhotoPreview" class="w-full h-full object-cover">
+                                    </template>
+                                    <template x-if="!speakerPhotoPreview">
+                                        <i class="fas fa-user text-2xl text-gray-300"></i>
+                                    </template>
+                                </div>
+                                <input type="file" x-ref="speakerPhotoInput" accept="image/*" class="hidden" @change="onSpeakerPhotoPick($event)">
+                                <button type="button" @click="$refs.speakerPhotoInput.click()"
+                                    class="text-xs font-semibold text-blue-600 hover:text-blue-800 transition">Escolher foto</button>
+                                <p x-show="speakerErrors.photo" x-text="speakerErrors.photo?.[0]" class="text-red-500 text-xs"></p>
+                            </div>
                             <div>
                                 <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Nome *</label>
                                 <input type="text" x-model="speakerForm.name"
@@ -281,11 +327,57 @@
                                     placeholder="(27) 99999-0000">
                             </div>
                             <div>
+                                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">CPF *</label>
+                                <input type="text" x-ref="speakerCpf"
+                                    class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono"
+                                    :class="speakerErrors.cpf ? 'border-red-500' : ''"
+                                    placeholder="000.000.000-00">
+                                <p x-show="speakerErrors.cpf" x-text="speakerErrors.cpf?.[0]" class="text-red-500 text-xs mt-1"></p>
+                                <p class="text-xs text-gray-400 mt-1">Usado para emitir o certificado do palestrante.</p>
+                            </div>
+                            <div>
                                 <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Bio / Especialidade</label>
                                 <textarea x-model="speakerForm.bio" rows="2"
                                     class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm resize-none"
                                     placeholder="Breve descrição..."></textarea>
                             </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 uppercase mb-1">Assinatura</label>
+                                <div class="flex items-center gap-3 flex-wrap">
+                                    <div class="w-36 h-16 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden shrink-0"
+                                        style="background-image:linear-gradient(45deg,#eee 25%,transparent 25%),linear-gradient(-45deg,#eee 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eee 75%),linear-gradient(-45deg,transparent 75%,#eee 75%);background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0;">
+                                        <template x-if="speakerSignaturePreview">
+                                            <img :src="speakerSignaturePreview" class="max-w-full max-h-full object-contain p-1">
+                                        </template>
+                                        <template x-if="!speakerSignaturePreview">
+                                            <span class="text-gray-400 text-[10px] text-center px-2">Prévia</span>
+                                        </template>
+                                    </div>
+                                    <div>
+                                        <input type="file" x-ref="speakerSignatureInput" accept="image/png,image/*" class="hidden" @change="onSpeakerSignaturePick($event)">
+                                        <button type="button" @click="$refs.speakerSignatureInput.click()"
+                                            class="text-xs font-semibold text-blue-600 hover:text-blue-800 transition">Escolher assinatura</button>
+                                        <p class="text-xs text-gray-400 mt-1">PNG com fundo transparente, até 2MB.</p>
+                                    </div>
+                                </div>
+                                <p x-show="speakerErrors.signature" x-text="speakerErrors.signature?.[0]" class="text-red-500 text-xs mt-1"></p>
+                            </div>
+
+                            {{-- Só administrador define o diretor; o quickStore grava false para os demais. --}}
+                            @if(auth()->user()->isAdmin())
+                            <div class="border-t pt-4">
+                                <label class="flex items-start gap-3 cursor-pointer">
+                                    <input type="checkbox" x-model="speakerForm.is_director"
+                                        class="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span>
+                                        <span class="block text-xs font-bold text-gray-600 uppercase">Diretor do Empreende Vitória</span>
+                                        <span class="block text-xs text-gray-500 mt-1">
+                                            A assinatura deste palestrante sai em todos os certificados. Ao marcar, o diretor anterior é desmarcado.
+                                        </span>
+                                    </span>
+                                </label>
+                            </div>
+                            @endif
                         </div>
 
                         <div class="flex justify-end gap-3 mt-6">
