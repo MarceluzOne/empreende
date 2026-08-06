@@ -190,6 +190,7 @@ class EventService
             'type'             => $data['type'] ?? 'single',
             'extra_dates'      => count($extraDates) ? $extraDates : null,
             'visibility'       => $data['visibility'] ?? 'public',
+            'whatsapp_group_link' => $data['whatsapp_group_link'] ?? null,
         ];
     }
 

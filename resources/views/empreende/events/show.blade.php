@@ -111,6 +111,27 @@
         </div>
     </div>
 
+    {{-- Grupo de WhatsApp do evento --}}
+    @if($event->whatsapp_group_link)
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-xs text-gray-500 uppercase font-bold mb-1">
+            <i class="fab fa-whatsapp mr-1 text-green-500"></i>Grupo de WhatsApp
+        </p>
+        <div class="mt-3 flex items-center gap-2 flex-wrap">
+            <input type="text" id="whatsappGroupLink" readonly value="{{ $event->whatsapp_group_link }}"
+                class="flex-1 min-w-[240px] px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono bg-gray-50 text-gray-700">
+            <button type="button" onclick="copyWhatsappGroupLink()"
+                class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+                <i class="fas fa-copy"></i> <span id="copyWhatsappLabel">Copiar</span>
+            </button>
+            <a href="{{ $event->whatsapp_group_link }}" target="_blank" rel="noopener"
+                class="inline-flex items-center gap-2 border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-semibold px-4 py-2 rounded-lg transition">
+                <i class="fas fa-external-link-alt"></i> <span class="hidden sm:inline">Abrir</span>
+            </a>
+        </div>
+    </div>
+    @endif
+
     {{-- Formulário de inscrição: oculto quando concluído (manual/automático) ou cancelado --}}
     @if($event->registrationsClosed())
         @php $motivo = $event->isCancelled() ? 'Evento cancelado' : 'Evento concluído'; @endphp
@@ -138,11 +159,12 @@
                     @error('name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                 </div>
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1 uppercase tracking-wide">CPF</label>
+                    <label class="block text-sm font-bold text-gray-700 mb-1 uppercase tracking-wide">CPF *</label>
                     <input type="text" name="cpf" id="participant_cpf" value="{{ old('cpf') }}"
                         class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono @error('cpf') border-red-500 @enderror"
-                        placeholder="000.000.000-00"
+                        placeholder="000.000.000-00" required
                         {{ $locked ? 'disabled' : '' }}>
+                    <span class="text-gray-500 text-xs">Usado pelo participante para emitir o certificado.</span>
                     @error('cpf') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                 </div>
                 <div>
@@ -313,10 +335,10 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1 uppercase tracking-wide">CPF</label>
+                    <label class="block text-sm font-bold text-gray-700 mb-1 uppercase tracking-wide">CPF *</label>
                     <input type="text" name="cpf" id="edit_cpf"
                         class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono"
-                        placeholder="000.000.000-00">
+                        placeholder="000.000.000-00" required>
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1 uppercase tracking-wide">WhatsApp</label>
@@ -413,6 +435,18 @@ function copyShareLink() {
     el.setSelectionRange(0, 99999);
     navigator.clipboard.writeText(el.value).then(function () {
         const label = document.getElementById('copyLabel');
+        const original = label.textContent;
+        label.textContent = 'Copiado!';
+        setTimeout(function () { label.textContent = original; }, 1600);
+    });
+}
+
+function copyWhatsappGroupLink() {
+    const el = document.getElementById('whatsappGroupLink');
+    el.select();
+    el.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(el.value).then(function () {
+        const label = document.getElementById('copyWhatsappLabel');
         const original = label.textContent;
         label.textContent = 'Copiado!';
         setTimeout(function () { label.textContent = original; }, 1600);

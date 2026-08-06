@@ -223,6 +223,18 @@
                 @error('visibility') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
             </div>
 
+            {{-- Grupo de WhatsApp --}}
+            <div class="mb-5">
+                <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">
+                    <i class="fab fa-whatsapp mr-1 text-green-500"></i>Link do Grupo de WhatsApp
+                </label>
+                <input type="url" name="whatsapp_group_link" value="{{ old('whatsapp_group_link', $event->whatsapp_group_link) }}"
+                    class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none @error('whatsapp_group_link') border-red-500 @enderror"
+                    placeholder="https://chat.whatsapp.com/...">
+                @error('whatsapp_group_link') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                <p class="text-xs text-gray-400 mt-1">Opcional. Deixe em branco para remover o grupo do evento.</p>
+            </div>
+
             {{-- Calendário --}}
             <div class="mb-5">
                 <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">

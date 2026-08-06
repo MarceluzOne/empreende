@@ -127,7 +127,13 @@
           <div class="ok-check"><i class="fas fa-check"></i></div>
           <h3>Inscrição confirmada!</h3>
           <p>{{ $firstName ? $firstName.', sua' : 'Sua' }} vaga está garantida. Anote os detalhes acima.</p>
-          @if($waUrl)
+          {{-- Com grupo cadastrado o convite ao grupo tem prioridade; sem ele,
+               mantém a mensagem de confirmação no WhatsApp do inscrito. --}}
+          @if($event->whatsapp_group_link)
+            <a href="{{ $event->whatsapp_group_link }}" target="_blank" rel="noopener" class="btn btn--wa">
+              <i class="fab fa-whatsapp"></i> Entrar no grupo do WhatsApp
+            </a>
+          @elseif($waUrl)
             <a href="{{ $waUrl }}" target="_blank" rel="noopener" class="btn btn--wa">
               <i class="fab fa-whatsapp"></i> Receber confirmação no WhatsApp
             </a>

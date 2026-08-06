@@ -27,6 +27,7 @@ class Event extends Model
         'reopened_at',
         'image_path',
         'visibility',
+        'whatsapp_group_link',
         'share_token',
     ];
 
