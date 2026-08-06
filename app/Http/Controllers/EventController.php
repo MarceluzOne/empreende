@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreEventParticipantRequest;
+use App\Http\Requests\UpdateEventParticipantRequest;
 use App\Http\Requests\StoreEventRequest;
 use App\Http\Requests\UpdateEventRequest;
 use App\Http\Requests\UpdateEventStatusRequest;
@@ -120,37 +121,18 @@ class EventController extends Controller
             return back()->withErrors('Não é possível inscrever participantes: as inscrições deste evento estão encerradas.')->withInput();
         }
 
-        $cpf = $request->cpf ? preg_replace('/[^0-9]/', '', $request->cpf) : null;
-
-        $participant = $event->participants()->create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'cpf'      => $cpf,
-            'whatsapp' => $request->whatsapp,
-        ]);
+        $participant = $event->participants()->create($request->only('name', 'email', 'cpf', 'whatsapp'));
 
         AuditService::log('created', $participant, null, "Inscreveu o participante {$participant->name} no evento {$event->title}");
 
         return redirect()->route('events.show', $event)->with('success', 'Participante inscrito com sucesso!');
     }
 
-    public function updateParticipant(Request $request, Event $event, EventParticipant $participant)
+    public function updateParticipant(UpdateEventParticipantRequest $request, Event $event, EventParticipant $participant)
     {
         abort_if($participant->event_id !== $event->id, 404);
 
-        $request->validate([
-            'name'     => 'required|string|max:255',
-            'cpf'      => 'nullable|string|max:14',
-            'whatsapp' => 'nullable|string|max:20',
-            'email'    => 'nullable|email|max:255',
-        ]);
-
-        $participant->update([
-            'name'     => $request->name,
-            'cpf'      => $request->cpf ? preg_replace('/[^0-9]/', '', $request->cpf) : null,
-            'whatsapp' => $request->whatsapp,
-            'email'    => $request->email,
-        ]);
+        $participant->update($request->only('name', 'cpf', 'whatsapp', 'email'));
 
         AuditService::log('updated', $participant, null, "Atualizou o participante {$participant->name} no evento {$event->title}");
 

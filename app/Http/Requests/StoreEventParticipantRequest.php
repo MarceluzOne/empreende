@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\Cpf;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -32,9 +33,9 @@ class StoreEventParticipantRequest extends FormRequest
             'name'      => 'required|string|max:255',
             'email'     => 'nullable|email|max:255',
             'cpf'       => [
-                'nullable',
+                'required',
                 'string',
-                'max:14',
+                new Cpf,
                 Rule::unique('event_participants', 'cpf')->where('event_id', $event->id),
             ],
             'whatsapp'  => 'nullable|string|max:20',
@@ -46,6 +47,7 @@ class StoreEventParticipantRequest extends FormRequest
         return [
             'name.required'  => 'O nome do participante é obrigatório.',
             'email.email'    => 'Informe um e-mail válido.',
+            'cpf.required'   => 'O CPF é obrigatório — é por ele que o participante busca o certificado.',
             'cpf.unique'     => 'Este CPF já está inscrito neste evento.',
         ];
     }
