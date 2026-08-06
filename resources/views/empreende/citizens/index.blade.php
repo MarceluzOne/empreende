@@ -14,9 +14,9 @@
 
         {{-- Busca por CPF --}}
         <form method="GET" action="{{ route('citizens.index') }}" class="mb-5 flex gap-2">
-            <input type="text" name="cpf" value="{{ $search }}"
-                class="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-600 transition font-mono text-sm"
-                placeholder="Buscar por CPF (pode ser parcial)...">
+            <input type="text" name="busca" value="{{ $search }}"
+                class="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-600 transition text-sm"
+                placeholder="Buscar por nome ou CPF (pode ser parcial)...">
             <button type="submit"
                 class="bg-blue-600 text-white px-5 py-3 rounded-xl font-bold text-sm hover:bg-blue-700 transition">
                 <i class="fas fa-search mr-1"></i> Buscar
@@ -81,7 +81,7 @@
                         <tr>
                             <td colspan="5" class="px-6 py-12 text-center text-gray-400 text-sm">
                                 @if($search)
-                                    Nenhum cidadão encontrado para "<span class="font-mono">{{ $search }}</span>".
+                                    Nenhum cidadão encontrado para "<span class="font-semibold">{{ $search }}</span>".
                                 @else
                                     Nenhum cidadão cadastrado ainda.
                                 @endif
@@ -94,7 +94,7 @@
 
         @if($citizens->hasPages())
             <div class="mt-4">
-                {{ $citizens->appends(['cpf' => $search])->links() }}
+                {{ $citizens->appends(['busca' => $search])->links() }}
             </div>
         @endif
     </div>

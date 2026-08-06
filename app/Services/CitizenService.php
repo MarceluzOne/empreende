@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\JobSeeker;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 
 /**
@@ -18,17 +19,18 @@ use Ramsey\Uuid\Uuid;
 class CitizenService
 {
     /**
-     * Lista consolidada e paginada de cidadãos, opcionalmente filtrada por CPF.
+     * Lista consolidada e paginada de cidadãos, opcionalmente filtrada por
+     * nome ou CPF (ambos aceitam busca parcial).
      */
-    public function list(?string $cpfSearch = null, int $perPage = 15): LengthAwarePaginator
+    public function list(?string $search = null, int $perPage = 15): LengthAwarePaginator
     {
-        $search = $this->onlyDigits($cpfSearch);
+        $term   = trim((string) $search);
         $people = $this->build();
 
         $collection = collect($people);
 
-        if ($search !== '') {
-            $collection = $collection->filter(fn ($e) => str_contains($e['cpf'], $search));
+        if ($term !== '') {
+            $collection = $collection->filter(fn ($e) => $this->matches($e, $term));
         }
 
         $collection = $collection
@@ -163,6 +165,29 @@ class CitizenService
             $page,
             ['path' => LengthAwarePaginator::resolveCurrentPath()]
         );
+    }
+
+    /**
+     * Casa o termo buscado com o CPF (comparado só por dígitos, para ignorar a
+     * máscara) ou com o nome (sem acento e em caixa baixa).
+     *
+     * @param array<string, mixed> $entry
+     */
+    private function matches(array $entry, string $term): bool
+    {
+        $digits = $this->onlyDigits($term);
+
+        if ($digits !== '' && str_contains($entry['cpf'], $digits)) {
+            return true;
+        }
+
+        return $entry['name'] !== null
+            && str_contains($this->normalize($entry['name']), $this->normalize($term));
+    }
+
+    private function normalize(string $value): string
+    {
+        return mb_strtolower(Str::ascii($value));
     }
 
     private function onlyDigits(?string $value): string

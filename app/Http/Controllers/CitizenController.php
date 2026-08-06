@@ -11,11 +11,12 @@ class CitizenController extends Controller
 
     public function index(Request $request)
     {
-        $citizens = $this->service->list($request->input('cpf'));
+        // `cpf` é o nome antigo do campo, mantido para não quebrar links salvos.
+        $search = $request->input('busca', $request->input('cpf'));
 
         return view('citizens.index', [
-            'citizens' => $citizens,
-            'search'   => $request->input('cpf'),
+            'citizens' => $this->service->list($search),
+            'search'   => $search,
         ]);
     }
 
