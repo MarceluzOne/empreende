@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
 <style>
   :root{
     --brand:#0763A0;--brand-deep:#044a7a;--brand-soft:#e8f1f9;
@@ -79,6 +80,25 @@
   .panel-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:800;color:var(--ink);margin-bottom:4px}
   .panel-sub{font-size:14px;color:var(--muted)}
 
+  /* ── Barra de filtro ── */
+  .filter-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  .filter-field{position:relative;flex:0 1 300px;min-width:220px}
+  .filter-field i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;pointer-events:none}
+  .filter-field select{
+    width:100%;padding:10px 14px 10px 38px;border:1.5px solid var(--line);border-radius:999px;
+    font-size:14px;font-weight:600;font-family:'Lato',sans-serif;color:var(--ink);
+    background:var(--paper);cursor:pointer;outline:none;transition:border-color .15s,box-shadow .15s;
+  }
+  .filter-field select:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(7,99,160,.1)}
+  .filter-count{font-size:13px;color:var(--muted);font-weight:600}
+  .filter-count strong{color:var(--brand)}
+  .filter-clear{
+    display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;
+    border:1.5px solid var(--line);background:none;color:var(--muted);
+    font-size:13px;font-weight:700;font-family:'Lato',sans-serif;cursor:pointer;transition:background .15s,color .15s;
+  }
+  .filter-clear:hover{background:var(--brand-soft);color:var(--brand)}
+
   /* ── Cards ── */
   .cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
   .card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s}
@@ -139,6 +159,33 @@
   .form-control{width:100%;padding:10px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'Lato',sans-serif;color:var(--ink);background:var(--paper);transition:border-color .15s,box-shadow .15s;outline:none}
   .form-control:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(7,99,160,.1)}
   .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .form-control.has-error{border-color:#dc2626}
+  .form-error{display:block;margin-top:6px;font-size:12px;font-weight:700;color:#dc2626}
+  .form-hint{display:block;margin-top:6px;font-size:12px;color:var(--muted)}
+  .form-check{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;user-select:none}
+
+  /* ── Upload + recorte de imagem (mesmo padrão da página de Serviços) ── */
+  .upload-preview{display:none;position:relative;border-radius:10px;overflow:hidden;aspect-ratio:16/9;background:#000;margin-bottom:8px}
+  .upload-preview img{width:100%;height:100%;object-fit:cover;display:block}
+  .upload-label{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    border:2px dashed var(--line);border-radius:12px;padding:18px;cursor:pointer;
+    background:#fafbfc;transition:border-color .15s,background .15s;min-height:76px;
+  }
+  .upload-label:hover{border-color:var(--brand);background:var(--brand-soft)}
+  .upload-label i{font-size:20px;color:var(--muted);margin-bottom:6px}
+  .upload-label span{font-size:13px;color:var(--muted)}
+
+  .crop-modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;align-items:center;justify-content:center;padding:20px}
+  .crop-modal-backdrop.open{display:flex}
+  .crop-modal{background:var(--paper);border-radius:18px;width:100%;max-width:680px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.3);display:flex;flex-direction:column}
+  .crop-modal__head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  .crop-modal__head h3{margin:0;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:16px}
+  .crop-modal__head p{margin:0;font-size:12px;color:var(--muted)}
+  .crop-modal__close{background:none;border:0;cursor:pointer;font-size:18px;color:var(--muted);line-height:1}
+  .crop-modal__body{padding:16px;background:#1a1a2e;max-height:55vh;display:flex;align-items:center;justify-content:center}
+  .crop-modal__body img{max-width:100%;max-height:50vh;display:block}
+  .crop-modal__foot{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:12px}
   .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid var(--line)}
   .btn-cancel{padding:10px 20px;border-radius:999px;font-size:14px;font-weight:700;color:var(--muted);border:1.5px solid var(--line);background:none;cursor:pointer;transition:background .15s}
   .btn-cancel:hover{background:var(--cream)}
@@ -225,6 +272,13 @@
         <i class="fas fa-briefcase"></i> Vagas Disponíveis
       </button>
 
+      <button class="nav-item" data-panel="servicos">
+        <i class="fas fa-tools"></i> Meus Serviços
+        @if($meusServicos->count())
+          <span class="nav-badge">{{ $meusServicos->count() }}</span>
+        @endif
+      </button>
+
       <div class="nav-label" style="margin-top:8px">Eventos</div>
 
       <button class="nav-item" data-panel="meus-eventos">
@@ -240,6 +294,9 @@
     </nav>
 
     <div class="sidebar-footer">
+      <button type="button" class="nav-item" onclick="openModal('modal-alterar-senha')">
+        <i class="fas fa-key"></i> Alterar senha
+      </button>
       <form action="{{ route('usuario.logout') }}" method="POST">
         @csrf
         <button type="submit" class="nav-item" style="color:#991b1b;width:100%">
@@ -385,10 +442,43 @@
         <div class="panel-sub">Vagas ativas no momento. Candidate-se com um clique.</div>
       </div>
 
+      {{-- Filtro por área de interesse --}}
+      <div class="filter-bar">
+        <div class="filter-field">
+          <i class="fas fa-tag"></i>
+          <select id="filtro-area" onchange="filtrarVagasPorArea(this.value)" aria-label="Filtrar vagas por área de interesse">
+            <option value="">Todas as áreas</option>
+            @foreach($interestAreas as $area)
+              <option value="{{ $area }}" {{ $areaFiltro === $area ? 'selected' : '' }}>{{ $area }}</option>
+            @endforeach
+          </select>
+        </div>
+
+        <span class="filter-count">
+          {{ $vagas->count() }} vaga{{ $vagas->count() === 1 ? '' : 's' }}
+          @if($areaFiltro) em <strong>{{ $areaFiltro }}</strong> @endif
+        </span>
+
+        @if($areaFiltro)
+          <button type="button" class="filter-clear" onclick="filtrarVagasPorArea('')">
+            <i class="fas fa-times"></i> Limpar filtro
+          </button>
+        @endif
+      </div>
+
       @if($vagas->isEmpty())
         <div class="empty-state">
           <i class="fas fa-briefcase"></i>
-          <p>Nenhuma vaga ativa no momento.</p>
+          <p>
+            @if($areaFiltro)
+              Nenhuma vaga aberta em <strong>{{ $areaFiltro }}</strong> no momento.<br>
+              <button type="button" class="filter-clear" style="margin-top:10px" onclick="filtrarVagasPorArea('')">
+                <i class="fas fa-times"></i> Ver todas as áreas
+              </button>
+            @else
+              Nenhuma vaga ativa no momento.
+            @endif
+          </p>
         </div>
       @else
         <div class="cards-grid">
@@ -436,6 +526,64 @@
                     </button>
                   </form>
                 @endif
+              </div>
+            </div>
+          @endforeach
+        </div>
+      @endif
+    </div>
+
+    {{-- ── Painel: Meus Serviços ── --}}
+    <div class="panel" id="panel-servicos">
+      <div class="panel-header">
+        <div class="panel-title">Meus Serviços</div>
+        <div class="panel-sub">Cadastros feitos na página de Serviços, vinculados ao seu CPF ou ao e-mail desta conta.</div>
+      </div>
+
+      @if($meusServicos->isEmpty())
+        <div class="empty-state">
+          <i class="fas fa-tools"></i>
+          <p>
+            Nenhum cadastro de serviço vinculado à sua conta.<br>
+            <a href="{{ route('servicos') }}#cadastro" style="color:var(--brand);font-weight:700">Cadastre seu serviço</a>
+            usando o mesmo CPF ou e-mail para poder editá-lo por aqui.
+          </p>
+        </div>
+      @else
+        <div class="cards-grid">
+          @foreach($meusServicos as $servico)
+            <div class="card"
+              data-servico-id="{{ $servico->id }}"
+              data-url="{{ route('portal.usuario.servicos.update', $servico) }}"
+              data-name="{{ e($servico->name) }}"
+              data-service-title="{{ e($servico->service_title) }}"
+              data-whatsapp="{{ $servico->whatsapp }}"
+              data-instagram="{{ $servico->instagram }}"
+              data-optional-info="{{ e($servico->optional_info) }}"
+              data-image="{{ $servico->business_image ? Storage::disk('public')->url($servico->business_image) : '' }}">
+              <div class="card-badge
+                @if($servico->status === 'active') badge-green
+                @elseif($servico->status === 'pending') badge-yellow
+                @else badge-gray
+                @endif">
+                <i class="fas fa-circle" style="font-size:7px"></i>
+                {{ $servico->status === 'pending' ? 'Em análise' : $servico->status_label }}
+              </div>
+              <h3>{{ $servico->service_title }}</h3>
+              <div class="card-meta">
+                <span><i class="fas fa-user"></i> {{ $servico->name }}</span>
+                <span><i class="fab fa-whatsapp"></i> {{ $servico->whatsapp }}</span>
+                @if($servico->instagram)
+                  <span><i class="fab fa-instagram"></i> {{ $servico->instagram }}</span>
+                @endif
+                @if($servico->optional_info)
+                  <span><i class="fas fa-info-circle"></i> {{ Str::limit($servico->optional_info, 80) }}</span>
+                @endif
+              </div>
+              <div class="card-actions">
+                <button type="button" class="btn-sm btn-brand" onclick="abrirEditarServico(this.closest('.card'))">
+                  <i class="fas fa-pen"></i> Editar
+                </button>
               </div>
             </div>
           @endforeach
@@ -765,6 +913,156 @@
   </div>
 </div>
 
+{{-- Modal: Editar Serviço --}}
+<div class="modal-backdrop" id="modal-editar-servico">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-editar-servico-title">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-editar-servico-title"><i class="fas fa-tools" style="color:var(--brand);margin-right:8px"></i>Editar Serviço</div>
+      <button class="modal-close" onclick="closeModal('modal-editar-servico')" aria-label="Fechar">&times;</button>
+    </div>
+
+    @if($errors->servico->any())
+      <div class="alert alert-error" style="margin-bottom:16px;display:block">
+        @foreach($errors->servico->all() as $erro)
+          <div><i class="fas fa-exclamation-circle"></i> {{ $erro }}</div>
+        @endforeach
+      </div>
+    @endif
+
+    <div class="alert alert-info" style="margin-bottom:16px">
+      <i class="fas fa-info-circle"></i>
+      Ao salvar, o cadastro volta para análise da equipe e fica fora do site até ser aprovado de novo.
+    </div>
+
+    <form method="POST" action="" id="form-editar-servico">
+      @csrf
+      @method('PUT')
+      <input type="hidden" name="_service_id" id="editar-servico-id">
+
+      <div class="form-group">
+        <label>Seu nome <span class="req">*</span></label>
+        <input type="text" name="name" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label>O que você oferece? <span class="req">*</span></label>
+        <input type="text" name="service_title" class="form-control" required>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>WhatsApp <span class="req">*</span></label>
+          <input type="text" name="whatsapp" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label>Instagram</label>
+          <input type="text" name="instagram" class="form-control" placeholder="@seuinstagram">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Informações adicionais</label>
+        <textarea name="optional_info" class="form-control" rows="3"
+                  placeholder="Horários de atendimento, área de atuação, diferenciais..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Foto do negócio <span style="font-weight:400;color:var(--muted)">(16:9)</span></label>
+        <div class="upload-preview" id="servico-preview">
+          <img id="servico-preview-img" src="" alt="">
+        </div>
+        <label class="upload-label" for="servico-file">
+          <i class="fas fa-camera"></i>
+          <span id="servico-upload-texto">Clique para adicionar foto do negócio</span>
+          <span style="font-size:11px;margin-top:2px">JPG, PNG ou WEBP · máx. 5MB</span>
+        </label>
+        <input type="file" id="servico-file" accept="image/jpeg,image/png,image/webp" style="display:none">
+        <input type="hidden" name="business_image" id="servico-base64">
+        <span class="form-hint">Sem escolher uma foto nova, a atual é mantida.</span>
+      </div>
+
+      <p class="form-hint" style="margin-top:0">
+        E-mail e CPF não podem ser alterados aqui: são eles que ligam o cadastro à sua conta.
+        Se precisar corrigi-los, fale com a equipe do Empreende Vitória.
+      </p>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="closeModal('modal-editar-servico')">Cancelar</button>
+        <button type="submit" class="btn-submit"><i class="fas fa-check"></i> Salvar alterações</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{{-- Modal: recorte 16:9 da foto do serviço --}}
+<div class="crop-modal-backdrop" id="servico-crop-backdrop">
+  <div class="crop-modal">
+    <div class="crop-modal__head">
+      <div>
+        <h3>Ajustar imagem</h3>
+        <p>Arraste e redimensione para enquadrar no formato 16:9</p>
+      </div>
+      <button type="button" class="crop-modal__close" onclick="fecharCropServico()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="crop-modal__body">
+      <img id="servico-crop-img" src="" alt="">
+    </div>
+    <div class="crop-modal__foot">
+      <button type="button" class="btn-cancel" onclick="fecharCropServico()">Cancelar</button>
+      <button type="button" class="btn-submit" onclick="aplicarCropServico()"><i class="fas fa-check"></i> Aplicar</button>
+    </div>
+  </div>
+</div>
+
+{{-- Modal: Alterar Senha --}}
+<div class="modal-backdrop" id="modal-alterar-senha">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-alterar-senha-title" style="max-width:460px">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-alterar-senha-title"><i class="fas fa-key" style="color:var(--brand);margin-right:8px"></i>Alterar Senha</div>
+      <button class="modal-close" onclick="closeModal('modal-alterar-senha')" aria-label="Fechar">&times;</button>
+    </div>
+
+    <form method="POST" action="{{ route('portal.usuario.senha.update') }}">
+      @csrf
+      @method('PUT')
+
+      <div class="form-group">
+        <label>Senha atual <span class="req">*</span></label>
+        <input type="password" name="current_password" autocomplete="current-password" required
+               class="form-control campo-senha @error('current_password', 'senha') has-error @enderror">
+        @error('current_password', 'senha') <span class="form-error">{{ $message }}</span> @enderror
+      </div>
+
+      <div class="form-group">
+        <label>Nova senha <span class="req">*</span></label>
+        <input type="password" name="password" autocomplete="new-password" minlength="8" required
+               class="form-control campo-senha @error('password', 'senha') has-error @enderror">
+        @error('password', 'senha')
+          <span class="form-error">{{ $message }}</span>
+        @else
+          <span class="form-hint">Mínimo de 8 caracteres.</span>
+        @enderror
+      </div>
+
+      <div class="form-group">
+        <label>Confirmar nova senha <span class="req">*</span></label>
+        <input type="password" name="password_confirmation" autocomplete="new-password" minlength="8" required
+               class="form-control campo-senha">
+      </div>
+
+      <label class="form-check">
+        <input type="checkbox" onchange="mostrarSenhas(this.checked)"> Mostrar senhas
+      </label>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="closeModal('modal-alterar-senha')">Cancelar</button>
+        <button type="submit" class="btn-submit"><i class="fas fa-check"></i> Salvar nova senha</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 <script>
   const navItems  = document.querySelectorAll('.nav-item[data-panel]');
   const panels    = document.querySelectorAll('.panel');
@@ -809,15 +1107,131 @@
   document.getElementById('modal-criar-perfil').addEventListener('click', function(e) {
     if (e.target === this) closeModal('modal-criar-perfil');
   });
+  document.getElementById('modal-alterar-senha').addEventListener('click', function(e) {
+    if (e.target === this) closeModal('modal-alterar-senha');
+  });
+  document.getElementById('modal-editar-servico').addEventListener('click', function(e) {
+    if (e.target === this) closeModal('modal-editar-servico');
+  });
+
+  // Preenche o modal a partir do card clicado — um só modal serve a todos os
+  // cadastros do usuário.
+  function abrirEditarServico(card) {
+    const d = card.dataset;
+    const f = document.getElementById('form-editar-servico');
+
+    f.action                  = d.url;
+    f.querySelector('[name="_service_id"]').value   = d.servicoId;
+    f.querySelector('[name="name"]').value          = d.name;
+    f.querySelector('[name="service_title"]').value = d.serviceTitle;
+    f.querySelector('[name="whatsapp"]').value      = d.whatsapp;
+    f.querySelector('[name="instagram"]').value     = d.instagram || '';
+    f.querySelector('[name="optional_info"]').value = d.optionalInfo || '';
+
+    // Foto: mostra a atual como prévia e zera qualquer recorte anterior.
+    document.getElementById('servico-base64').value = '';
+    document.getElementById('servico-file').value   = '';
+    mostrarPreviaServico(d.image || '');
+    document.getElementById('servico-upload-texto').textContent =
+      d.image ? 'Clique para trocar a foto do negócio' : 'Clique para adicionar foto do negócio';
+
+    openModal('modal-editar-servico');
+  }
+
+  function mostrarPreviaServico(src) {
+    const box = document.getElementById('servico-preview');
+    document.getElementById('servico-preview-img').src = src;
+    box.style.display = src ? 'block' : 'none';
+  }
+
+  // ── Recorte 16:9 da foto do serviço (mesmo fluxo da página de Serviços) ──
+  let servicoCropper = null;
+
+  document.getElementById('servico-file').addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('A imagem deve ter no máximo 5MB.');
+      this.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = e => abrirCropServico(e.target.result);
+    reader.readAsDataURL(file);
+  });
+
+  function abrirCropServico(src) {
+    const img = document.getElementById('servico-crop-img');
+    img.src = src;
+    document.getElementById('servico-crop-backdrop').classList.add('open');
+
+    // Espera o render da imagem antes de iniciar o cropper.
+    setTimeout(() => {
+      if (servicoCropper) servicoCropper.destroy();
+      servicoCropper = new Cropper(img, {
+        aspectRatio: 16 / 9,
+        viewMode: 1,
+        autoCropArea: 1,
+        movable: true,
+        zoomable: true,
+        rotatable: false,
+        scalable: false,
+      });
+    }, 100);
+  }
+
+  function fecharCropServico() {
+    document.getElementById('servico-crop-backdrop').classList.remove('open');
+    if (servicoCropper) { servicoCropper.destroy(); servicoCropper = null; }
+    document.getElementById('servico-file').value = '';
+  }
+
+  function aplicarCropServico() {
+    if (!servicoCropper) return;
+
+    const base64 = servicoCropper.getCroppedCanvas({ width: 1280, height: 720 }).toDataURL('image/jpeg', 0.88);
+    document.getElementById('servico-base64').value = base64;
+    mostrarPreviaServico(base64);
+    document.getElementById('servico-upload-texto').textContent = 'Clique para trocar a foto do negócio';
+    fecharCropServico();
+  }
+
+  document.getElementById('servico-crop-backdrop').addEventListener('click', function (e) {
+    if (e.target === this) fecharCropServico();
+  });
+  function mostrarSenhas(visivel) {
+    document.querySelectorAll('.campo-senha').forEach(function (campo) {
+      campo.type = visivel ? 'text' : 'password';
+    });
+  }
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
+      // Com o recorte aberto, ESC fecha só ele — o modal de edição continua.
+      if (document.getElementById('servico-crop-backdrop').classList.contains('open')) {
+        fecharCropServico();
+        return;
+      }
       closeModal('modal-criar-perfil');
       closeModal('modal-cancelar-candidatura');
       closeModal('modal-cancelar-evento');
       closeModal('modal-detalhe-vaga');
       closeModal('modal-detalhe-evento');
+      closeModal('modal-alterar-senha');
+      closeModal('modal-editar-servico');
     }
   });
+
+  // Filtro de vagas por área: recarrega com ?area=... e volta direto para a
+  // aba de vagas. A filtragem é no banco, não só nos cards já renderizados.
+  function filtrarVagasPorArea(area) {
+    const url = new URL(location.href);
+    if (area) url.searchParams.set('area', area);
+    else      url.searchParams.delete('area');
+    url.hash = 'vagas';
+    location.href = url.toString();
+  }
 
   function abrirDetalheVaga(card) {
     const d = card.dataset;
@@ -1015,11 +1429,37 @@
   @if(session('success') || session('error') || session('info'))
     @if(session('success') && str_contains(session('success'), 'Perfil'))
       activate('perfil');
+    @elseif(session('success') && str_contains(session('success'), 'Senha'))
+      activate('perfil');
+    @elseif(session('success') && str_contains(session('success'), 'Serviço'))
+      activate('servicos');
     @elseif(session('success') && str_contains(session('success'), 'Inscrição'))
       activate('meus-eventos');
     @else
       activate('vagas');
     @endif
+  @endif
+
+  {{-- Senha recusada: reabre o modal já com as mensagens de erro à vista. --}}
+  @if($errors->senha->any())
+    openModal('modal-alterar-senha');
+  @endif
+
+  {{-- Edição de serviço recusada: reabre o modal do cadastro certo, mantendo
+       o que a pessoa tinha digitado. --}}
+  @if($errors->servico->any())
+    (function () {
+      const card = document.querySelector('[data-servico-id="{{ old('_service_id') }}"]');
+      if (!card) return;
+      activate('servicos');
+      abrirEditarServico(card);
+      const f = document.getElementById('form-editar-servico');
+      f.querySelector('[name="name"]').value          = @json(old('name'));
+      f.querySelector('[name="service_title"]').value = @json(old('service_title'));
+      f.querySelector('[name="whatsapp"]').value      = @json(old('whatsapp'));
+      f.querySelector('[name="instagram"]').value     = @json(old('instagram', ''));
+      f.querySelector('[name="optional_info"]').value = @json(old('optional_info', ''));
+    })();
   @endif
 
   // "Garantir minha vaga" (vindo de /cursos): abre a aba de eventos e o card

@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
 <style>
   :root{
     --brand:#0763A0;--brand-deep:#044a7a;--brand-soft:#e8f1f9;
@@ -29,6 +30,36 @@
   .user-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#0f2942,var(--brand-deep));color:#fff;display:grid;place-items:center;font-size:11px;font-weight:900}
   .btn-logout{padding:8px 16px;border-radius:999px;font-size:13px;font-weight:700;color:var(--muted);border:none;background:none;cursor:pointer;transition:background .15s,color .15s}
   .btn-logout:hover{background:var(--brand-soft);color:var(--brand)}
+
+  /* ── Menu da conta ── */
+  .user-menu{position:relative}
+  .user-chip-btn{border:none;cursor:pointer;font-family:'Lato',sans-serif;color:var(--ink);transition:background .15s}
+  .user-chip-btn:hover{background:var(--brand-soft)}
+  .user-chip-name{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .user-chip-caret{font-size:11px;color:var(--muted);transition:transform .15s}
+  .user-menu.open .user-chip-caret{transform:rotate(180deg)}
+  .dropdown{
+    display:none;position:absolute;top:calc(100% + 8px);right:0;min-width:230px;z-index:120;
+    background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:6px;
+    box-shadow:0 12px 32px rgba(12,24,34,.16);animation:dropIn .15s ease;
+  }
+  .user-menu.open .dropdown{display:block}
+  @keyframes dropIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+  .dropdown-head{padding:10px 12px 8px;border-bottom:1px solid var(--line);margin-bottom:6px}
+  .dropdown-head strong{display:block;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dropdown-head span{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dropdown-item{
+    display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:none;background:none;
+    border-radius:10px;font-family:'Lato',sans-serif;font-size:14px;font-weight:700;color:var(--ink);
+    cursor:pointer;text-align:left;transition:background .15s,color .15s;
+  }
+  .dropdown-item:hover{background:var(--brand-soft);color:var(--brand)}
+  .dropdown-item i{width:16px;text-align:center;color:var(--muted);flex-shrink:0}
+  .dropdown-item:hover i{color:var(--brand)}
+  .dropdown-item.danger{color:#991b1b}
+  .dropdown-item.danger:hover{background:#fee2e2;color:#991b1b}
+  .dropdown-item.danger i{color:#991b1b}
+  .dropdown-sep{height:1px;background:var(--line);margin:6px 4px}
 
   .hero-banner{background:linear-gradient(135deg,#0f2942 0%,var(--brand-deep) 60%,var(--brand) 100%);color:#fff;padding:48px 40px;display:flex;align-items:center;justify-content:space-between;gap:24px}
   .hero-banner h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:28px;font-weight:800;margin-bottom:6px}
@@ -57,6 +88,7 @@
   .card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
   .card-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:4px 10px;border-radius:999px;margin-bottom:12px}
   .badge-green{background:#dcfce7;color:#166534}
+  .badge-yellow{background:#fefce8;color:#854d0e}
   .badge-blue{background:var(--brand-soft);color:var(--brand)}
   .badge-red{background:#fee2e2;color:#991b1b}
   .badge-gray{background:var(--cream);color:var(--muted)}
@@ -79,6 +111,45 @@
   .table-card td{padding:14px 20px;font-size:14px;border-bottom:1px solid var(--line)}
   .table-card tr:last-child td{border-bottom:none}
   .table-card tr:hover td{background:var(--cream)}
+
+  /* ── Formulário (modal da vitrine) ── */
+  .form-group{margin-bottom:16px}
+  .form-group label{display:block;font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px}
+  .form-group label span.req{color:#dc2626}
+  .form-control{width:100%;padding:10px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:'Lato',sans-serif;color:var(--ink);background:var(--paper);transition:border-color .15s,box-shadow .15s;outline:none}
+  .form-control:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(7,99,160,.1)}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .form-hint{display:block;margin-top:6px;font-size:12px;color:var(--muted)}
+  .form-check{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;user-select:none;margin-bottom:4px}
+  .form-static{padding:10px 14px;border:1.5px dashed var(--line);border-radius:10px;font-size:14px;color:var(--muted);background:var(--cream)}
+  @media(max-width:768px){.user-chip-name{max-width:120px}}
+  .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:8px;padding:18px 28px;border-top:1px solid var(--line)}
+  .btn-cancel{padding:10px 20px;border-radius:999px;font-size:14px;font-weight:700;color:var(--muted);border:1.5px solid var(--line);background:none;cursor:pointer}
+  .btn-cancel:hover{background:var(--cream)}
+  .btn-submit{padding:10px 24px;border-radius:999px;font-size:14px;font-weight:700;background:var(--brand);color:#fff;border:none;cursor:pointer}
+  .btn-submit:hover{background:var(--brand-deep)}
+  .alert-inline{padding:12px 16px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:16px;display:flex;gap:8px;align-items:flex-start}
+  .alert-inline-error{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b}
+  .alert-inline-info{background:var(--brand-soft);border:1px solid #93c5fd;color:var(--brand)}
+
+  /* ── Upload + recorte 16:9 (mesmo padrão da página de Empresas Locais) ── */
+  .upload-preview{display:none;position:relative;border-radius:10px;overflow:hidden;aspect-ratio:16/9;background:#000;margin-bottom:8px}
+  .upload-preview img{width:100%;height:100%;object-fit:cover;display:block}
+  .upload-label{display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px dashed var(--line);border-radius:12px;padding:18px;cursor:pointer;background:#fafbfc;transition:border-color .15s,background .15s;min-height:76px}
+  .upload-label:hover{border-color:var(--brand);background:var(--brand-soft)}
+  .upload-label i{font-size:20px;color:var(--muted);margin-bottom:6px}
+  .upload-label span{font-size:13px;color:var(--muted)}
+
+  .crop-modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;align-items:center;justify-content:center;padding:20px}
+  .crop-modal-backdrop.open{display:flex}
+  .crop-modal{background:var(--paper);border-radius:18px;width:100%;max-width:680px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.3);display:flex;flex-direction:column}
+  .crop-modal__head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  .crop-modal__head h3{margin:0;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:16px}
+  .crop-modal__head p{margin:0;font-size:12px;color:var(--muted)}
+  .crop-modal__close{background:none;border:0;cursor:pointer;font-size:18px;color:var(--muted);line-height:1}
+  .crop-modal__body{padding:16px;background:#1a1a2e;max-height:55vh;display:flex;align-items:center;justify-content:center}
+  .crop-modal__body img{max-width:100%;max-height:50vh;display:block}
+  .crop-modal__foot{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:12px}
 
   .empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
   .empty-state i{font-size:40px;margin-bottom:12px;opacity:.4}
@@ -154,14 +225,41 @@
     </div>
   </a>
   <div class="topbar-right">
-    <div class="user-chip">
-      <div class="user-avatar"><i class="fas fa-building" style="font-size:12px"></i></div>
-      {{ auth()->user()->empresa?->razao_social ?? auth()->user()->name }}
+    @php $nomeEmpresa = auth()->user()->empresa?->razao_social ?? auth()->user()->name; @endphp
+    <div class="user-menu" id="userMenu">
+      <button type="button" class="user-chip user-chip-btn" id="userMenuToggle"
+              aria-haspopup="true" aria-expanded="false">
+        <div class="user-avatar"><i class="fas fa-building" style="font-size:12px"></i></div>
+        <span class="user-chip-name">{{ $nomeEmpresa }}</span>
+        <i class="fas fa-chevron-down user-chip-caret"></i>
+      </button>
+
+      <div class="dropdown" role="menu">
+        <div class="dropdown-head">
+          <strong>{{ $nomeEmpresa }}</strong>
+          <span>{{ auth()->user()->email }}</span>
+        </div>
+
+        <button type="button" class="dropdown-item" role="menuitem" onclick="openModal('modal-dados-empresa')">
+          <i class="fas fa-building"></i> Meus dados
+        </button>
+        <button type="button" class="dropdown-item" role="menuitem" onclick="openModal('modal-senha-empresa')">
+          <i class="fas fa-key"></i> Alterar senha
+        </button>
+        <a href="#vitrine" class="dropdown-item" role="menuitem">
+          <i class="fas fa-store"></i> Minha vitrine
+        </a>
+
+        <div class="dropdown-sep"></div>
+
+        <form action="{{ route('empresa.logout') }}" method="POST">
+          @csrf
+          <button type="submit" class="dropdown-item danger" role="menuitem">
+            <i class="fas fa-sign-out-alt"></i> Sair
+          </button>
+        </form>
+      </div>
     </div>
-    <form action="{{ route('empresa.logout') }}" method="POST" style="display:inline">
-      @csrf
-      <button type="submit" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Sair</button>
-    </form>
   </div>
 </nav>
 
@@ -270,7 +368,304 @@
     @endif
   </div>
 
+  {{-- Minha Vitrine (cadastro público em /empresas-locais) --}}
+  <div class="section" id="vitrine">
+    <div class="section-header">
+      <div class="section-title"><i class="fas fa-store"></i> Minha Vitrine</div>
+      <a href="{{ route('empresas-locais') }}#cadastro" class="btn-add" target="_blank">
+        <i class="fas fa-external-link-alt"></i> Ver página
+      </a>
+    </div>
 
+    @if($minhasVitrines->isEmpty())
+      <div class="empty-state" style="background:var(--paper);border:1px solid var(--line);border-radius:18px">
+        <i class="fas fa-store"></i>
+        <p>
+          Nenhum cadastro em Empresas Locais vinculado à sua conta.<br>
+          <a href="{{ route('empresas-locais') }}#cadastro" target="_blank" style="color:var(--brand);font-weight:700">Cadastre sua empresa</a>
+          usando o mesmo CNPJ ou e-mail para poder editá-la por aqui.
+        </p>
+      </div>
+    @else
+      <div class="cards-grid">
+        @foreach($minhasVitrines as $vitrine)
+          <div class="card"
+            data-vitrine-id="{{ $vitrine->id }}"
+            data-url="{{ route('portal.empresa.servicos.update', $vitrine) }}"
+            data-name="{{ e($vitrine->name) }}"
+            data-service-title="{{ e($vitrine->service_title) }}"
+            data-whatsapp="{{ $vitrine->whatsapp }}"
+            data-instagram="{{ $vitrine->instagram }}"
+            data-optional-info="{{ e($vitrine->optional_info) }}"
+            data-image="{{ $vitrine->business_image ? Storage::disk('public')->url($vitrine->business_image) : '' }}">
+            <div class="card-badge
+              @if($vitrine->status === 'active') badge-green
+              @elseif($vitrine->status === 'pending') badge-yellow
+              @else badge-gray
+              @endif">
+              <i class="fas fa-circle" style="font-size:7px"></i>
+              {{ $vitrine->status === 'pending' ? 'Em análise' : $vitrine->status_label }}
+            </div>
+            <h3>{{ $vitrine->service_title }}</h3>
+            <div class="card-meta">
+              <span><i class="fas fa-building"></i> {{ $vitrine->name }}</span>
+              <span><i class="fab fa-whatsapp"></i> {{ $vitrine->whatsapp }}</span>
+              @if($vitrine->instagram)
+                <span><i class="fab fa-instagram"></i> {{ $vitrine->instagram }}</span>
+              @endif
+            </div>
+            <div class="card-actions">
+              <button type="button" class="btn-sm btn-brand" onclick="abrirEditarVitrine(this.closest('.card'))">
+                <i class="fas fa-pen"></i> Editar
+              </button>
+            </div>
+          </div>
+        @endforeach
+      </div>
+    @endif
+  </div>
+
+</div>
+
+{{-- ── Modal: dados cadastrais da empresa ── --}}
+<div class="modal-backdrop" id="modal-dados-empresa">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width:560px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title"><i class="fas fa-building" style="color:var(--brand);margin-right:8px"></i>Dados da Empresa</div>
+        <div class="modal-subtitle">Informações da conta e de contato</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-dados-empresa')"><i class="fas fa-times"></i></button>
+    </div>
+
+    <form method="POST" action="{{ route('portal.empresa.dados.update') }}" style="display:contents">
+      @csrf
+      @method('PUT')
+
+      <div class="modal-body">
+        @if($errors->empresa->any())
+          <div class="alert-inline alert-inline-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <div>
+              @foreach($errors->empresa->all() as $erro)
+                <div>{{ $erro }}</div>
+              @endforeach
+            </div>
+          </div>
+        @endif
+
+        <div class="form-group">
+          <label>Razão social <span class="req">*</span></label>
+          <input type="text" name="razao_social" class="form-control" required
+                 value="{{ old('razao_social', $empresa->razao_social ?? auth()->user()->name) }}">
+        </div>
+
+        <div class="form-group">
+          <label>E-mail de acesso <span class="req">*</span></label>
+          <input type="email" name="email" class="form-control" required
+                 value="{{ old('email', auth()->user()->email) }}">
+          <span class="form-hint">É com este e-mail que a empresa entra no portal.</span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Telefone</label>
+            <input type="text" name="telefone" class="form-control" placeholder="(81) 99999-9999"
+                   value="{{ old('telefone', $empresa->telefone ?? '') }}">
+          </div>
+          <div class="form-group">
+            <label>Cidade</label>
+            <input type="text" name="cidade" class="form-control" placeholder="Vitória de Santo Antão"
+                   value="{{ old('cidade', $empresa->cidade ?? '') }}">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Descrição da empresa</label>
+          <textarea name="descricao" class="form-control" rows="3"
+                    placeholder="Ramo de atuação, porte, diferenciais...">{{ old('descricao', $empresa->descricao ?? '') }}</textarea>
+          <span class="form-hint">Aparece para os candidatos junto das suas vagas.</span>
+        </div>
+
+        <div class="form-group">
+          <label>CNPJ</label>
+          <div class="form-static">{{ $empresa->cnpj ?? 'Não informado' }}</div>
+          <span class="form-hint">
+            O CNPJ identifica a conta e liga a vitrine de Empresas Locais a ela, por isso não pode ser
+            alterado por aqui. Se estiver errado, fale com a equipe do Empreende Vitória.
+          </span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="closeModal('modal-dados-empresa')">Cancelar</button>
+        <button type="submit" class="btn-submit"><i class="fas fa-check"></i> Salvar dados</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{{-- ── Modal: alterar senha ── --}}
+<div class="modal-backdrop" id="modal-senha-empresa">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width:460px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title"><i class="fas fa-key" style="color:var(--brand);margin-right:8px"></i>Alterar Senha</div>
+        <div class="modal-subtitle">Senha de acesso ao portal</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-senha-empresa')"><i class="fas fa-times"></i></button>
+    </div>
+
+    <form method="POST" action="{{ route('portal.empresa.senha.update') }}" style="display:contents">
+      @csrf
+      @method('PUT')
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Senha atual <span class="req">*</span></label>
+          <input type="password" name="current_password" autocomplete="current-password" required
+                 class="form-control campo-senha" style="{{ $errors->senha->has('current_password') ? 'border-color:#dc2626' : '' }}">
+          @error('current_password', 'senha') <span class="form-hint" style="color:#dc2626;font-weight:700">{{ $message }}</span> @enderror
+        </div>
+
+        <div class="form-group">
+          <label>Nova senha <span class="req">*</span></label>
+          <input type="password" name="password" autocomplete="new-password" minlength="8" required
+                 class="form-control campo-senha" style="{{ $errors->senha->has('password') ? 'border-color:#dc2626' : '' }}">
+          @error('password', 'senha')
+            <span class="form-hint" style="color:#dc2626;font-weight:700">{{ $message }}</span>
+          @else
+            <span class="form-hint">Mínimo de 8 caracteres.</span>
+          @enderror
+        </div>
+
+        <div class="form-group">
+          <label>Confirmar nova senha <span class="req">*</span></label>
+          <input type="password" name="password_confirmation" autocomplete="new-password" minlength="8" required
+                 class="form-control campo-senha">
+        </div>
+
+        <label class="form-check">
+          <input type="checkbox" onchange="mostrarSenhasEmpresa(this.checked)"> Mostrar senhas
+        </label>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="closeModal('modal-senha-empresa')">Cancelar</button>
+        <button type="submit" class="btn-submit"><i class="fas fa-check"></i> Salvar nova senha</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{{-- ── Modal: editar vitrine ── --}}
+<div class="modal-backdrop" id="modal-editar-vitrine">
+  <div class="modal" role="dialog" aria-modal="true" style="max-width:560px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title"><i class="fas fa-store" style="color:var(--brand);margin-right:8px"></i>Editar Vitrine</div>
+        <div class="modal-subtitle">Como sua empresa aparece na página de Empresas Locais</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-editar-vitrine')"><i class="fas fa-times"></i></button>
+    </div>
+
+    <form method="POST" action="" id="form-editar-vitrine" style="display:contents">
+      @csrf
+      @method('PUT')
+
+      <div class="modal-body">
+        @if($errors->servico->any())
+          <div class="alert-inline alert-inline-error">
+            <i class="fas fa-exclamation-circle"></i>
+            <div>
+              @foreach($errors->servico->all() as $erro)
+                <div>{{ $erro }}</div>
+              @endforeach
+            </div>
+          </div>
+        @endif
+
+        <div class="alert-inline alert-inline-info">
+          <i class="fas fa-info-circle"></i>
+          <div>Ao salvar, o cadastro volta para análise da equipe e fica fora do site até ser aprovado de novo.</div>
+        </div>
+
+        <input type="hidden" name="_service_id" id="editar-vitrine-id">
+
+        <div class="form-group">
+          <label>Nome da empresa <span class="req">*</span></label>
+          <input type="text" name="name" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label>O que sua empresa oferece? <span class="req">*</span></label>
+          <input type="text" name="service_title" class="form-control" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>WhatsApp <span class="req">*</span></label>
+            <input type="text" name="whatsapp" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label>Instagram</label>
+            <input type="text" name="instagram" class="form-control" placeholder="@suaempresa">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Informações adicionais</label>
+          <textarea name="optional_info" class="form-control" rows="3"
+                    placeholder="Horários de atendimento, área de atuação, diferenciais..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Imagem da empresa <span style="font-weight:400;color:var(--muted)">(16:9)</span></label>
+          <div class="upload-preview" id="vitrine-preview">
+            <img id="vitrine-preview-img" src="" alt="">
+          </div>
+          <label class="upload-label" for="vitrine-file">
+            <i class="fas fa-camera"></i>
+            <span id="vitrine-upload-texto">Clique para adicionar a imagem da empresa</span>
+            <span style="font-size:11px;margin-top:2px">JPG, PNG ou WEBP · máx. 5MB</span>
+          </label>
+          <input type="file" id="vitrine-file" accept="image/jpeg,image/png,image/webp" style="display:none">
+          <input type="hidden" name="business_image" id="vitrine-base64">
+          <span class="form-hint">Sem escolher uma imagem nova, a atual é mantida.</span>
+        </div>
+
+        <p class="form-hint">
+          E-mail e CNPJ não podem ser alterados aqui: são eles que ligam o cadastro à sua conta.
+          Se precisar corrigi-los, fale com a equipe do Empreende Vitória.
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="closeModal('modal-editar-vitrine')">Cancelar</button>
+        <button type="submit" class="btn-submit"><i class="fas fa-check"></i> Salvar alterações</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{{-- ── Modal: recorte 16:9 da imagem da vitrine ── --}}
+<div class="crop-modal-backdrop" id="vitrine-crop-backdrop">
+  <div class="crop-modal">
+    <div class="crop-modal__head">
+      <div>
+        <h3>Ajustar imagem</h3>
+        <p>Arraste e redimensione para enquadrar no formato 16:9</p>
+      </div>
+      <button type="button" class="crop-modal__close" onclick="fecharCropVitrine()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="crop-modal__body">
+      <img id="vitrine-crop-img" src="" alt="">
+    </div>
+    <div class="crop-modal__foot">
+      <button type="button" class="btn-cancel" onclick="fecharCropVitrine()">Cancelar</button>
+      <button type="button" class="btn-submit" onclick="aplicarCropVitrine()"><i class="fas fa-check"></i> Aplicar</button>
+    </div>
+  </div>
 </div>
 
 {{-- ── Modais de candidatos por vaga ── --}}
@@ -370,7 +765,32 @@
   </div>
 @endforeach
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
 <script>
+  // ── Menu da conta (dropdown do nome da empresa) ──
+  const userMenu       = document.getElementById('userMenu');
+  const userMenuToggle = document.getElementById('userMenuToggle');
+
+  function fecharUserMenu() {
+    userMenu.classList.remove('open');
+    userMenuToggle.setAttribute('aria-expanded', 'false');
+  }
+
+  userMenuToggle.addEventListener('click', function (e) {
+    e.stopPropagation();
+    const aberto = userMenu.classList.toggle('open');
+    this.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+  });
+
+  // Escolher uma opção fecha o menu (inclusive as que abrem modal).
+  userMenu.querySelectorAll('.dropdown-item').forEach(item => {
+    item.addEventListener('click', fecharUserMenu);
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!userMenu.contains(e.target)) fecharUserMenu();
+  });
+
   function openModal(id) {
     document.getElementById(id).classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -388,9 +808,129 @@
   // Fechar com ESC
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
+      fecharUserMenu();
+      // Com o recorte aberto, ESC fecha só ele — o modal de edição continua.
+      if (document.getElementById('vitrine-crop-backdrop').classList.contains('open')) {
+        fecharCropVitrine();
+        return;
+      }
       document.querySelectorAll('.modal-backdrop.open').forEach(m => closeModal(m.id));
     }
   });
+
+  // ── Vitrine: edição do cadastro público de Empresas Locais ──
+  function abrirEditarVitrine(card) {
+    const d = card.dataset;
+    const f = document.getElementById('form-editar-vitrine');
+
+    f.action = d.url;
+    f.querySelector('[name="_service_id"]').value   = d.vitrineId;
+    f.querySelector('[name="name"]').value          = d.name;
+    f.querySelector('[name="service_title"]').value = d.serviceTitle;
+    f.querySelector('[name="whatsapp"]').value      = d.whatsapp;
+    f.querySelector('[name="instagram"]').value     = d.instagram || '';
+    f.querySelector('[name="optional_info"]').value = d.optionalInfo || '';
+
+    document.getElementById('vitrine-base64').value = '';
+    document.getElementById('vitrine-file').value   = '';
+    mostrarPreviaVitrine(d.image || '');
+    document.getElementById('vitrine-upload-texto').textContent =
+      d.image ? 'Clique para trocar a imagem da empresa' : 'Clique para adicionar a imagem da empresa';
+
+    openModal('modal-editar-vitrine');
+  }
+
+  function mostrarPreviaVitrine(src) {
+    document.getElementById('vitrine-preview-img').src = src;
+    document.getElementById('vitrine-preview').style.display = src ? 'block' : 'none';
+  }
+
+  let vitrineCropper = null;
+
+  document.getElementById('vitrine-file').addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('A imagem deve ter no máximo 5MB.');
+      this.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = e => abrirCropVitrine(e.target.result);
+    reader.readAsDataURL(file);
+  });
+
+  function abrirCropVitrine(src) {
+    const img = document.getElementById('vitrine-crop-img');
+    img.src = src;
+    document.getElementById('vitrine-crop-backdrop').classList.add('open');
+
+    // Espera o render da imagem antes de iniciar o cropper.
+    setTimeout(() => {
+      if (vitrineCropper) vitrineCropper.destroy();
+      vitrineCropper = new Cropper(img, {
+        aspectRatio: 16 / 9,
+        viewMode: 1,
+        autoCropArea: 1,
+        movable: true,
+        zoomable: true,
+        rotatable: false,
+        scalable: false,
+      });
+    }, 100);
+  }
+
+  function fecharCropVitrine() {
+    document.getElementById('vitrine-crop-backdrop').classList.remove('open');
+    if (vitrineCropper) { vitrineCropper.destroy(); vitrineCropper = null; }
+    document.getElementById('vitrine-file').value = '';
+  }
+
+  function aplicarCropVitrine() {
+    if (!vitrineCropper) return;
+
+    const base64 = vitrineCropper.getCroppedCanvas({ width: 1280, height: 720 }).toDataURL('image/jpeg', 0.88);
+    document.getElementById('vitrine-base64').value = base64;
+    mostrarPreviaVitrine(base64);
+    document.getElementById('vitrine-upload-texto').textContent = 'Clique para trocar a imagem da empresa';
+    fecharCropVitrine();
+  }
+
+  document.getElementById('vitrine-crop-backdrop').addEventListener('click', function (e) {
+    if (e.target === this) fecharCropVitrine();
+  });
+
+  function mostrarSenhasEmpresa(visivel) {
+    document.querySelectorAll('.campo-senha').forEach(function (campo) {
+      campo.type = visivel ? 'text' : 'password';
+    });
+  }
+
+  {{-- Dados ou senha recusados: reabre o modal correspondente com os erros. --}}
+  @if($errors->empresa->any())
+    openModal('modal-dados-empresa');
+  @endif
+  @if($errors->senha->any())
+    openModal('modal-senha-empresa');
+  @endif
+
+  {{-- Edição recusada: reabre o modal do cadastro certo com o que foi digitado. --}}
+  @if($errors->servico->any())
+    (function () {
+      const card = document.querySelector('[data-vitrine-id="{{ old('_service_id') }}"]');
+      if (!card) return;
+      abrirEditarVitrine(card);
+      const f = document.getElementById('form-editar-vitrine');
+      f.querySelector('[name="name"]').value          = @json(old('name'));
+      f.querySelector('[name="service_title"]').value = @json(old('service_title'));
+      f.querySelector('[name="whatsapp"]').value      = @json(old('whatsapp'));
+      f.querySelector('[name="instagram"]').value     = @json(old('instagram', ''));
+      f.querySelector('[name="optional_info"]').value = @json(old('optional_info', ''));
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    })();
+  @endif
 </script>
 </body>
 </html>

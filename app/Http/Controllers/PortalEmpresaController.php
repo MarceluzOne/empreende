@@ -6,7 +6,14 @@ use App\Models\Empresa;
 use App\Models\JobApplication;
 use App\Models\JobSeeker;
 use App\Models\JobVacancy;
+use App\Models\ServiceProvider;
+use App\Http\Requests\UpdateEmpresaRequest;
+use App\Http\Requests\UpdatePasswordRequest;
+use App\Http\Requests\UpdateServiceProviderRequest;
+use App\Services\EmpresaService;
 use App\Services\JobVacancyService;
+use App\Services\ServiceProviderService;
+use App\Services\UserService;
 use Illuminate\Http\Request;
 
 class PortalEmpresaController extends Controller
@@ -27,7 +34,10 @@ class PortalEmpresaController extends Controller
         'Gastronomia', 'Serviços Gerais', 'Jurídico', 'Contabilidade / Finanças', 'Outros',
     ];
 
-    public function __construct(private JobVacancyService $service) {}
+    public function __construct(
+        private JobVacancyService $service,
+        private ServiceProviderService $services
+    ) {}
 
     public function index()
     {
@@ -41,7 +51,63 @@ class PortalEmpresaController extends Controller
 
         $totalCandidaturas = JobApplication::whereHas('vacancy', fn($q) => $q->where('user_id', $user->id))->count();
 
-        return view('portal.empresa.index', compact('minhasVagas', 'totalCandidaturas'));
+        // Cadastros feitos na página pública de Empresas Locais, reconhecidos
+        // pelo CNPJ informado lá ou pelo e-mail da conta.
+        $minhasVitrines = $this->services->forCompany($user->email, $this->companyCnpj());
+
+        $empresa = Empresa::where('user_id', $user->id)->first();
+
+        return view('portal.empresa.index', compact('minhasVagas', 'totalCandidaturas', 'minhasVitrines', 'empresa'));
+    }
+
+    // ── Conta ──────────────────────────────────────────────────
+
+    public function updateDados(UpdateEmpresaRequest $request, EmpresaService $empresas)
+    {
+        $empresas->updateProfile($request->user(), $request->validated());
+
+        return back()->with('success', 'Dados cadastrais atualizados com sucesso!');
+    }
+
+    public function updateSenha(UpdatePasswordRequest $request, UserService $users)
+    {
+        $users->changePassword($request->user(), $request->input('password'));
+
+        return back()->with('success', 'Senha alterada com sucesso!');
+    }
+
+    /**
+     * Edição do cadastro público de /empresas-locais pela própria empresa.
+     * Volta para análise da equipe a cada alteração.
+     */
+    public function updateServico(UpdateServiceProviderRequest $request, ServiceProvider $service)
+    {
+        abort_unless($this->ownsService($service), 403, 'Este cadastro não pertence à sua conta.');
+
+        $this->services->updateFromPortal(
+            $service,
+            $request->safe()->except('business_image'),
+            $request->input('business_image')
+        );
+
+        return back()->with('success', 'Vitrine atualizada! O cadastro voltou para análise da equipe.');
+    }
+
+    private function ownsService(ServiceProvider $service): bool
+    {
+        return $this->services->belongsToCompany($service, auth()->user()->email, $this->companyCnpj());
+    }
+
+    /**
+     * CNPJ da empresa logada em dígitos — a tabela empresas guarda com
+     * máscara e service_providers guarda sem.
+     */
+    private function companyCnpj(): ?string
+    {
+        $cnpj = Empresa::where('user_id', auth()->id())->value('cnpj');
+        $digits = $cnpj ? preg_replace('/\D/', '', $cnpj) : '';
+
+        return $digits !== '' ? $digits : null;
     }
 
     public function createVaga()

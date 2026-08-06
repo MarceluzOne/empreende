@@ -7,7 +7,12 @@ use App\Models\EventParticipant;
 use App\Models\JobApplication;
 use App\Models\JobSeeker;
 use App\Models\JobVacancy;
+use App\Models\ServiceProvider;
+use App\Http\Requests\UpdatePasswordRequest;
+use App\Http\Requests\UpdateServiceProviderRequest;
 use App\Services\JobSeekerService;
+use App\Services\ServiceProviderService;
+use App\Services\UserService;
 use Illuminate\Http\Request;
 
 class PortalUsuarioController extends Controller
@@ -23,9 +28,12 @@ class PortalUsuarioController extends Controller
         '1 ano a 2 anos', '2 anos a 3 anos', '3 anos a 5 anos', 'Mais de 5 anos',
     ];
 
-    public function __construct(private JobSeekerService $service) {}
+    public function __construct(
+        private JobSeekerService $service,
+        private ServiceProviderService $services
+    ) {}
 
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
 
@@ -58,21 +66,34 @@ class PortalUsuarioController extends Controller
 
         $vagasCandidadasIds = $minhasCandidaturas->pluck('job_vacancy_id');
 
+        // Filtro por área de interesse: só vale se for uma das áreas
+        // conhecidas, para não abrir a query a qualquer texto vindo da URL.
+        $areaFiltro = in_array($request->query('area'), $this->interestAreas, true)
+            ? $request->query('area')
+            : null;
+
         $vagas = JobVacancy::where('status', 'active')
             ->whereNotIn('id', $vagasCandidadasIds)
+            ->when($areaFiltro, fn($q) => $q->where('interest_area', $areaFiltro))
             ->with('user.empresa')
             ->latest()
-            ->take(6)
             ->get();
 
-        return view('portal.usuario.index', compact(
-            'meusEventos',
-            'eventosDisponiveis',
-            'vagas',
-            'perfil',
-            'minhasCandidaturas',
-            'vagasCandidadasIds',
-        ));
+        // Cadastros feitos na página pública de Serviços, reconhecidos pelo
+        // CPF informado lá ou pelo e-mail da conta.
+        $meusServicos = $this->services->forCandidate($user->email, $cpf);
+
+        return view('portal.usuario.index', [
+            'meusEventos'        => $meusEventos,
+            'eventosDisponiveis' => $eventosDisponiveis,
+            'vagas'              => $vagas,
+            'perfil'             => $perfil,
+            'minhasCandidaturas' => $minhasCandidaturas,
+            'vagasCandidadasIds' => $vagasCandidadasIds,
+            'meusServicos'       => $meusServicos,
+            'interestAreas'      => $this->interestAreas,
+            'areaFiltro'         => $areaFiltro,
+        ]);
     }
 
     // ── Currículo ──────────────────────────────────────────────
@@ -199,6 +220,52 @@ class PortalUsuarioController extends Controller
         $this->service->destroy($perfil);
 
         return redirect()->route('portal.usuario')->with('success', 'Currículo excluído com sucesso.');
+    }
+
+    // ── Prestador de serviço ───────────────────────────────────
+
+    /**
+     * Edição do cadastro público de /servicos pelo próprio dono. Volta para
+     * análise da equipe a cada alteração.
+     */
+    public function updateServico(UpdateServiceProviderRequest $request, ServiceProvider $service)
+    {
+        abort_unless($this->ownsService($service), 403, 'Este cadastro não pertence à sua conta.');
+
+        $this->services->updateFromPortal(
+            $service,
+            $request->safe()->except('business_image'),
+            $request->input('business_image')
+        );
+
+        return back()->with('success', 'Serviço atualizado! O cadastro voltou para análise da equipe.');
+    }
+
+    /**
+     * O cadastro é do usuário se casar pelo CPF do currículo ou pelo e-mail
+     * da conta — mesmo critério da listagem.
+     */
+    private function ownsService(ServiceProvider $service): bool
+    {
+        $user   = auth()->user();
+        $perfil = JobSeeker::where('user_id', $user->id)
+            ->orWhere('email', $user->email)
+            ->first();
+
+        return $this->services->belongsToCandidate($service, $user->email, $this->profileCpf($perfil));
+    }
+
+    // ── Conta ──────────────────────────────────────────────────
+
+    /**
+     * Troca de senha pelo próprio candidato, sem passar pelo fluxo de
+     * recuperação por e-mail. Exige a senha atual.
+     */
+    public function updateSenha(UpdatePasswordRequest $request, UserService $users)
+    {
+        $users->changePassword($request->user(), $request->input('password'));
+
+        return back()->with('success', 'Senha alterada com sucesso!');
     }
 
     // ── Eventos ────────────────────────────────────────────────

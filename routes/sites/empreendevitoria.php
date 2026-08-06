@@ -177,6 +177,12 @@ Route::middleware(['auth', 'check.user.type:usuario'])->group(function () {
     Route::put('/portal/usuario/curriculo', [PortalUsuarioController::class, 'updateCurriculo'])->name('portal.usuario.curriculo.update');
     Route::delete('/portal/usuario/curriculo', [PortalUsuarioController::class, 'destroyCurriculo'])->name('portal.usuario.curriculo.destroy');
 
+    // Cadastro de prestador de serviço (feito na página pública /servicos)
+    Route::put('/portal/usuario/servicos/{service}', [PortalUsuarioController::class, 'updateServico'])->name('portal.usuario.servicos.update');
+
+    // Conta
+    Route::put('/portal/usuario/senha', [PortalUsuarioController::class, 'updateSenha'])->name('portal.usuario.senha.update');
+
     // Candidaturas a vagas
     Route::post('vagas/{jobVacancy}/candidatar', [JobApplicationController::class, 'store'])->name('job-vacancies.apply');
     Route::delete('vagas/{jobVacancy}/candidatar', [JobApplicationController::class, 'destroy'])->name('job-vacancies.unapply');
@@ -209,4 +215,11 @@ Route::middleware(['auth', 'check.user.type:empresa'])->group(function () {
 
     // Perfil do candidato (somente-leitura para empresa)
     Route::get('/portal/empresa/candidatos/{jobSeeker}', [PortalEmpresaController::class, 'showCandidato'])->name('portal.empresa.candidato.show');
+
+    // Cadastro da vitrine (feito na página pública /empresas-locais)
+    Route::put('/portal/empresa/vitrine/{service}', [PortalEmpresaController::class, 'updateServico'])->name('portal.empresa.servicos.update');
+
+    // Conta
+    Route::put('/portal/empresa/dados', [PortalEmpresaController::class, 'updateDados'])->name('portal.empresa.dados.update');
+    Route::put('/portal/empresa/senha', [PortalEmpresaController::class, 'updateSenha'])->name('portal.empresa.senha.update');
 });
