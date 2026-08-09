@@ -137,7 +137,7 @@
       <div class="auth-footer">
         Lembrou a senha? <a href="{{ route('login') }}">Entrar agora</a>
         <br><br>
-        <a href="{{ route('usuario.login') }}" style="color:var(--muted)"><i class="fas fa-user"></i> Candidato</a>
+        <a href="{{ route('usuario.login') }}" style="color:var(--muted)"><i class="fas fa-user"></i> Usuário</a>
         &nbsp;·&nbsp;
         <a href="{{ route('empresa.login') }}" style="color:var(--muted)"><i class="fas fa-building"></i> Empresa</a>
         &nbsp;·&nbsp;

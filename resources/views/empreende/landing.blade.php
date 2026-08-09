@@ -713,7 +713,8 @@
     <nav class="nav">
       <a href="#topo" class="active">Home</a>
       <a href="#sobre">O Que é?</a>
-      <a href="#servicos">Serviços</a>
+      <a href="{{ route('servicos') }}">Serviços</a>
+      <a href="{{ route('empresas-locais') }}">Empresas</a>
       <a href="#vagas">Vagas</a>
       <a href="{{ route('cursos') }}">Cursos</a>
       <a href="{{ route('public.certificates') }}">Certificados</a>
@@ -731,7 +732,8 @@
     <button class="mobile-close" id="mobileClose" aria-label="Fechar menu"><i class="fas fa-times"></i></button>
     <a href="#topo" class="active">Home <i class="fas fa-chevron-right"></i></a>
     <a href="#sobre">O Que é? <i class="fas fa-chevron-right"></i></a>
-    <a href="#servicos">Serviços <i class="fas fa-chevron-right"></i></a>
+    <a href="{{ route('servicos') }}">Serviços <i class="fas fa-chevron-right"></i></a>
+    <a href="{{ route('empresas-locais') }}">Empresas <i class="fas fa-chevron-right"></i></a>
     <a href="#vagas">Vagas <i class="fas fa-chevron-right"></i></a>
     <a href="{{ route('cursos') }}">Cursos <i class="fas fa-chevron-right"></i></a>
     <a href="{{ route('public.certificates') }}">Certificados <i class="fas fa-chevron-right"></i></a>

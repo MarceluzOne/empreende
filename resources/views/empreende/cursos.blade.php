@@ -313,7 +313,8 @@
   <nav class="nav">
     <a href="{{ route('home') }}">Home</a>
     <a href="{{ route('home') }}#sobre">O Que é?</a>
-    <a href="{{ route('home') }}#servicos">Serviços</a>
+    <a href="{{ route('servicos') }}">Serviços</a>
+    <a href="{{ route('empresas-locais') }}">Empresas</a>
     <a href="{{ route('home') }}#vagas">Vagas</a>
     <a href="{{ route('cursos') }}" class="active">Cursos</a>
     <a href="{{ route('public.certificates') }}">Certificados</a>
@@ -330,7 +331,8 @@
   <button class="mobile-close" id="mobileClose"><i class="fas fa-times"></i></button>
   <a href="{{ route('home') }}">Home <i class="fas fa-chevron-right"></i></a>
   <a href="{{ route('home') }}#sobre">O Que é? <i class="fas fa-chevron-right"></i></a>
-  <a href="{{ route('home') }}#servicos">Serviços <i class="fas fa-chevron-right"></i></a>
+  <a href="{{ route('servicos') }}">Serviços <i class="fas fa-chevron-right"></i></a>
+  <a href="{{ route('empresas-locais') }}">Empresas <i class="fas fa-chevron-right"></i></a>
   <a href="{{ route('home') }}#vagas">Vagas <i class="fas fa-chevron-right"></i></a>
   <a href="{{ route('cursos') }}" class="active">Cursos <i class="fas fa-chevron-right"></i></a>
   <a href="{{ route('public.certificates') }}">Certificados <i class="fas fa-chevron-right"></i></a>

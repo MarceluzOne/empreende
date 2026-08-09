@@ -325,10 +325,12 @@
     <a href="{{ route('home') }}">Home</a>
     <a href="{{ route('home') }}#sobre">O Que é?</a>
     <a href="{{ route('servicos') }}">Serviços</a>
+    <a href="{{ route('empresas-locais') }}" class="active">Empresas</a>
     <a href="{{ route('home') }}#vagas">Vagas</a>
     <a href="{{ route('cursos') }}">Cursos</a>
+    <a href="{{ route('public.certificates') }}">Certificados</a>
     <a href="{{ route('contato') }}">Contato</a>
-    <a href="{{ route('login') }}" class="nav-login"><i class="fas fa-user-lock"></i> Entrar</a>
+    <a href="{{ route('usuario.login') }}" class="nav-login"><i class="fas fa-user-lock"></i> Entrar</a>
   </nav>
   <button class="menu-toggle" id="menuToggle" aria-label="Abrir menu">
     <i class="fas fa-bars"></i>
@@ -341,8 +343,10 @@
   <a href="{{ route('home') }}">Home <i class="fas fa-chevron-right"></i></a>
   <a href="{{ route('home') }}#sobre">O Que é? <i class="fas fa-chevron-right"></i></a>
   <a href="{{ route('servicos') }}">Serviços <i class="fas fa-chevron-right"></i></a>
+  <a href="{{ route('empresas-locais') }}" class="active">Empresas <i class="fas fa-chevron-right"></i></a>
   <a href="{{ route('home') }}#vagas">Vagas <i class="fas fa-chevron-right"></i></a>
   <a href="{{ route('cursos') }}">Cursos <i class="fas fa-chevron-right"></i></a>
+  <a href="{{ route('public.certificates') }}">Certificados <i class="fas fa-chevron-right"></i></a>
   <a href="{{ route('contato') }}">Contato <i class="fas fa-chevron-right"></i></a>
   <a href="{{ route('usuario.login') }}" style="margin-top:12px;background:var(--brand);color:#fff;justify-content:center">Entrar</a>
 </aside>

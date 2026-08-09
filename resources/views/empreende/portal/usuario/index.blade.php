@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <link rel="icon" type="image/png" href="{{ asset('assets/Marca-Empreende-Vitoria_negativada.png') }}">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Portal do Candidato — Empreende Vitória</title>
+<title>Portal do Usuário — Empreende Vitória</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -218,7 +218,7 @@
     <a href="{{ route('home') }}" class="brand">
       <div class="brand-mark">EV</div>
       <div>Empreende Vitória
-        <small style="display:block;font-size:10px;font-weight:600;opacity:.5;text-transform:uppercase;letter-spacing:.08em;font-family:'Lato',sans-serif">Portal do Candidato</small>
+        <small style="display:block;font-size:10px;font-weight:600;opacity:.5;text-transform:uppercase;letter-spacing:.08em;font-family:'Lato',sans-serif">Portal do Usuário</small>
       </div>
     </a>
   </div>
