@@ -27,6 +27,14 @@
 
     <form action="{{ route('job-seekers.store') }}" method="POST"
         x-data="{
+            cpf: '{{ old('cpf', '') }}',
+            maskCpf(v) {
+                v = v.replace(/\D/g, '').slice(0, 11);
+                if (v.length > 9) v = v.slice(0, 3) + '.' + v.slice(3, 6) + '.' + v.slice(6, 9) + '-' + v.slice(9);
+                else if (v.length > 6) v = v.slice(0, 3) + '.' + v.slice(3, 6) + '.' + v.slice(6);
+                else if (v.length > 3) v = v.slice(0, 3) + '.' + v.slice(3);
+                this.cpf = v;
+            },
             phone: '{{ old('phone', '') }}',
             maskPhone(v) {
                 v = v.replace(/\D/g, '').slice(0, 11);
@@ -63,16 +71,30 @@
                 <i class="fas fa-user text-blue-500"></i> Dados Pessoais
             </h2>
 
-            {{-- Nome --}}
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Nome Completo *</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fas fa-user"></i></span>
-                    <input type="text" name="name" value="{{ old('name') }}"
-                        placeholder="Nome completo do candidato"
-                        class="w-full pl-10 pr-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none @error('name') border-red-400 @else border-gray-200 @enderror">
+            {{-- Nome / CPF --}}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Nome Completo *</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fas fa-user"></i></span>
+                        <input type="text" name="name" value="{{ old('name') }}"
+                            placeholder="Nome completo do candidato"
+                            class="w-full pl-10 pr-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none @error('name') border-red-400 @else border-gray-200 @enderror">
+                    </div>
+                    @error('name') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                 </div>
-                @error('name') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">CPF *</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fas fa-id-card"></i></span>
+                        <input type="text" name="cpf"
+                            x-model="cpf"
+                            @input="maskCpf($event.target.value)"
+                            placeholder="000.000.000-00" maxlength="14" inputmode="numeric"
+                            class="w-full pl-10 pr-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none @error('cpf') border-red-400 @else border-gray-200 @enderror">
+                    </div>
+                    @error('cpf') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                </div>
             </div>
 
             {{-- Cargo / Cidade / Estado --}}
