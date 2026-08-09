@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <link rel="icon" type="image/png" href="{{ asset('assets/Marca-Empreende-Vitoria_negativada.png') }}">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Acesso do Candidato — Empreende Vitória</title>
+<title>Acesso do Usuário — Empreende Vitória</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -112,11 +112,11 @@
   <div class="auth-side">
     <div class="auth-side-icon"><i class="fas fa-user-tie"></i></div>
     <h2>Sua carreira começa <span>aqui.</span></h2>
-    <p>Acesse o portal do candidato e aproveite todas as oportunidades que o Empreende Vitória oferece.</p>
+    <p>Acesse o portal do usuário e aproveite todas as oportunidades que o Empreende Vitória oferece.</p>
     <div class="auth-side-features">
       <div class="auth-side-feature"><i class="fas fa-calendar-check"></i> Inscreva-se em eventos e cursos</div>
       <div class="auth-side-feature"><i class="fas fa-briefcase"></i> Visualize vagas de emprego</div>
-      <div class="auth-side-feature"><i class="fas fa-id-card"></i> Crie seu perfil de candidato</div>
+      <div class="auth-side-feature"><i class="fas fa-id-card"></i> Crie seu perfil de usuário</div>
       <div class="auth-side-feature"><i class="fas fa-certificate"></i> Solicite seus certificados</div>
     </div>
   </div>
@@ -126,7 +126,7 @@
       <div class="access-switch">
         <span>Como você quer entrar?</span>
         <div class="access-seg">
-          <a href="{{ route('usuario.login') }}" class="active"><i class="fas fa-user"></i> Candidato</a>
+          <a href="{{ route('usuario.login') }}" class="active"><i class="fas fa-user"></i> Usuário</a>
           <a href="{{ route('empresa.login') }}"><i class="fas fa-building"></i> Empresa</a>
         </div>
         <div class="access-staff">
@@ -135,7 +135,7 @@
       </div>
 
       <div class="auth-card-header">
-        <h1>Entrar como Candidato</h1>
+        <h1>Entrar como Usuário</h1>
         <p>Não tem conta? <a href="{{ route('usuario.register') }}">Cadastre-se gratuitamente</a></p>
       </div>
 
@@ -155,7 +155,7 @@
         <div class="form-group">
           <label for="email">E-mail</label>
           <input type="email" id="email" name="email" class="form-control {{ $errors->has('email') ? 'error' : '' }}"
-                 value="{{ old('email') }}" placeholder="seu@email.com" required>
+                 value="{{ old('email', request('email')) }}" placeholder="seu@email.com" required>
         </div>
 
         <div class="form-group" x-data="{show:false}">

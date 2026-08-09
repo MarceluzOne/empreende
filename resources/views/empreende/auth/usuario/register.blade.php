@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <link rel="icon" type="image/png" href="{{ asset('assets/Marca-Empreende-Vitoria_negativada.png') }}">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cadastro de Candidato — Empreende Vitória</title>
+<title>Cadastro de Usuário — Empreende Vitória</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -53,6 +53,13 @@
   .btn-primary:hover{background:var(--brand-deep);transform:translateY(-1px)}
   .btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none}
   .alert-error{background:#fff5f5;border:1px solid #fed7d7;color:#c53030;padding:12px 16px;border-radius:var(--radius);margin-bottom:20px;font-size:14px;display:flex;align-items:flex-start;gap:8px}
+  .alert-account{background:#fffbeb;border:1px solid #fde68a;color:#92400e;padding:14px 16px;border-radius:var(--radius);margin-bottom:20px;font-size:14px;display:flex;align-items:flex-start;gap:10px}
+  .alert-account strong{font-family:'Plus Jakarta Sans',sans-serif;display:block;margin-bottom:2px}
+  .alert-account-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .btn-account{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:999px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:13.5px;background:#92400e;color:#fff;transition:background .15s}
+  .btn-account:hover{background:#7c3410}
+  .btn-account--ghost{background:transparent;color:#92400e;border:1.5px solid #fcd34d}
+  .btn-account--ghost:hover{background:#fef3c7}
   .form-hint{font-size:12px;color:var(--muted);margin-top:4px}
   [x-cloak]{display:none!important}
   @media(max-width:820px){.auth-side{display:none}.auth-main{padding:24px 16px}}
@@ -80,19 +87,55 @@
   <div class="auth-main">
     <div class="auth-card">
       <div class="auth-card-header">
-        <h1>Criar conta de Candidato</h1>
+        <h1>Criar conta de Usuário</h1>
         <p>Já tem conta? <a href="{{ route('usuario.login') }}">Faça login</a></p>
       </div>
 
-      @if($errors->any())
+      @if(session('conta_existente'))
+        @php
+          $conta = session('conta_existente');
+          $rotaLogin = [
+              'empresa'     => 'empresa.login',
+              'funcionario' => 'login',
+          ][$conta['type']] ?? 'usuario.login';
+          $urlLogin = $conta['prefill_email']
+              ? route($rotaLogin, ['email' => $conta['prefill_email']])
+              : route($rotaLogin);
+        @endphp
+        <div class="alert-account">
+          <i class="fas fa-circle-exclamation" style="margin-top:3px;flex-shrink:0"></i>
+          <div>
+            <strong>Você já tem conta no Empreende Vitória.</strong>
+            {{ $conta['message'] }}
+            <div class="alert-account-actions">
+              <a href="{{ $urlLogin }}" class="btn-account"><i class="fas fa-right-to-bracket"></i> Entrar</a>
+              @if($conta['can_reset'])
+                <a href="{{ route('password.request') }}" class="btn-account btn-account--ghost">Esqueci minha senha</a>
+              @endif
+            </div>
+          </div>
+        </div>
+      @endif
+
+      @php
+        $outrosErros = collect($errors->getMessages())->except('conta_existente')->flatten();
+      @endphp
+      @if($outrosErros->isNotEmpty())
         <div class="alert-error">
           <i class="fas fa-exclamation-circle" style="margin-top:2px;flex-shrink:0"></i>
-          <div>@foreach($errors->all() as $error)<div>{{ $error }}</div>@endforeach</div>
+          <div>@foreach($outrosErros as $error)<div>{{ $error }}</div>@endforeach</div>
         </div>
       @endif
 
       <form action="{{ route('usuario.register.post') }}" method="POST">
         @csrf
+
+        <div class="form-group">
+          <label for="cpf">CPF</label>
+          <input type="text" id="cpf" name="cpf" class="form-control {{ $errors->has('cpf') ? 'error' : '' }}"
+                 value="{{ old('cpf') }}" placeholder="000.000.000-00" inputmode="numeric" required>
+          <div class="form-hint">Usamos o CPF para reconhecer cadastros que você já tenha no Empreende Vitória.</div>
+        </div>
 
         <div class="form-group">
           <label for="name">Nome completo</label>
@@ -136,6 +179,12 @@
     </div>
   </div>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/imask/6.4.3/imask.min.js"></script>
+<script>
+  var cpfInput = document.getElementById('cpf');
+  if (cpfInput) IMask(cpfInput, { mask: '000.000.000-00' });
+</script>
 
 </body>
 </html>
