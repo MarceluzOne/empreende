@@ -795,7 +795,7 @@
     <div class="two-col">
       <div>
         <p>Este é o ambiente virtual do <strong>Empreende Vitória — Salão do Empreendedor</strong>, criado para auxiliar empreendedores a <strong>formalizarem seus negócios</strong> e a obterem informações sobre como gerenciá-los de forma eficiente.</p>
-        <p>A iniciativa é da <strong>Prefeitura da Vitória de Santo Antão</strong>, através da Secretaria de Desenvolvimento Econômico, com apoio do <strong>Sebrae</strong>, <strong>Amupe</strong> e a <strong>Rede de Atendimento</strong>, visando incentivar o empreendedorismo e a geração de empregos.</p>
+        <p>A iniciativa é da <strong>Prefeitura da Vitória de Santo Antão</strong>, em parceria estratégica com a <strong>AGINTEC (Agência de Inovação e Tecnologia)</strong>para a elaboração do sistema, visando incentivar o empreendedorismo e a geração de empregos.</p>
         <p>A formalização garante acesso a benefícios como aposentadoria, licença-maternidade e auxílio-doença — além de mais credibilidade junto a clientes e investidores.</p>
 
         <div class="info-card">
