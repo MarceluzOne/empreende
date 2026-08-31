@@ -17,6 +17,7 @@
 |
 */
 
+use App\Http\Controllers\AssistedPasswordResetController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\Auth\EmpresaAuthController;
@@ -71,10 +72,12 @@ Route::post('/sair', [AuthController::class, 'logout'])->name('logout');
 /*
 | Reset de senha
 */
+// A redefinicao nao sai por e-mail: /esqueci-senha so orienta a procurar o
+// atendimento, e o link de verdade e gerado por um funcionario em Cidadaos.
 Route::get('/esqueci-senha', [PasswordResetController::class, 'showForgotForm'])->name('password.request');
-Route::post('/esqueci-senha', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
-Route::get('/redefinir-senha/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
-Route::post('/redefinir-senha', [PasswordResetController::class, 'reset'])->name('password.update');
+Route::get('/redefinir-senha/atendimento/{token}', [AssistedPasswordResetController::class, 'show'])->name('password.assisted');
+Route::post('/redefinir-senha/atendimento', [AssistedPasswordResetController::class, 'update'])
+    ->middleware('throttle:5,1')->name('password.assisted.update');
 
 /*
 | Setup (migrations via rota — ambiente FTP sem artisan)
@@ -128,6 +131,7 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->prefix('portal/funci
     // Cidadãos: lista consolidada por CPF (candidatos + atendidos)
     Route::get('cidadaos', [CitizenController::class, 'index'])->name('citizens.index');
     Route::get('cidadaos/{uuid}', [CitizenController::class, 'show'])->name('citizens.show');
+    Route::post('cidadaos/{uuid}/link-senha', [CitizenController::class, 'passwordLink'])->name('citizens.password-link');
 
     // Empresas: lista consolidada por CNPJ (cadastradas + com vagas publicadas)
     Route::get('empresas', [CompanyController::class, 'index'])->name('companies.index');

@@ -27,6 +27,11 @@ return [
     // derivado no middleware).
     'app_url'        => env('EMPREENDE_APP_URL', 'https://prefeituradavitoria.pe.gov.br'),
 
+    // WhatsApp da Sala do Empreendedor, no formato aceito pelo wa.me
+    // (55 + DDD + número, só dígitos). É por onde a pessoa pede a redefinição
+    // de senha, já que o envio por e-mail não está ligado.
+    'support_whatsapp' => env('EMPREENDE_SUPPORT_WHATSAPP', '5581982510723'),
+
     'mail'           => [
         'from_address' => 'no-reply@empreendevitoria.pe.gov.br',
         'from_name'    => 'Empreende Vitória',

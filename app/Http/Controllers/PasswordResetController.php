@@ -2,84 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Auth\Events\PasswordReset;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rules;
-
+/**
+ * Página de orientação do "Esqueci minha senha".
+ *
+ * O envio por e-mail nunca foi ligado, e uma tela que aceita o endereço e diz
+ * "enviamos o link" sem nada chegar é pior que não existir. Aqui a pessoa é
+ * direcionada ao atendimento — presencial ou pelo WhatsApp —, onde um
+ * funcionário gera o link pelo AssistedPasswordResetService.
+ */
 class PasswordResetController extends Controller
 {
     public function showForgotForm()
     {
-        return view('auth.forgot-password');
-    }
-
-    public function sendResetLink(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-        ], [
-            'email.required' => 'O e-mail é obrigatório.',
-            'email.email'    => 'Informe um e-mail válido.',
-        ]);
-
-        $status = Password::sendResetLink($request->only('email'));
-
-        return $status === Password::RESET_LINK_SENT
-            ? back()->with('status', __($status))
-            : back()->withErrors(['email' => __($status)]);
-    }
-
-    public function showResetForm(Request $request, string $token)
-    {
-        return view('auth.reset-password', [
-            'token' => $token,
-            'email' => $request->email,
-        ]);
-    }
-
-    public function reset(Request $request)
-    {
-        $request->validate([
-            'token'    => 'required',
-            'email'    => 'required|email',
-            'password' => ['required', 'confirmed', Rules\Password::min(8)],
-        ], [
-            'email.required'     => 'O e-mail é obrigatório.',
-            'password.required'  => 'A nova senha é obrigatória.',
-            'password.confirmed' => 'A confirmação da senha não confere.',
-            'password.min'       => 'A senha deve ter pelo menos 8 caracteres.',
-        ]);
-
-        $type = null;
-
-        $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) use (&$type) {
-                $user->forceFill(['password' => Hash::make($password)])
-                     ->setRememberToken(Str::random(60));
-                $user->save();
-                $type = $user->type;
-                event(new PasswordReset($user));
-            }
-        );
-
-        return $status === Password::PASSWORD_RESET
-            ? redirect()->route($this->loginRouteFor($type))->with('status', 'Senha redefinida com sucesso! Faça login.')
-            : back()->withErrors(['email' => __($status)]);
+        return view('auth.forgot-password', ['whatsapp' => $this->supportWhatsapp()]);
     }
 
     /**
-     * Cada tipo de conta tem sua própria tela de login; sem isso todo mundo
-     * cairia no login de funcionário depois de redefinir a senha.
+     * O contexto do site é resolvido por middleware e pode não existir (rota
+     * fora de qualquer site); daí o bound() antes de pedir ao container.
      */
-    private function loginRouteFor(?string $type): string
+    private function supportWhatsapp(): ?string
     {
-        return [
-            'usuario' => 'usuario.login',
-            'empresa' => 'empresa.login',
-        ][$type] ?? 'login';
+        $site = app()->bound('current.site.config') ? app('current.site.config') : [];
+
+        return $site['support_whatsapp'] ?? null;
     }
 }

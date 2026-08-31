@@ -3,7 +3,12 @@
 namespace App\Services;
 
 use App\Models\Attendance;
+use App\Models\EventParticipant;
 use App\Models\JobSeeker;
+use App\Models\ServiceProvider;
+use App\Models\User;
+use App\Support\Document;
+use App\Support\Phone;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -52,11 +57,14 @@ class CitizenService
         if (!$entry) {
             return [
                 'uuid'          => $uuid,
+                'cpf'           => null,
                 'cpf_formatted' => null,
                 'cnpjs'         => collect(),
                 'name'          => null,
                 'candidato'     => null,
                 'attendances'   => collect(),
+                'account'       => null,
+                'phones'        => collect(),
             ];
         }
 
@@ -79,11 +87,102 @@ class CitizenService
 
         return [
             'uuid'          => $entry['uuid'],
+            'cpf'           => $digits,
             'cpf_formatted' => $entry['cpf_formatted'],
             'cnpjs'         => $cnpjs,
             'name'          => $entry['name'] ?? $candidato->name ?? optional($attendances->first())->customer_name,
             'candidato'     => $candidato,
             'attendances'   => $attendances,
+            'account'       => $this->accountFor($digits),
+            'phones'        => $this->phonesFor($digits),
+        ];
+    }
+
+    /**
+     * CPF do cidadão a partir do UUID da listagem, ou null se o UUID não
+     * corresponder a ninguém.
+     */
+    public function cpfForUuid(string $uuid): ?string
+    {
+        $entry = collect($this->build())->first(fn ($e) => $e['uuid'] === $uuid);
+
+        return $entry['cpf'] ?? null;
+    }
+
+    /**
+     * Conta do portal desta pessoa.
+     *
+     * Procura primeiro por `users.cpf`, que é o vínculo direto. O currículo é
+     * a segunda tentativa e existe para um caso específico: contas criadas
+     * antes da coluna `cpf` continuam com o campo nulo, e sem esse desvio a
+     * tela diria "não tem conta" quando na verdade tem — só falta o backfill.
+     */
+    public function accountFor(string $cpfDigits): ?User
+    {
+        $variants = Document::cpfVariants($cpfDigits);
+
+        if ($variants === []) {
+            return null;
+        }
+
+        return User::whereIn('cpf', $variants)->where('type', 'usuario')->first()
+            ?: optional(JobSeeker::whereIn('cpf', $variants)->whereNotNull('user_id')->first())->user;
+    }
+
+    /**
+     * Telefones conhecidos deste CPF, sem repetição, com as origens em que
+     * cada número aparece.
+     *
+     * São o segundo fator do link de redefinição assistida: o funcionário só
+     * envia para um número que o sistema já conhecia, e não para um ditado na
+     * hora por quem pediu.
+     *
+     * @return Collection<int, array{digits: string, formatted: ?string, sources: array<int, string>}>
+     */
+    public function phonesFor(string $cpfDigits): Collection
+    {
+        $variants = Document::cpfVariants($cpfDigits);
+
+        if ($variants === []) {
+            return collect();
+        }
+
+        $found = [];
+
+        foreach ($this->phoneSources($variants) as $source => $numbers) {
+            foreach ($numbers as $number) {
+                $digits = $this->onlyDigits($number);
+
+                if (strlen($digits) < 10) {
+                    continue;
+                }
+
+                $found[$digits]['digits']    = $digits;
+                $found[$digits]['formatted'] = Phone::format($digits);
+                $found[$digits]['sources'][] = $source;
+            }
+        }
+
+        return collect($found)->map(function (array $phone) {
+            $phone['sources'] = array_values(array_unique($phone['sources']));
+
+            return $phone;
+        })->values();
+    }
+
+    /**
+     * Telefone de cada origem que grava um, rotulada em português para a tela.
+     *
+     * @param array<int, string> $variants
+     * @return array<string, array<int, string|null>>
+     */
+    private function phoneSources(array $variants): array
+    {
+        return [
+            'currículo'   => JobSeeker::whereIn('cpf', $variants)->pluck('phone')->all(),
+            'atendimento' => Attendance::whereIn('customer_cpf', $variants)->pluck('customer_phone')->all(),
+            'evento'      => EventParticipant::whereIn('cpf', $variants)->pluck('whatsapp')->all(),
+            'prestador'   => ServiceProvider::whereIn('cpf', $variants)->pluck('whatsapp')->all(),
         ];
     }
 
