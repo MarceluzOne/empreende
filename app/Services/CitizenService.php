@@ -179,11 +179,24 @@ class CitizenService
     private function phoneSources(array $variants): array
     {
         return [
+            'conta'       => User::whereIn('cpf', $variants)->pluck('phone')->all(),
             'currículo'   => JobSeeker::whereIn('cpf', $variants)->pluck('phone')->all(),
             'atendimento' => Attendance::whereIn('customer_cpf', $variants)->pluck('customer_phone')->all(),
             'evento'      => EventParticipant::whereIn('cpf', $variants)->pluck('whatsapp')->all(),
             'prestador'   => ServiceProvider::whereIn('cpf', $variants)->pluck('whatsapp')->all(),
         ];
+    }
+
+    /**
+     * Grava o telefone na conta do portal, para o caso em que o cadastro não
+     * tem número em nenhuma origem e o funcionário o colhe no atendimento.
+     *
+     * Só dígitos: é assim que phonesFor() compara os números das origens.
+     */
+    public function storeAccountPhone(User $account, string $phone): void
+    {
+        $account->phone = $this->onlyDigits($phone);
+        $account->save();
     }
 
     /**

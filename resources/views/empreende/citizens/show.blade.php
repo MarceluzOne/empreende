@@ -141,6 +141,12 @@
                 </div>
             @endif
 
+            @if(session('reset_ok'))
+                <div class="mb-4 px-4 py-3 rounded-xl bg-green-50 border border-green-100 text-sm text-green-800">
+                    <i class="fas fa-circle-check mr-1"></i> {{ session('reset_ok') }}
+                </div>
+            @endif
+
             @if(! $cpfValido)
                 <div class="px-4 py-3 rounded-xl bg-amber-50 border border-amber-100 text-sm text-amber-800">
                     O CPF deste cadastro está incompleto ({{ $cpf_formatted }}) — sem os 11 dígitos não há como casar os
@@ -184,10 +190,33 @@
                 </div>
 
                 @if(! $podeGerar)
-                    <div class="px-4 py-3 rounded-xl bg-amber-50 border border-amber-100 text-sm text-amber-800">
-                        Não há telefone cadastrado para este CPF em nenhum registro. Sem um número que o sistema já
-                        conhecia não há como confirmar com quem estamos falando — <strong>atenda presencialmente</strong>.
+                    <div class="px-4 py-3 rounded-xl bg-amber-50 border border-amber-100 text-sm text-amber-800 mb-3">
+                        Não há telefone em nenhum registro deste CPF, e o link só é enviado para um número do cadastro.
+                        Cadastre o telefone abaixo para liberar a geração.
+                        <div class="mt-2 text-xs">
+                            <i class="fas fa-triangle-exclamation mr-1"></i>
+                            Um número informado agora, no próprio atendimento, <strong>não confirma a identidade de
+                            quem pediu</strong> — quem pede é quem dita. Só cadastre depois de ter certeza de quem é a
+                            pessoa (documento com foto no balcão, por exemplo). O número e o seu nome ficam na auditoria.
+                        </div>
                     </div>
+
+                    <form method="POST" action="{{ route('citizens.phone.store', $uuid) }}" class="flex flex-wrap gap-2 items-start">
+                        @csrf
+                        <div>
+                            <input type="text" name="phone" id="telefoneInput" inputmode="numeric" maxlength="16"
+                                value="{{ old('phone') }}" placeholder="(81) 9 9999-9999" required
+                                class="px-3 py-2 rounded-xl border text-sm w-52 outline-none focus:ring-2 focus:ring-amber-400 {{ $errors->has('phone') ? 'border-red-400' : 'border-gray-200' }}">
+                            @error('phone')
+                                <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <button type="submit"
+                            class="px-4 py-2 rounded-xl bg-gray-700 hover:bg-gray-800 text-white text-sm font-bold transition">
+                            <i class="fas fa-phone mr-1"></i> Cadastrar telefone
+                        </button>
+                    </form>
+
                 @elseif(! $linkGerado)
                     <button type="button" id="gerarLinkBtn"
                         class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition">
@@ -274,6 +303,17 @@
                 fechar.addEventListener('click', function () { modal.classList.replace('flex', 'hidden'); });
                 modal.addEventListener('click', function (e) {
                     if (e.target === modal) modal.classList.replace('flex', 'hidden');
+                });
+            }
+
+            // Máscara de telefone: (81) 9 9999-9999 / (81) 9999-9999
+            var tel = document.getElementById('telefoneInput');
+            if (tel) {
+                tel.addEventListener('input', function () {
+                    var d = tel.value.replace(/\D/g, '').slice(0, 11);
+                    tel.value = d.length > 10
+                        ? d.replace(/(\d{2})(\d{1})(\d{4})(\d{0,4})/, '($1) $2 $3-$4')
+                        : d.replace(/(\d{2})(\d{0,4})(\d{0,4})/, '($1) $2-$3').replace(/[-\s]*$/, '');
                 });
             }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\AssistedResetException;
+use App\Http\Requests\StoreCitizenPhoneRequest;
 use App\Services\AssistedPasswordResetService;
 use App\Services\CitizenService;
 use Illuminate\Http\Request;
@@ -43,5 +44,20 @@ class CitizenController extends Controller
         } catch (AssistedResetException $e) {
             return back()->with('reset_error', $e->getMessage());
         }
+    }
+
+    /**
+     * Grava o telefone colhido no atendimento, para o cadastro que não tem
+     * nenhum — sem ele o link de senha não é gerado.
+     */
+    public function storePhone(string $uuid, StoreCitizenPhoneRequest $request, AssistedPasswordResetService $reset)
+    {
+        try {
+            $reset->registerPhone($uuid, $request->input('phone'));
+        } catch (AssistedResetException $e) {
+            return back()->with('reset_error', $e->getMessage());
+        }
+
+        return back()->with('reset_ok', 'Telefone gravado no cadastro. Agora dá para gerar o link.');
     }
 }

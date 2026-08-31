@@ -6,6 +6,7 @@ use App\Exceptions\AssistedResetException;
 use App\Models\User;
 use App\Support\Document;
 use App\Support\Email;
+use App\Support\Phone;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Password;
@@ -43,13 +44,51 @@ class AssistedPasswordResetService
      */
     public function linkForCitizen(string $uuid): array
     {
+        return $this->linkFor($this->cpfForCitizen($uuid));
+    }
+
+    /**
+     * Grava um telefone na conta quando o cadastro não tem nenhum, para
+     * desbloquear a geração do link.
+     *
+     * Vale registrar o limite disto: um número informado durante o próprio
+     * atendimento não confirma identidade — quem pediu o link é quem ditou o
+     * número. Serve para o caso em que o funcionário já se convenceu de quem
+     * é a pessoa por outro meio (documento no balcão, por exemplo). Por isso
+     * a ação vai para a auditoria com o número gravado e o autor.
+     */
+    public function registerPhone(string $uuid, string $phone): void
+    {
+        $account = $this->requireAccount($this->cpfForCitizen($uuid));
+
+        $this->citizens->storeAccountPhone($account, $phone);
+
+        AuditService::log(
+            'updated',
+            $account,
+            ['phone' => Phone::format($phone)],
+            'Cadastrou telefone no atendimento para '.$account->name
+        );
+    }
+
+    /**
+     * CPF do cidadão a partir do UUID da listagem, já validado.
+     */
+    private function cpfForCitizen(string $uuid): string
+    {
         $cpf = $this->citizens->cpfForUuid($uuid);
 
         if ($cpf === null) {
             throw AssistedResetException::noAccount();
         }
 
-        return $this->linkFor($cpf);
+        $digits = Document::digits($cpf);
+
+        if (strlen($digits) !== 11) {
+            throw AssistedResetException::invalidCpf();
+        }
+
+        return $digits;
     }
 
     /**

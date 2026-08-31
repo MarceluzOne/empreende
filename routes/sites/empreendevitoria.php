@@ -132,6 +132,7 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->prefix('portal/funci
     Route::get('cidadaos', [CitizenController::class, 'index'])->name('citizens.index');
     Route::get('cidadaos/{uuid}', [CitizenController::class, 'show'])->name('citizens.show');
     Route::post('cidadaos/{uuid}/link-senha', [CitizenController::class, 'passwordLink'])->name('citizens.password-link');
+    Route::post('cidadaos/{uuid}/telefone', [CitizenController::class, 'storePhone'])->name('citizens.phone.store');
 
     // Empresas: lista consolidada por CNPJ (cadastradas + com vagas publicadas)
     Route::get('empresas', [CompanyController::class, 'index'])->name('companies.index');
