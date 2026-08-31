@@ -410,9 +410,10 @@
     <nav class="nav">
       <a href="{{ route('home') }}">Home</a>
       <a href="{{ route('home') }}#sobre">O Que é?</a>
-      <a href="{{ route('home') }}#servicos">Serviços</a>
+      <a href="{{ route('servicos') }}">Serviços</a>
       <a href="{{ route('home') }}#vagas">Vagas</a>
       <a href="{{ route('cursos') }}">Cursos</a>
+      <a href="{{ route('public.certificates') }}">Certificados</a>
       <a href="{{ route('contato') }}" class="active">Contato</a>
       <a href="{{ route('usuario.login') }}" class="nav-login"><i class="fas fa-user-lock"></i> Entrar</a>
     </nav>
@@ -427,9 +428,11 @@
     <button class="mobile-close" id="mobileClose" aria-label="Fechar menu"><i class="fas fa-times"></i></button>
     <a href="{{ route('home') }}">Home <i class="fas fa-chevron-right"></i></a>
     <a href="{{ route('home') }}#sobre">O Que é? <i class="fas fa-chevron-right"></i></a>
-    <a href="{{ route('home') }}#servicos">Serviços <i class="fas fa-chevron-right"></i></a>
+    <a href="{{ route('servicos') }}">Serviços <i class="fas fa-chevron-right"></i></a>
+    <a href="{{ route('empresas-locais') }}">Empresas <i class="fas fa-chevron-right"></i></a>
     <a href="{{ route('home') }}#vagas">Vagas <i class="fas fa-chevron-right"></i></a>
     <a href="{{ route('cursos') }}">Cursos <i class="fas fa-chevron-right"></i></a>
+    <a href="{{ route('public.certificates') }}">Certificados <i class="fas fa-chevron-right"></i></a>
     <a href="{{ route('contato') }}" class="active">Contato <i class="fas fa-chevron-right"></i></a>
     <a href="{{ route('usuario.login') }}" style="margin-top:12px;background:var(--brand);color:#fff;justify-content:center">Entrar</a>
   </aside>
@@ -497,8 +500,7 @@
           <div class="ico"><i class="fas fa-envelope"></i></div>
           <div>
             <h3>E-mail</h3>
-            <a href="mailto:sec.desindustrial@prefeituradavitoria.pe.gov.br">sec.desindustrial@prefeituradavitoria.pe.gov.br</a>
-            <p style="margin-top:6px;font-size:13px">Secretaria de Desenvolvimento Econômico</p>
+            <a href="mailto:empreendevitoria@prefeituradavitoria.pe.gov.br">empreendevitoria@prefeituradavitoria.pe.gov.br</a>
           </div>
         </div>
 

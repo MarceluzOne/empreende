@@ -101,7 +101,7 @@
       <div class="access-switch">
         <span>Como você quer entrar?</span>
         <div class="access-seg">
-          <a href="{{ route('usuario.login') }}"><i class="fas fa-user"></i> Candidato</a>
+          <a href="{{ route('usuario.login') }}"><i class="fas fa-user"></i> Usuário</a>
           <a href="{{ route('empresa.login') }}" class="active"><i class="fas fa-building"></i> Empresa</a>
         </div>
         <div class="access-staff">

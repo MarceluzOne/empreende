@@ -62,7 +62,7 @@
   <a href="{{ route('portal.usuario') }}" class="brand">
     <div class="brand-mark">EV</div>
     <div>Empreende Vitória
-      <small style="display:block;font-size:11px;font-weight:600;opacity:.6;text-transform:uppercase;letter-spacing:.08em;font-family:'Lato',sans-serif">Portal do Candidato</small>
+      <small style="display:block;font-size:11px;font-weight:600;opacity:.6;text-transform:uppercase;letter-spacing:.08em;font-family:'Lato',sans-serif">Portal do Usuário</small>
     </div>
   </a>
   <a href="{{ route('portal.usuario') }}" class="btn-back"><i class="fas fa-arrow-left"></i> Voltar</a>

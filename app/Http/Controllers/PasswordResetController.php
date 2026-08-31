@@ -53,18 +53,33 @@ class PasswordResetController extends Controller
             'password.min'       => 'A senha deve ter pelo menos 8 caracteres.',
         ]);
 
+        $type = null;
+
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) {
+            function ($user, $password) use (&$type) {
                 $user->forceFill(['password' => Hash::make($password)])
                      ->setRememberToken(Str::random(60));
                 $user->save();
+                $type = $user->type;
                 event(new PasswordReset($user));
             }
         );
 
         return $status === Password::PASSWORD_RESET
-            ? redirect()->route('login')->with('status', 'Senha redefinida com sucesso! Faça login.')
+            ? redirect()->route($this->loginRouteFor($type))->with('status', 'Senha redefinida com sucesso! Faça login.')
             : back()->withErrors(['email' => __($status)]);
+    }
+
+    /**
+     * Cada tipo de conta tem sua própria tela de login; sem isso todo mundo
+     * cairia no login de funcionário depois de redefinir a senha.
+     */
+    private function loginRouteFor(?string $type): string
+    {
+        return [
+            'usuario' => 'usuario.login',
+            'empresa' => 'empresa.login',
+        ][$type] ?? 'login';
     }
 }

@@ -25,6 +25,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CitizenController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CpfBackfillController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\JobApplicationController;
@@ -159,6 +160,11 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->prefix('portal/funci
     Route::middleware(['can:admin-only'])->group(function () {
         Route::resource('equipe', UserController::class)->names('users')->parameters(['equipe' => 'user']);
         Route::get('auditoria', [AuditController::class, 'index'])->name('audit.index');
+
+        // TEMPORÁRIO: preenche users.cpf das contas antigas em servidor sem SSH.
+        // Remover junto com CpfBackfillController e a view cpf-backfill.
+        Route::get('backfill-cpf', [CpfBackfillController::class, 'index'])->name('cpf.backfill');
+        Route::post('backfill-cpf', [CpfBackfillController::class, 'run'])->name('cpf.backfill.run');
     });
 });
 

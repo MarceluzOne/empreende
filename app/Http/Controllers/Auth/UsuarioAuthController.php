@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RegisterUsuarioRequest;
 use App\Models\User;
+use App\Services\UserRegistrationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class UsuarioAuthController extends Controller
 {
+    public function __construct(private UserRegistrationService $registration) {}
+
     public function showLogin()
     {
         if (Auth::check() && Auth::user()->type === 'usuario') {
@@ -65,24 +69,14 @@ class UsuarioAuthController extends Controller
         return view('auth.usuario.register');
     }
 
-    public function register(Request $request)
+    public function register(RegisterUsuarioRequest $request)
     {
-        $request->validate([
-            'name'                  => 'required|string|max:255',
-            'email'                 => 'required|email|unique:users,email',
-            'password'              => 'required|min:8|confirmed',
-        ]);
-
-        $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
-            'type'     => 'usuario',
-        ]);
+        $user = $this->registration->create($request->validated());
 
         Auth::login($user);
 
-        return redirect()->route('portal.usuario');
+        return redirect()->route('portal.usuario')
+            ->with('info', $this->registration->linkedSummary($user));
     }
 
     public function logout()

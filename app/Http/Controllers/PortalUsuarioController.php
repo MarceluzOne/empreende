@@ -13,6 +13,7 @@ use App\Http\Requests\UpdateServiceProviderRequest;
 use App\Services\JobSeekerService;
 use App\Services\ServiceProviderService;
 use App\Services\UserService;
+use App\Support\Document;
 use Illuminate\Http\Request;
 
 class PortalUsuarioController extends Controller
@@ -37,9 +38,7 @@ class PortalUsuarioController extends Controller
     {
         $user = auth()->user();
 
-        $perfil = JobSeeker::where('user_id', $user->id)
-            ->orWhere('email', $user->email)
-            ->first();
+        $perfil = $this->service->forUser($user);
 
         $cpf = $this->profileCpf($perfil);
 
@@ -100,7 +99,7 @@ class PortalUsuarioController extends Controller
 
     public function createCurriculo()
     {
-        if (JobSeeker::where('user_id', auth()->id())->exists()) {
+        if ($this->service->forUser(auth()->user())) {
             return redirect()->route('portal.usuario')->with('info', 'Você já possui um currículo. Use a opção Editar.');
         }
 
@@ -154,9 +153,7 @@ class PortalUsuarioController extends Controller
 
     public function editCurriculo()
     {
-        $perfil = JobSeeker::where('user_id', auth()->id())
-            ->orWhere('email', auth()->user()->email)
-            ->firstOrFail();
+        $perfil = $this->currentProfile();
 
         return view('portal.usuario.curriculo.edit', [
             'perfil'          => $perfil,
@@ -167,9 +164,7 @@ class PortalUsuarioController extends Controller
 
     public function updateCurriculo(Request $request)
     {
-        $perfil = JobSeeker::where('user_id', auth()->id())
-            ->orWhere('email', auth()->user()->email)
-            ->firstOrFail();
+        $perfil = $this->currentProfile();
 
         $request->validate([
             'name'                         => 'required|string|max:255',
@@ -213,9 +208,7 @@ class PortalUsuarioController extends Controller
 
     public function destroyCurriculo()
     {
-        $perfil = JobSeeker::where('user_id', auth()->id())
-            ->orWhere('email', auth()->user()->email)
-            ->firstOrFail();
+        $perfil = $this->currentProfile();
 
         $this->service->destroy($perfil);
 
@@ -247,12 +240,13 @@ class PortalUsuarioController extends Controller
      */
     private function ownsService(ServiceProvider $service): bool
     {
-        $user   = auth()->user();
-        $perfil = JobSeeker::where('user_id', $user->id)
-            ->orWhere('email', $user->email)
-            ->first();
+        $user = auth()->user();
 
-        return $this->services->belongsToCandidate($service, $user->email, $this->profileCpf($perfil));
+        return $this->services->belongsToCandidate(
+            $service,
+            $user->email,
+            $this->profileCpf($this->service->forUser($user))
+        );
     }
 
     // ── Conta ──────────────────────────────────────────────────
@@ -277,9 +271,7 @@ class PortalUsuarioController extends Controller
         }
 
         $user   = auth()->user();
-        $perfil = JobSeeker::where('user_id', $user->id)
-            ->orWhere('email', $user->email)
-            ->first();
+        $perfil = $this->service->forUser($user);
 
         $cpf = $this->profileCpf($perfil);
 
@@ -325,12 +317,29 @@ class PortalUsuarioController extends Controller
     }
 
     /**
+     * Currículo do usuário logado, exigindo que exista.
+     */
+    private function currentProfile(): JobSeeker
+    {
+        $perfil = $this->service->forUser(auth()->user());
+
+        abort_if($perfil === null, 404, 'Você ainda não tem currículo cadastrado.');
+
+        return $perfil;
+    }
+
+    /**
      * CPF do perfil normalizado (apenas dígitos), pois o JobSeeker guarda com
-     * máscara e o EventParticipant guarda sem.
+     * máscara e o EventParticipant guarda sem. Sem currículo, vale o CPF
+     * informado no cadastro da conta.
      */
     private function profileCpf(?JobSeeker $perfil): ?string
     {
-        $digits = $perfil && $perfil->cpf ? preg_replace('/\D/', '', $perfil->cpf) : '';
+        $digits = Document::digits($perfil->cpf ?? null);
+
+        if ($digits === '') {
+            $digits = Document::digits(auth()->user()->cpf);
+        }
 
         return $digits !== '' ? $digits : null;
     }
@@ -352,13 +361,10 @@ class PortalUsuarioController extends Controller
      */
     private function findParticipant(Event $event): EventParticipant
     {
-        $user   = auth()->user();
-        $perfil = JobSeeker::where('user_id', $user->id)
-            ->orWhere('email', $user->email)
-            ->first();
+        $user = auth()->user();
 
         return EventParticipant::where('event_id', $event->id)
-            ->where(fn($q) => $this->matchUser($q, $user, $this->profileCpf($perfil)))
+            ->where(fn($q) => $this->matchUser($q, $user, $this->profileCpf($this->service->forUser($user))))
             ->firstOrFail();
     }
 }
