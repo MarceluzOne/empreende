@@ -15,16 +15,6 @@
         </div>
     </div>
 
-    @if($errors->any())
-        <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-            <ul class="list-disc list-inside space-y-1">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
     <form action="{{ route('job-seekers.update', $seeker) }}" method="POST"
         x-data="{
             phone: '{{ old('phone', $seeker->formatted_phone) }}',
@@ -74,15 +64,27 @@
                 <i class="fas fa-user text-blue-500"></i> Dados Pessoais
             </h2>
 
-            {{-- Nome --}}
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1">Nome Completo *</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fas fa-user"></i></span>
-                    <input type="text" name="name" value="{{ old('name', $seeker->name) }}"
-                        class="w-full pl-10 pr-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none @error('name') border-red-400 @else border-gray-200 @enderror">
+            {{-- Nome / CPF --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Nome Completo *</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fas fa-user"></i></span>
+                        <input type="text" name="name" value="{{ old('name', $seeker->name) }}"
+                            class="w-full pl-10 pr-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none @error('name') border-red-400 @else border-gray-200 @enderror">
+                    </div>
+                    @error('name') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
                 </div>
-                @error('name') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">CPF *</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400"><i class="fas fa-id-card"></i></span>
+                        <input type="text" name="cpf" id="seeker_cpf"
+                            value="{{ old('cpf', App\Support\Document::maskCpf(App\Support\Document::digits($seeker->cpf))) }}"
+                            class="w-full pl-10 pr-4 py-3 border rounded-xl text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none @error('cpf') border-red-400 @else border-gray-200 @enderror">
+                    </div>
+                    @error('cpf') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
+                </div>
             </div>
 
             {{-- Cargo / Cidade / Estado --}}
@@ -382,4 +384,45 @@
 
     </form>
 </div>
+
+@include('partials.confirm-modal', [
+    'id'      => 'confirm-cpf',
+    'title'   => 'Alterar o CPF?',
+    'icon'    => 'fa-id-card',
+    'tone'    => 'amber',
+    'confirm' => 'Alterar e salvar',
+])
+
+@push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const cpf = document.getElementById('seeker_cpf');
+
+            if (!cpf) {
+                return;
+            }
+
+            IMask(cpf, { mask: '000.000.000-00' });
+
+            const original = @json(App\Support\Document::digits($seeker->cpf));
+
+            const mascarar = function (digitos) {
+                return digitos.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            };
+
+            // Trocar o CPF reescreve os atendimentos e a conta desta pessoa,
+            // então pergunta — mas só quando o documento mudou de fato.
+            ConfirmModal.guard(cpf.form, 'confirm-cpf', function () {
+                const digitado = (cpf.value || '').replace(/\D/g, '');
+
+                if (digitado === original) {
+                    return null;
+                }
+
+                return 'O CPF passa de ' + mascarar(original) + ' para ' + mascarar(digitado)
+                    + ' também nos atendimentos e na conta desta pessoa.';
+            });
+        });
+    </script>
+@endpush
 @endsection

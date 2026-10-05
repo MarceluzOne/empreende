@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Attendance;
 use App\Models\JobSeeker;
+use App\Models\User;
+use App\Support\Document;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -52,10 +54,14 @@ class CitizenService
         if (!$entry) {
             return [
                 'uuid'          => $uuid,
+                'cpf'           => '',
                 'cpf_formatted' => null,
                 'cnpjs'         => collect(),
                 'name'          => null,
+                'phone'         => null,
+                'email'         => null,
                 'candidato'     => null,
+                'conta'         => null,
                 'attendances'   => collect(),
             ];
         }
@@ -77,14 +83,61 @@ class CitizenService
             ->map(fn ($c) => $this->formatDocument($c))
             ->values();
 
+        $conta = $this->account($digits);
+
         return [
             'uuid'          => $entry['uuid'],
+            'cpf'           => $digits,
             'cpf_formatted' => $entry['cpf_formatted'],
             'cnpjs'         => $cnpjs,
             'name'          => $entry['name'] ?? $candidato->name ?? optional($attendances->first())->customer_name,
+            'phone'         => $candidato->phone ?? optional($attendances->first())->customer_phone,
+            'email'         => $candidato->email ?? optional($conta)->email,
             'candidato'     => $candidato,
+            'conta'         => $conta,
             'attendances'   => $attendances,
         ];
+    }
+
+    /**
+     * Conta de acesso da pessoa, quando existe. Procura pelas duas grafias
+     * porque nem toda origem gravou o CPF apenas com dígitos.
+     */
+    public function account(string $cpf): ?User
+    {
+        $variants = Document::cpfVariants($cpf);
+
+        return $variants === [] ? null : User::whereIn('cpf', $variants)->first();
+    }
+
+    /**
+     * UUID da URL a partir de um CPF em qualquer grafia. Usado depois de uma
+     * edição que trocou o documento, para redirecionar ao endereço novo.
+     */
+    public function uuidFor(?string $cpf): string
+    {
+        return $this->uuidForCpf($this->onlyDigits($cpf));
+    }
+
+    /**
+     * Caminho inverso: o CPF por trás do UUID da URL. Como o UUID é um hash e
+     * não se reverte, varre os documentos conhecidos — mas só a coluna do CPF,
+     * sem montar o cadastro consolidado inteiro.
+     */
+    public function cpfForUuid(string $uuid): ?string
+    {
+        $documents = JobSeeker::whereNotNull('cpf')->pluck('cpf')
+            ->merge(Attendance::whereNotNull('customer_cpf')->pluck('customer_cpf'));
+
+        foreach ($documents as $document) {
+            $digits = $this->onlyDigits($document);
+
+            if ($digits !== '' && $this->uuidForCpf($digits) === $uuid) {
+                return $digits;
+            }
+        }
+
+        return null;
     }
 
     /**
