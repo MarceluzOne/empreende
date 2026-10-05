@@ -39,11 +39,4 @@ class AssistedResetException extends RuntimeException
         );
     }
 
-    public static function noPhone(): self
-    {
-        return new self(
-            'Não há telefone cadastrado para este CPF em nenhum registro (currículo, atendimento, evento ou prestador). '
-            .'Sem um número conhecido não há como confirmar com quem estamos falando: atenda presencialmente.'
-        );
-    }
 }

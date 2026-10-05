@@ -61,6 +61,8 @@ class CitizenService
                 'cpf_formatted' => null,
                 'cnpjs'         => collect(),
                 'name'          => null,
+                'phone'         => null,
+                'email'         => null,
                 'candidato'     => null,
                 'attendances'   => collect(),
                 'account'       => null,
@@ -85,15 +87,24 @@ class CitizenService
             ->map(fn ($c) => $this->formatDocument($c))
             ->values();
 
+        $account = $this->accountFor($digits);
+
         return [
             'uuid'          => $entry['uuid'],
             'cpf'           => $digits,
             'cpf_formatted' => $entry['cpf_formatted'],
             'cnpjs'         => $cnpjs,
             'name'          => $entry['name'] ?? $candidato->name ?? optional($attendances->first())->customer_name,
+            // A conta entra na cadeia do telefone porque quem só tem conta no
+            // portal não aparece nas outras origens — e é justamente quem a
+            // tela de edição precisa conseguir completar.
+            'phone'         => $candidato->phone
+                ?? optional($attendances->first())->customer_phone
+                ?? optional($account)->phone,
+            'email'         => $candidato->email ?? optional($account)->email,
             'candidato'     => $candidato,
             'attendances'   => $attendances,
-            'account'       => $this->accountFor($digits),
+            'account'       => $account,
             'phones'        => $this->phonesFor($digits),
         ];
     }
@@ -101,6 +112,10 @@ class CitizenService
     /**
      * CPF do cidadão a partir do UUID da listagem, ou null se o UUID não
      * corresponder a ninguém.
+     *
+     * Deriva do mapa consolidado, e não de uma varredura só do currículo e dos
+     * atendimentos: é o que mantém o UUID resolvível quando a pessoa entra no
+     * mapa por outra origem — por exemplo quem só tem conta no portal.
      */
     public function cpfForUuid(string $uuid): ?string
     {
@@ -110,12 +125,28 @@ class CitizenService
     }
 
     /**
+     * UUID da URL a partir de um CPF em qualquer grafia. Usado depois de uma
+     * edição que trocou o documento, para redirecionar ao endereço novo.
+     */
+    public function uuidFor(?string $cpf): string
+    {
+        return $this->uuidForCpf($this->onlyDigits($cpf));
+    }
+
+    /**
      * Conta do portal desta pessoa.
      *
      * Procura primeiro por `users.cpf`, que é o vínculo direto. O currículo é
      * a segunda tentativa e existe para um caso específico: contas criadas
      * antes da coluna `cpf` continuam com o campo nulo, e sem esse desvio a
      * tela diria "não tem conta" quando na verdade tem — só falta o backfill.
+     *
+     * O desvio pelo currículo exige `type = 'usuario'` nas DUAS pontas, e isso
+     * não é zelo: `JobSeekerService::store()` grava `user_id = Auth::id()`, de
+     * modo que todo currículo cadastrado no balcão aponta para a conta do
+     * ATENDENTE. Sem o filtro, esta função devolveria a conta do funcionário
+     * como se fosse a do cidadão — e gerar um link de senha ali destruiria o
+     * token dele, já que `password_reset_tokens` guarda um token por e-mail.
      */
     public function accountFor(string $cpfDigits): ?User
     {
@@ -125,17 +156,27 @@ class CitizenService
             return null;
         }
 
-        return User::whereIn('cpf', $variants)->where('type', 'usuario')->first()
-            ?: optional(JobSeeker::whereIn('cpf', $variants)->whereNotNull('user_id')->first())->user;
+        $byCpf = User::whereIn('cpf', $variants)->where('type', 'usuario')->first();
+
+        if ($byCpf) {
+            return $byCpf;
+        }
+
+        $byCurriculo = optional(
+            JobSeeker::whereIn('cpf', $variants)->whereNotNull('user_id')->first()
+        )->user;
+
+        return optional($byCurriculo)->type === 'usuario' ? $byCurriculo : null;
     }
 
     /**
      * Telefones conhecidos deste CPF, sem repetição, com as origens em que
      * cada número aparece.
      *
-     * São o segundo fator do link de redefinição assistida: o funcionário só
-     * envia para um número que o sistema já conhecia, e não para um ditado na
-     * hora por quem pediu.
+     * Servem de apoio ao atendimento: ajudam a conferir com quem se está
+     * falando e por onde mandar o link. Não são pré-requisito para gerar o
+     * link — quem confirma a identidade é o atendente, conferindo o CPF e os
+     * dados do cadastro na tela.
      *
      * @return Collection<int, array{digits: string, formatted: ?string, sources: array<int, string>}>
      */
@@ -185,18 +226,6 @@ class CitizenService
             'evento'      => EventParticipant::whereIn('cpf', $variants)->pluck('whatsapp')->all(),
             'prestador'   => ServiceProvider::whereIn('cpf', $variants)->pluck('whatsapp')->all(),
         ];
-    }
-
-    /**
-     * Grava o telefone na conta do portal, para o caso em que o cadastro não
-     * tem número em nenhuma origem e o funcionário o colhe no atendimento.
-     *
-     * Só dígitos: é assim que phonesFor() compara os números das origens.
-     */
-    public function storeAccountPhone(User $account, string $phone): void
-    {
-        $account->phone = $this->onlyDigits($phone);
-        $account->save();
     }
 
     /**

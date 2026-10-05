@@ -3,14 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\AssistedResetException;
-use App\Http\Requests\StoreCitizenPhoneRequest;
+use App\Http\Requests\UpdateCitizenRequest;
 use App\Services\AssistedPasswordResetService;
 use App\Services\CitizenService;
+use App\Services\CitizenUpdateService;
 use Illuminate\Http\Request;
 
 class CitizenController extends Controller
 {
-    public function __construct(private CitizenService $service) {}
+    public function __construct(
+        private CitizenService $service,
+        private CitizenUpdateService $updater
+    ) {}
 
     public function index(Request $request)
     {
@@ -27,15 +31,35 @@ class CitizenController extends Controller
     {
         $citizen = $this->service->detail($uuid);
 
-        abort_if(!$citizen['candidato'] && $citizen['attendances']->isEmpty(), 404);
+        abort_if($this->desconhecido($citizen), 404);
 
         return view('citizens.show', $citizen);
     }
 
+    public function edit(string $uuid)
+    {
+        $citizen = $this->service->detail($uuid);
+
+        abort_if($this->desconhecido($citizen), 404);
+
+        return view('citizens.edit', $citizen);
+    }
+
+    public function update(UpdateCitizenRequest $request, string $uuid)
+    {
+        $cpf = $this->service->cpfForUuid($uuid);
+        abort_if($cpf === null, 404);
+
+        $novoCpf = $this->updater->update($cpf, $request->validated());
+
+        return redirect()->route('citizens.show', $this->service->uuidFor($novoCpf))
+            ->with('success', 'Dados do cidadão atualizados.');
+    }
+
     /**
-     * Gera o link de redefinição de senha para o funcionário repassar.
-     * As recusas são de negócio (sem conta, sem CPF, sem telefone) e voltam
-     * como aviso na própria tela.
+     * Gera o link de redefinição de senha para o atendente repassar.
+     * As recusas são de negócio (sem conta, CPF incompleto, conta sem CPF) e
+     * voltam como aviso na própria tela.
      */
     public function passwordLink(string $uuid, AssistedPasswordResetService $reset)
     {
@@ -47,17 +71,16 @@ class CitizenController extends Controller
     }
 
     /**
-     * Grava o telefone colhido no atendimento, para o cadastro que não tem
-     * nenhum — sem ele o link de senha não é gerado.
+     * Ter só conta no portal já faz da pessoa um cidadão desta tela: é
+     * justamente quem se cadastrou sozinho pelo site e nunca apareceu no
+     * balcão que precisa ser alcançado aqui.
+     *
+     * @param array<string, mixed> $citizen
      */
-    public function storePhone(string $uuid, StoreCitizenPhoneRequest $request, AssistedPasswordResetService $reset)
+    private function desconhecido(array $citizen): bool
     {
-        try {
-            $reset->registerPhone($uuid, $request->input('phone'));
-        } catch (AssistedResetException $e) {
-            return back()->with('reset_error', $e->getMessage());
-        }
-
-        return back()->with('reset_ok', 'Telefone gravado no cadastro. Agora dá para gerar o link.');
+        return !$citizen['candidato']
+            && $citizen['attendances']->isEmpty()
+            && !$citizen['account'];
     }
 }

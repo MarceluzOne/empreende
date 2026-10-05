@@ -6,9 +6,7 @@ use App\Exceptions\AssistedResetException;
 use App\Models\User;
 use App\Support\Document;
 use App\Support\Email;
-use App\Support\Phone;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Password;
 
 /**
@@ -22,12 +20,19 @@ use Illuminate\Support\Facades\Password;
  * `sendResetLink()`. Com isso o hash do token, a expiração e o uso único vêm
  * prontos do framework.
  *
- * Duas travas sustentam o fluxo:
- *  - o link não identifica ninguém: quem abrir precisa saber o CPF da conta;
- *  - o link só é gerado para quem tem telefone já cadastrado, para o
- *    funcionário enviar a um número que o sistema conhecia de antes. Sem isso,
- *    no atendimento por WhatsApp a pessoa confirmaria na tela um CPF que ela
- *    mesma acabou de ditar — confirmação nenhuma.
+ * O que sustenta o fluxo:
+ *  - **o link não identifica ninguém**: quem abrir precisa saber o CPF da conta,
+ *    então ele sozinho não serve a quem o interceptar;
+ *  - **uso único e com prazo**, de graça pelo broker;
+ *  - **quem confirma a identidade é o atendente**, conferindo o CPF e os dados
+ *    do cadastro na tela, e **toda geração vai para a auditoria** com autor, IP
+ *    e horário.
+ *
+ * Telefone não é pré-requisito, de propósito. Ele chegou a ser exigido, mas não
+ * protegia: o link nunca é enviado por aqui — é devolvido para o atendente
+ * repassar —, então exigir um número cadastrado só travava o atendimento de quem
+ * nunca informou telefone. Os números seguem no retorno como apoio à conferência
+ * e ao envio.
  */
 class AssistedPasswordResetService
 {
@@ -45,30 +50,6 @@ class AssistedPasswordResetService
     public function linkForCitizen(string $uuid): array
     {
         return $this->linkFor($this->cpfForCitizen($uuid));
-    }
-
-    /**
-     * Grava um telefone na conta quando o cadastro não tem nenhum, para
-     * desbloquear a geração do link.
-     *
-     * Vale registrar o limite disto: um número informado durante o próprio
-     * atendimento não confirma identidade — quem pediu o link é quem ditou o
-     * número. Serve para o caso em que o funcionário já se convenceu de quem
-     * é a pessoa por outro meio (documento no balcão, por exemplo). Por isso
-     * a ação vai para a auditoria com o número gravado e o autor.
-     */
-    public function registerPhone(string $uuid, string $phone): void
-    {
-        $account = $this->requireAccount($this->cpfForCitizen($uuid));
-
-        $this->citizens->storeAccountPhone($account, $phone);
-
-        AuditService::log(
-            'updated',
-            $account,
-            ['phone' => Phone::format($phone)],
-            'Cadastrou telefone no atendimento para '.$account->name
-        );
     }
 
     /**
@@ -106,7 +87,6 @@ class AssistedPasswordResetService
         }
 
         $account = $this->requireAccount($digits);
-        $phones  = $this->requirePhones($digits);
 
         $token = Password::broker()->createToken($account);
 
@@ -115,7 +95,7 @@ class AssistedPasswordResetService
         return [
             'url'        => route('password.assisted', ['token' => $token]),
             'expires_at' => Carbon::now()->addMinutes((int) config('auth.passwords.users.expire'))->format('d/m/Y H:i'),
-            'phones'     => $phones->all(),
+            'phones'     => $this->citizens->phonesFor($digits)->all(),
             'name'       => $account->name,
             'email'      => Email::mask($account->email),
         ];
@@ -157,20 +137,6 @@ class AssistedPasswordResetService
         }
 
         return $account;
-    }
-
-    /**
-     * @return Collection<int, array{digits: string, formatted: ?string, sources: array<int, string>}>
-     */
-    private function requirePhones(string $digits): Collection
-    {
-        $phones = $this->citizens->phonesFor($digits);
-
-        if ($phones->isEmpty()) {
-            throw AssistedResetException::noPhone();
-        }
-
-        return $phones;
     }
 
     /**

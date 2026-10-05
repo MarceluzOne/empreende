@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -19,20 +19,33 @@ use Illuminate\Support\Facades\Schema;
  * Guardada por hasColumn porque em produção não roda migration (ver a rota
  * /setup-inicial): lá o ALTER TABLE é aplicado à mão e esta migration serve
  * para o ambiente local e para deixar o passo registrado.
+ *
+ * Por Schema::table(), e não por um ALTER TABLE cru com `AFTER cpf`: a suíte
+ * roda em sqlite :memory: (phpunit.xml), e sqlite não aceita `AFTER` em
+ * `ADD COLUMN` — o ALTER derrubava todo teste com RefreshDatabase no boot.
+ * A posição da coluna é cosmética e só existe no .sql de produção.
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        if (! Schema::hasColumn('users', 'phone')) {
-            DB::statement('ALTER TABLE users ADD COLUMN phone VARCHAR(20) NULL AFTER cpf');
+        if (Schema::hasColumn('users', 'phone')) {
+            return;
         }
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('phone', 20)->nullable();
+        });
     }
 
     public function down(): void
     {
-        if (Schema::hasColumn('users', 'phone')) {
-            DB::statement('ALTER TABLE users DROP COLUMN phone');
+        if (! Schema::hasColumn('users', 'phone')) {
+            return;
         }
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('phone');
+        });
     }
 };
