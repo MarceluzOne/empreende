@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\AssistedResetException;
+use App\Http\Requests\ActivateCitizenAccountRequest;
 use App\Http\Requests\UpdateCitizenRequest;
 use App\Services\AssistedPasswordResetService;
+use App\Services\CitizenAccountActivationService;
 use App\Services\CitizenService;
 use App\Services\CitizenUpdateService;
 use Illuminate\Http\Request;
@@ -70,6 +72,22 @@ class CitizenController extends Controller
     {
         try {
             return back()->with('reset_link', $reset->linkForCitizen($uuid));
+        } catch (AssistedResetException $e) {
+            return back()->with('reset_error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Cria a conta de quem foi cadastrado no balcão e nunca teve uma, e já
+     * devolve o link para a pessoa definir a primeira senha.
+     */
+    public function activateAccount(
+        string $uuid,
+        ActivateCitizenAccountRequest $request,
+        CitizenAccountActivationService $activation
+    ) {
+        try {
+            return back()->with('reset_link', $activation->activate($uuid, $request->input('email')));
         } catch (AssistedResetException $e) {
             return back()->with('reset_error', $e->getMessage());
         }

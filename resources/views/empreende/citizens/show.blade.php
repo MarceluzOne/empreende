@@ -164,9 +164,52 @@
                 </div>
 
             @elseif(! $temConta)
-                <p class="text-sm text-gray-400 italic">
-                    Esta pessoa ainda não tem conta no portal — não há senha a redefinir.
+                {{-- Quem foi cadastrado no balcao nao tem conta: nao e "perdeu
+                     a senha", e nunca houve senha. O atendente cria a conta
+                     aqui e entrega o mesmo link, para a pessoa definir a dela.
+                     A senha nasce aleatoria e ninguem a conhece. --}}
+                @php $emailsConhecidos = $known_emails ?? []; @endphp
+
+                <p class="text-sm text-gray-600 mb-1">
+                    Esta pessoa <strong>ainda não tem conta no portal</strong> — não é senha perdida, é conta que nunca
+                    existiu. Isso acontece com quem foi cadastrado no atendimento.
                 </p>
+                <p class="text-xs text-gray-500 mb-4">
+                    Ativar cria a conta e gera o link para ela mesma definir a primeira senha. Confirme a identidade
+                    antes: peça o CPF e confira com o cadastro acima.
+                </p>
+
+                <form method="POST" action="{{ route('citizens.account.activate', $uuid) }}"
+                    class="flex flex-wrap gap-2 items-start">
+                    @csrf
+
+                    @if($emailsConhecidos === [])
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                E-mail da pessoa *
+                            </label>
+                            <input type="email" name="email" value="{{ old('email') }}" required
+                                placeholder="nome@exemplo.com"
+                                class="px-3 py-2 rounded-xl border text-sm w-72 outline-none focus:ring-2 focus:ring-amber-400 {{ $errors->has('email') ? 'border-red-400' : 'border-gray-200' }}">
+                            @error('email')
+                                <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                            @enderror
+                            <p class="text-xs text-gray-400 mt-1 max-w-xs">
+                                Não há e-mail em nenhum registro deste CPF, e o e-mail é o login da conta.
+                            </p>
+                        </div>
+                    @else
+                        <div class="text-sm text-gray-600 mr-2">
+                            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Login será</span>
+                            <span class="font-mono">{{ $emailsConhecidos[0] }}</span>
+                        </div>
+                    @endif
+
+                    <button type="submit"
+                        class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition">
+                        <i class="fas fa-user-plus mr-1"></i> Ativar conta e gerar link
+                    </button>
+                </form>
 
             @elseif(! $contaComCpf)
                 <div class="px-4 py-3 rounded-xl bg-amber-50 border border-amber-100 text-sm text-amber-800">

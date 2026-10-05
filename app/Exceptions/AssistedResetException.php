@@ -39,4 +39,42 @@ class AssistedResetException extends RuntimeException
         );
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Ativação de conta no atendimento
+    |--------------------------------------------------------------------------
+    | Recusas da criação de conta para quem foi cadastrado no balcão. Moram
+    | aqui porque terminam no mesmo lugar: um aviso no painel "Acesso ao
+    | portal", pela mesma via das recusas da redefinição.
+    */
+
+    public static function accountAlreadyExists(): self
+    {
+        return new self(
+            'Esta pessoa já tem conta no portal. Em vez de criar outra, gere o link de redefinição de senha.'
+        );
+    }
+
+    public static function noName(): self
+    {
+        return new self(
+            'Este cadastro está sem nome, e o nome é obrigatório na conta. Preencha os dados do cidadão antes de ativar.'
+        );
+    }
+
+    public static function noEmail(): self
+    {
+        return new self(
+            'Não há e-mail em nenhum registro deste CPF, e o e-mail é o login da conta. '
+            .'Pergunte o e-mail à pessoa e informe no campo da tela.'
+        );
+    }
+
+    public static function emailTaken(string $email): self
+    {
+        return new self(
+            "O e-mail {$email} já é o login de outra conta do portal. Informe um endereço diferente: reaproveitá-lo "
+            .'daria a esta pessoa o acesso da outra.'
+        );
+    }
 }

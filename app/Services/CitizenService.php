@@ -75,6 +75,7 @@ class CitizenService
                 'attendances'   => collect(),
                 'account'       => null,
                 'phones'        => collect(),
+                'known_emails'  => [],
             ];
         }
 
@@ -114,6 +115,7 @@ class CitizenService
             'attendances'   => $attendances,
             'account'       => $account,
             'phones'        => $this->phonesFor($digits),
+            'known_emails'  => $this->emailsFor($digits),
         ];
     }
 
@@ -241,6 +243,38 @@ class CitizenService
 
             return $phone;
         })->values();
+    }
+
+    /**
+     * E-mails conhecidos deste CPF, sem repetição e já validados.
+     *
+     * Irmão de phonesFor(): varre as origens que gravam e-mail. Serve à ativação
+     * de conta no atendimento — `users.email` é NOT NULL UNIQUE, então sem um
+     * e-mail não há conta, e a tela só precisa perguntar quando não há nenhum.
+     *
+     * `attendances` não entra porque não tem coluna de e-mail: quem veio só de
+     * atendimento é exatamente o caso em que o atendente tem de perguntar.
+     *
+     * @return array<int, string>
+     */
+    public function emailsFor(string $cpfDigits): array
+    {
+        $variants = Document::cpfVariants($cpfDigits);
+
+        if ($variants === []) {
+            return [];
+        }
+
+        return collect([
+            JobSeeker::whereIn('cpf', $variants)->pluck('email'),
+            EventParticipant::whereIn('cpf', $variants)->pluck('email'),
+            ServiceProvider::whereIn('cpf', $variants)->pluck('email'),
+        ])->flatten()
+            ->map(fn ($e) => trim((string) $e))
+            ->filter(fn ($e) => $e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL))
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**

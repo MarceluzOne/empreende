@@ -12,7 +12,8 @@
 <link rel="icon" type="image/png" href="{{ asset('assets/Marca-Empreende-Vitoria_negativada.png') }}">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Redefinir Senha — Empreende Vitória</title>
+<meta name="referrer" content="no-referrer">
+<title>Definir Senha — Empreende Vitória</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -84,7 +85,7 @@
 <div class="auth-wrap">
   <div class="auth-side">
     <div class="auth-side-icon"><i class="fas fa-key"></i></div>
-    <h2>Escolha sua <span>nova senha.</span></h2>
+    <h2>Escolha a sua <span>senha.</span></h2>
     <p>Confirme seu CPF para provarmos que este link chegou às mãos certas e defina a senha que você vai usar no portal.</p>
     <div class="auth-side-features">
       <div class="auth-side-feature"><i class="fas fa-id-card"></i> Confirmação pelo seu CPF</div>
@@ -96,8 +97,8 @@
   <div class="auth-main">
     <div class="auth-card">
       <div class="auth-card-header">
-        <h1>Redefinir senha</h1>
-        <p>Informe o CPF da sua conta e crie uma senha nova.</p>
+        <h1>Definir senha</h1>
+        <p>Informe o CPF da sua conta e escolha a senha que vai usar para entrar.</p>
       </div>
 
       @if($errors->any())
@@ -119,7 +120,7 @@
         </div>
 
         <div class="form-group">
-          <label for="password">Nova senha</label>
+          <label for="password">Sua senha</label>
           <div class="pw-wrap">
             <input type="password" id="password" name="password"
               class="form-control {{ $errors->has('password') ? 'error' : '' }}"
@@ -132,7 +133,7 @@
         </div>
 
         <div class="form-group">
-          <label for="password_confirmation">Confirme a nova senha</label>
+          <label for="password_confirmation">Confirme a senha</label>
           <div class="pw-wrap">
             <input type="password" id="password_confirmation" name="password_confirmation"
               class="form-control" placeholder="Repita a senha" required>
@@ -143,7 +144,7 @@
         </div>
 
         <button type="submit" class="btn-primary">
-          <i class="fas fa-check"></i> Alterar senha
+          <i class="fas fa-check"></i> Salvar senha
         </button>
       </form>
 

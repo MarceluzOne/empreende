@@ -132,6 +132,7 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->prefix('portal/funci
     Route::get('cidadaos', [CitizenController::class, 'index'])->name('citizens.index');
     Route::get('cidadaos/{uuid}/editar', [CitizenController::class, 'edit'])->name('citizens.edit');
     Route::post('cidadaos/{uuid}/link-senha', [CitizenController::class, 'passwordLink'])->name('citizens.password-link');
+    Route::post('cidadaos/{uuid}/ativar-conta', [CitizenController::class, 'activateAccount'])->name('citizens.account.activate');
     Route::put('cidadaos/{uuid}', [CitizenController::class, 'update'])->name('citizens.update');
     Route::get('cidadaos/{uuid}', [CitizenController::class, 'show'])->name('citizens.show');
 
