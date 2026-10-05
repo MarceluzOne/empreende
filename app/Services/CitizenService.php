@@ -24,18 +24,26 @@ use Ramsey\Uuid\Uuid;
 class CitizenService
 {
     /**
-     * Lista consolidada e paginada de cidadãos, opcionalmente filtrada por
-     * nome ou CPF (ambos aceitam busca parcial).
+     * Lista consolidada e paginada de cidadãos.
+     *
+     * @param array{busca?: ?string, conta?: ?string} $filters
+     *        busca → nome, CPF ou e-mail da conta (todos parciais)
+     *        conta → 'com' | 'sem', para achar quem pode ou não acessar o portal
      */
-    public function list(?string $search = null, int $perPage = 15): LengthAwarePaginator
+    public function list(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $term   = trim((string) $search);
-        $people = $this->build();
+        $term  = trim((string) ($filters['busca'] ?? ''));
+        $conta = $filters['conta'] ?? null;
 
-        $collection = collect($people);
+        $collection = collect($this->build());
 
         if ($term !== '') {
             $collection = $collection->filter(fn ($e) => $this->matches($e, $term));
+        }
+
+        if ($conta === 'com' || $conta === 'sem') {
+            $esperado   = $conta === 'com';
+            $collection = $collection->filter(fn ($e) => $e['has_account'] === $esperado);
         }
 
         $collection = $collection
@@ -107,6 +115,30 @@ class CitizenService
             'account'       => $account,
             'phones'        => $this->phonesFor($digits),
         ];
+    }
+
+    /**
+     * Quantas contas do portal estão sem CPF e por isso ficam fora da listagem.
+     *
+     * A listagem é indexada pelo CPF — o UUID da URL deriva dele —, então uma
+     * conta sem CPF não tem identidade para virar linha. Em vez de esconder o
+     * fato, a tela mostra o número e o caminho para resolver (o backfill).
+     *
+     * Conta só as que o desvio pelo currículo também não alcança: essas já
+     * aparecem, marcadas com `account_without_cpf`.
+     */
+    public function accountsWithoutCpfCount(): int
+    {
+        $comCurriculo = JobSeeker::whereNotNull('user_id')
+            ->whereNotNull('cpf')
+            ->pluck('user_id')
+            ->unique()
+            ->all();
+
+        return User::where('type', 'usuario')
+            ->whereNull('cpf')
+            ->when($comCurriculo !== [], fn ($q) => $q->whereNotIn('id', $comCurriculo))
+            ->count();
     }
 
     /**
@@ -271,7 +303,89 @@ class CitizenService
             $people[$cpf] = $entry;
         }
 
+        $this->addAccounts($people);
+
         return $people;
+    }
+
+    /**
+     * Terceira origem: as contas do portal.
+     *
+     * Sem ela a tela e cega para quem se cadastrou sozinho pelo site e nunca
+     * fez curriculo nem foi atendido -- e e exatamente essa pessoa que perde a
+     * senha e precisa ser encontrada aqui.
+     *
+     * Duas passadas porque ha dois jeitos de uma conta existir:
+     *  - com CPF proprio, o caso normal desde 2026-08-06;
+     *  - sem CPF, nas contas anteriores a coluna. Essas so sao alcancaveis
+     *    pelo curriculo, e e o mesmo desvio que accountFor() faz -- se a
+     *    listagem nao fizesse, diria "sem conta" para quem a tela de detalhe
+     *    mostra com conta.
+     *
+     * O filtro type='usuario' e obrigatorio nas duas: job_seekers.user_id
+     * guarda o id do ATENDENTE quando o curriculo foi cadastrado no balcao
+     * (JobSeekerService::store()), nao o do cidadao.
+     *
+     * @param array<string, array<string, mixed>> $people
+     */
+    private function addAccounts(array &$people): void
+    {
+        $contas = User::where('type', 'usuario')
+            ->whereNotNull('cpf')
+            ->get(['id', 'name', 'email', 'cpf', 'created_at']);
+
+        foreach ($contas as $conta) {
+            $cpf = $this->onlyDigits($conta->cpf);
+            if ($cpf === '') {
+                continue;
+            }
+            $entry = $this->ensure($people, $cpf);
+            // O nome do curriculo e do atendimento vem antes: foi digitado por
+            // um atendente, e tende a estar mais correto que o do autocadastro.
+            $entry['name']               = $entry['name'] ?: $conta->name;
+            $entry['has_account']        = true;
+            $entry['account_email']      = $conta->email;
+            $entry['account_created_at'] = $conta->created_at;
+            $entry['user_id']            = $entry['user_id'] ?: $conta->id;
+            $people[$cpf] = $entry;
+        }
+
+        $this->flagAccountsWithoutCpf($people);
+    }
+
+    /**
+     * Marca as entradas cuja conta existe mas esta sem CPF gravado, chegando
+     * nelas pelo curriculo. O aviso na linha poupa o atendente de abrir o
+     * cadastro para descobrir que o link nao sai sem o backfill.
+     *
+     * @param array<string, array<string, mixed>> $people
+     */
+    private function flagAccountsWithoutCpf(array &$people): void
+    {
+        $porCurriculo = JobSeeker::whereNotNull('cpf')
+            ->whereNotNull('user_id')
+            ->pluck('user_id', 'cpf');
+
+        if ($porCurriculo->isEmpty()) {
+            return;
+        }
+
+        $semCpf = User::whereIn('id', $porCurriculo->values()->unique()->all())
+            ->where('type', 'usuario')
+            ->whereNull('cpf')
+            ->pluck('email', 'id');
+
+        foreach ($porCurriculo as $documento => $userId) {
+            $cpf = $this->onlyDigits($documento);
+
+            if ($cpf === '' || !isset($people[$cpf]) || !$semCpf->has($userId)) {
+                continue;
+            }
+
+            $people[$cpf]['has_account']         = true;
+            $people[$cpf]['account_without_cpf'] = true;
+            $people[$cpf]['account_email']       = $semCpf->get($userId);
+        }
     }
 
     /**
@@ -291,6 +405,10 @@ class CitizenService
             'user_id'            => null,
             'attendance_count'   => 0,
             'last_attendance_at' => null,
+            'has_account'         => false,
+            'account_without_cpf' => false,
+            'account_email'       => null,
+            'account_created_at'  => null,
         ];
     }
 
@@ -304,13 +422,20 @@ class CitizenService
             $items->count(),
             $perPage,
             $page,
-            ['path' => LengthAwarePaginator::resolveCurrentPath()]
+            [
+                'path'  => LengthAwarePaginator::resolveCurrentPath(),
+                // Sem isto a pagina 2 perde busca e filtro.
+                'query' => request()->except('page'),
+            ]
         );
     }
 
     /**
-     * Casa o termo buscado com o CPF (comparado só por dígitos, para ignorar a
-     * máscara) ou com o nome (sem acento e em caixa baixa).
+     * Casa o termo buscado com o CPF (só por dígitos, para ignorar a máscara),
+     * com o nome ou com o e-mail da conta — todos sem acento e em caixa baixa.
+     *
+     * O e-mail entra porque no balcão a pessoa lembra do login com mais
+     * frequência do que do próprio CPF decorado.
      *
      * @param array<string, mixed> $entry
      */
@@ -322,8 +447,15 @@ class CitizenService
             return true;
         }
 
-        return $entry['name'] !== null
-            && str_contains($this->normalize($entry['name']), $this->normalize($term));
+        $normalizado = $this->normalize($term);
+
+        foreach ([$entry['name'], $entry['account_email']] as $campo) {
+            if ($campo !== null && str_contains($this->normalize($campo), $normalizado)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function normalize(string $value): string

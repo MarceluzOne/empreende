@@ -19,11 +19,16 @@ class CitizenController extends Controller
     public function index(Request $request)
     {
         // `cpf` é o nome antigo do campo, mantido para não quebrar links salvos.
-        $search = $request->input('busca', $request->input('cpf'));
+        $filters = [
+            'busca' => $request->input('busca', $request->input('cpf')),
+            'conta' => $request->input('conta'),
+        ];
 
         return view('citizens.index', [
-            'citizens' => $this->service->list($search),
-            'search'   => $search,
+            'citizens'      => $this->service->list($filters),
+            'search'        => $filters['busca'],
+            'conta'         => $filters['conta'],
+            'contasSemCpf'  => $this->service->accountsWithoutCpfCount(),
         ]);
     }
 
