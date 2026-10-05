@@ -42,5 +42,29 @@ class AppServiceProvider extends ServiceProvider
                 // Silencia erros se o banco não estiver pronto
             }
         }
+
+        $this->definePasswordLinkGate();
+    }
+
+    /**
+     * Quem pode gerar link de senha e ativar conta de cidadão.
+     *
+     * Definido em CÓDIGO, de propósito, e não como permissão na tabela. Os
+     * outros gates nascem de `permissions`, semeada por `GET /setup-inicial`;
+     * um `can:` apontando para permissão nova responderia 403 para todos até
+     * alguém acessar aquela URL em produção — um deploy que trancaria a equipe
+     * fora da tela. Assim o gate vale no primeiro request depois do upload.
+     *
+     * Gerar o link é, na prática, poder entrar na conta de um cidadão. Antes
+     * disso bastava ser `type = funcionario`; agora é revogável por papel.
+     * 'senha-cidadao' entra no array do RoleController para poder ser atribuída
+     * pela tela de Equipe quando a seed rodar.
+     */
+    private function definePasswordLinkGate(): void
+    {
+        Gate::define('gerar-link-senha', function ($user) {
+            return $user->isFuncionario()
+                && ($user->isAdmin() || $user->hasPermission('senha-cidadao'));
+        });
     }
 }

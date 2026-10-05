@@ -16,7 +16,13 @@ class RoleController extends Controller
         'admin-only',
         'rooms', 'rooms_view', 'rooms_create', 'rooms_update', 'rooms_delete',
         'bookings', 'bookings_view', 'bookings_create', 'bookings_update', 'bookings_delete',
-        'users', 'users_view', 'users_create', 'users_update', 'users_delete'
+        'users', 'users_view', 'users_create', 'users_update', 'users_delete',
+
+        // Gerar link de senha e ativar conta de cidadao no atendimento. O gate
+        // 'gerar-link-senha' (AppServiceProvider) aceita admin OU quem tem esta
+        // permissao -- ela existe para a tela de Equipe poder concede-la a um
+        // atendente sem torna-lo administrador.
+        'senha-cidadao',
     ];
 
     public function scriptConfiguration()

@@ -179,6 +179,13 @@
                     antes: peça o CPF e confira com o cadastro acima.
                 </p>
 
+                @cannot('gerar-link-senha')
+                    <p class="text-xs text-gray-500">
+                        Você não tem permissão para ativar conta de cidadão. Peça a um administrador.
+                    </p>
+                @endcannot
+
+                @can('gerar-link-senha')
                 <form method="POST" action="{{ route('citizens.account.activate', $uuid) }}"
                     class="flex flex-wrap gap-2 items-start">
                     @csrf
@@ -210,6 +217,7 @@
                         <i class="fas fa-user-plus mr-1"></i> Ativar conta e gerar link
                     </button>
                 </form>
+                @endcan
 
             @elseif(! $contaComCpf)
                 <div class="px-4 py-3 rounded-xl bg-amber-50 border border-amber-100 text-sm text-amber-800">
@@ -242,15 +250,21 @@
                 </div>
 
                 @if(! $linkGerado)
-                    <p class="text-xs text-gray-500 mb-3">
-                        Confirme a identidade antes de gerar: peça o CPF e confira com o cadastro acima. A senha é
-                        escolhida pela própria pessoa — a equipe não fica sabendo qual é.
-                    </p>
+                    @can('gerar-link-senha')
+                        <p class="text-xs text-gray-500 mb-3">
+                            Confirme a identidade antes de gerar: peça o CPF e confira com o cadastro acima. A senha é
+                            escolhida pela própria pessoa — a equipe não fica sabendo qual é.
+                        </p>
 
-                    <button type="button" id="gerarLinkBtn"
-                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition">
-                        <i class="fas fa-link"></i> Gerar link de redefinição de senha
-                    </button>
+                        <button type="button" id="gerarLinkBtn"
+                            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition">
+                            <i class="fas fa-link"></i> Gerar link de redefinição de senha
+                        </button>
+                    @else
+                        <p class="text-xs text-gray-500">
+                            Você não tem permissão para gerar link de senha. Peça a um administrador.
+                        </p>
+                    @endcan
                 @else
                     <div class="rounded-xl border border-green-100 bg-green-50 p-4">
                         <p class="text-xs font-bold text-green-800 uppercase tracking-wider mb-2">
@@ -278,7 +292,7 @@
     </div>
 
     {{-- Confirmação antes de gerar: o link novo invalida qualquer link anterior --}}
-    @if(!empty($podeGerar) && empty($linkGerado))
+    @if(!empty($podeGerar) && empty($linkGerado) && auth()->user()->can('gerar-link-senha'))
         <div id="confirmLinkModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 p-4">
             <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
                 <h5 class="text-lg font-black text-gray-800 mb-2">Gerar link de senha</h5>

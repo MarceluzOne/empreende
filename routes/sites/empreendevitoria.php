@@ -75,7 +75,8 @@ Route::post('/sair', [AuthController::class, 'logout'])->name('logout');
 // A redefinicao nao sai por e-mail: /esqueci-senha so orienta a procurar o
 // atendimento, e o link de verdade e gerado por um funcionario em Cidadaos.
 Route::get('/esqueci-senha', [PasswordResetController::class, 'showForgotForm'])->name('password.request');
-Route::get('/redefinir-senha/atendimento/{token}', [AssistedPasswordResetController::class, 'show'])->name('password.assisted');
+Route::get('/redefinir-senha/atendimento/{token}', [AssistedPasswordResetController::class, 'show'])
+    ->middleware('throttle:30,1')->name('password.assisted');
 Route::post('/redefinir-senha/atendimento', [AssistedPasswordResetController::class, 'update'])
     ->middleware('throttle:5,1')->name('password.assisted.update');
 
@@ -131,8 +132,12 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->prefix('portal/funci
     // Cidadãos: lista consolidada por CPF (candidatos + atendidos)
     Route::get('cidadaos', [CitizenController::class, 'index'])->name('citizens.index');
     Route::get('cidadaos/{uuid}/editar', [CitizenController::class, 'edit'])->name('citizens.edit');
-    Route::post('cidadaos/{uuid}/link-senha', [CitizenController::class, 'passwordLink'])->name('citizens.password-link');
-    Route::post('cidadaos/{uuid}/ativar-conta', [CitizenController::class, 'activateAccount'])->name('citizens.account.activate');
+    // Gerar link de senha e ativar conta sao, na pratica, poder entrar na conta
+    // de um cidadao -- nao bastam a 'auth' + tipo de conta do grupo.
+    Route::post('cidadaos/{uuid}/link-senha', [CitizenController::class, 'passwordLink'])
+        ->middleware('can:gerar-link-senha')->name('citizens.password-link');
+    Route::post('cidadaos/{uuid}/ativar-conta', [CitizenController::class, 'activateAccount'])
+        ->middleware('can:gerar-link-senha')->name('citizens.account.activate');
     Route::put('cidadaos/{uuid}', [CitizenController::class, 'update'])->name('citizens.update');
     Route::get('cidadaos/{uuid}', [CitizenController::class, 'show'])->name('citizens.show');
 

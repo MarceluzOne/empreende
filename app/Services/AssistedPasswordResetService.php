@@ -8,6 +8,7 @@ use App\Support\Document;
 use App\Support\Email;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\RateLimiter;
 
 /**
  * Redefinição de senha conduzida pelo atendimento, presencial ou por WhatsApp.
@@ -108,6 +109,10 @@ class AssistedPasswordResetService
      */
     public function reset(string $token, string $cpf, string $password): bool
     {
+        if ($this->excedeuTentativas($token)) {
+            return false;
+        }
+
         $account = $this->accountForReset($cpf);
 
         if (!$account) {
@@ -121,7 +126,41 @@ class AssistedPasswordResetService
             'token'                 => $token,
         ], fn ($user, $plain) => $this->users->changePassword($user, $plain));
 
-        return $status === Password::PASSWORD_RESET;
+        if ($status !== Password::PASSWORD_RESET) {
+            return false;
+        }
+
+        // Sem isto a auditoria mostra "gerou link" e nunca diz se alguem usou.
+        // Auth::id() e nulo aqui -- a tela e publica -- e audit_logs aceita.
+        AuditService::log(
+            'updated',
+            $account,
+            null,
+            'Senha definida pelo proprio cidadao, pelo link do atendimento'
+        );
+
+        return true;
+    }
+
+    /**
+     * Limite de tentativas POR TOKEN, somado ao throttle da rota.
+     *
+     * O `throttle:5,1` da rota conta por IP, e o CPF e o unico segredo que falta
+     * a quem tem o link na mao: distribuindo as tentativas entre IPs, daria para
+     * varrer CPFs sem esbarrar em nada. Aqui a conta e do token, entao a janela
+     * total e 10 tentativas, independentemente de onde venham.
+     */
+    private function excedeuTentativas(string $token): bool
+    {
+        $chave = 'senha-assistida:'.sha1($token);
+
+        if (RateLimiter::tooManyAttempts($chave, 10)) {
+            return true;
+        }
+
+        RateLimiter::hit($chave, 3600);
+
+        return false;
     }
 
     private function requireAccount(string $digits): User
