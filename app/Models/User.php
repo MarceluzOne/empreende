@@ -63,6 +63,13 @@ class User extends Authenticatable
     }
 
     public function isAdmin(): bool { return $this->roles->contains('name', 'admin'); }
+
+    /**
+     * Papel atribuído a esta conta. Mesma leitura do isAdmin() — pela relação
+     * já carregada, sem ir ao banco de novo.
+     */
+    public function hasRole(string $role): bool { return $this->roles->contains('name', $role); }
+
     public function isFuncionario(): bool { return $this->type === 'funcionario'; }
     public function isUsuario(): bool { return $this->type === 'usuario'; }
     public function isEmpresa(): bool { return $this->type === 'empresa'; }

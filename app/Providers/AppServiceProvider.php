@@ -56,15 +56,28 @@ class AppServiceProvider extends ServiceProvider
      * fora da tela. Assim o gate vale no primeiro request depois do upload.
      *
      * Gerar o link é, na prática, poder entrar na conta de um cidadão. Antes
-     * disso bastava ser `type = funcionario`; agora é revogável por papel.
-     * 'senha-cidadao' entra no array do RoleController para poder ser atribuída
-     * pela tela de Equipe quando a seed rodar.
+     * disso bastava ser `type = funcionario`, sem recurso nenhum para revogar.
+     *
+     * Quem atende no balcão é funcionário com o papel `employee`, e é ele que
+     * recebe o pedido de senha — então o papel entra no gate. Fica de fora a
+     * conta `type = funcionario` sem papel nenhum, que não deveria estar
+     * atendendo. 'senha-cidadao' permite conceder a quem tiver outro papel, sem
+     * precisar torná-lo administrador; ela é semeada por /setup-inicial, e por
+     * isso NÃO pode ser a única via — senão o deploy trancaria a equipe fora da
+     * tela até alguém acessar aquela URL.
+     *
+     * Revogar é tirar o papel ou a permissão da pessoa, pela tela de Equipe.
      */
     private function definePasswordLinkGate(): void
     {
         Gate::define('gerar-link-senha', function ($user) {
-            return $user->isFuncionario()
-                && ($user->isAdmin() || $user->hasPermission('senha-cidadao'));
+            if (! $user->isFuncionario()) {
+                return false;
+            }
+
+            return $user->isAdmin()
+                || $user->hasRole('employee')
+                || $user->hasPermission('senha-cidadao');
         });
     }
 }
