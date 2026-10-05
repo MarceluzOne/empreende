@@ -127,6 +127,8 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->prefix('portal/funci
 
     // Cidadãos: lista consolidada por CPF (candidatos + atendidos)
     Route::get('cidadaos', [CitizenController::class, 'index'])->name('citizens.index');
+    Route::get('cidadaos/{uuid}/editar', [CitizenController::class, 'edit'])->name('citizens.edit');
+    Route::put('cidadaos/{uuid}', [CitizenController::class, 'update'])->name('citizens.update');
     Route::get('cidadaos/{uuid}', [CitizenController::class, 'show'])->name('citizens.show');
 
     // Empresas: lista consolidada por CNPJ (cadastradas + com vagas publicadas)

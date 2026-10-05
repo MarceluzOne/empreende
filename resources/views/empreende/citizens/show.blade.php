@@ -15,7 +15,7 @@
             <div class="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-xl font-black shrink-0">
                 {{ strtoupper(mb_substr($name ?? '?', 0, 1)) }}
             </div>
-            <div>
+            <div class="flex-1 min-w-0">
                 <h2 class="text-xl font-black text-gray-800">{{ $name ?? '—' }}</h2>
                 <p class="text-gray-500 font-mono text-sm">CPF: {{ $cpf_formatted }}</p>
                 @if(!empty($cnpjs) && count($cnpjs))
@@ -24,6 +24,11 @@
                     </p>
                 @endif
             </div>
+
+            <a href="{{ route('citizens.edit', $uuid) }}"
+                class="shrink-0 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition">
+                <i class="fas fa-pen mr-1"></i> Editar
+            </a>
         </div>
 
         {{-- Perfil de candidato --}}
@@ -33,10 +38,16 @@
                     <i class="fas fa-user-graduate text-indigo-500 mr-1"></i> Candidato
                 </h3>
                 @if($candidato)
-                    <a href="{{ route('job-seekers.curriculo', $candidato->id) }}" target="_blank"
-                        class="text-blue-600 hover:text-blue-800 text-sm font-bold">
-                        <i class="fas fa-file-pdf mr-1"></i> Ver currículo (PDF)
-                    </a>
+                    <div class="flex items-center gap-4">
+                        <a href="{{ route('job-seekers.edit', $candidato) }}"
+                            class="text-blue-600 hover:text-blue-800 text-sm font-bold">
+                            <i class="fas fa-pen mr-1"></i> Editar currículo
+                        </a>
+                        <a href="{{ route('job-seekers.curriculo', $candidato->id) }}" target="_blank"
+                            class="text-blue-600 hover:text-blue-800 text-sm font-bold">
+                            <i class="fas fa-file-pdf mr-1"></i> Ver currículo (PDF)
+                        </a>
+                    </div>
                 @endif
             </div>
 
@@ -61,6 +72,22 @@
                 </div>
             @else
                 <p class="text-sm text-gray-400 italic">Esta pessoa não possui currículo de candidato cadastrado.</p>
+            @endif
+        </div>
+
+        {{-- Conta de acesso no portal --}}
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-5">
+            <h3 class="text-sm font-black text-gray-700 uppercase tracking-wider mb-4">
+                <i class="fas fa-key text-indigo-500 mr-1"></i> Conta de acesso
+            </h3>
+
+            @if($conta)
+                <div class="text-sm">
+                    <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Login</span>
+                    <span class="font-mono">{{ $conta->email }}</span>
+                </div>
+            @else
+                <p class="text-sm text-gray-400 italic">Esta pessoa ainda não criou conta no portal.</p>
             @endif
         </div>
 

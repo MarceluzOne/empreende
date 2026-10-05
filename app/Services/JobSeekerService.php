@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 
 class JobSeekerService
 {
+    public function __construct(private CitizenUpdateService $citizens) {}
+
     /**
      * Currículo do usuário: pelo vínculo direto, senão pelo e-mail da conta ou
      * pelo CPF. As duas últimas alternativas reconhecem o currículo cadastrado
@@ -43,7 +45,18 @@ class JobSeekerService
     {
         $data['phone'] = isset($data['phone']) ? preg_replace('/[^0-9]/', '', $data['phone']) : null;
 
+        $cpfAnterior = $seeker->cpf;
+
+        if (array_key_exists('cpf', $data)) {
+            $data['cpf'] = Document::digits($data['cpf']);
+        }
+
         $seeker->update($data);
+
+        // O CPF identifica a pessoa fora do currículo também: corrigi-lo aqui
+        // sem alcançar atendimentos e conta a dividiria em dois cidadãos.
+        $this->citizens->changeCpf($cpfAnterior, $seeker->cpf);
+
         return $seeker;
     }
 
