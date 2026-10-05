@@ -94,10 +94,12 @@ return [
         'users' => [
             'provider' => 'users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
-            // 24h: o link é entregue no atendimento (presencial ou WhatsApp) e a
-            // pessoa costuma redefinir só quando chega em casa. Não há mais fluxo
-            // por e-mail, então este prazo vale só para a redefinição assistida.
-            'expire' => 1440,
+            // 12h: o link é entregue no atendimento (presencial ou WhatsApp) e a
+            // pessoa costuma redefinir só quando chega em casa — 12h cobrem o
+            // mesmo dia sem deixar um segredo valendo até amanhã no histórico da
+            // conversa. Não há mais fluxo por e-mail, então este prazo vale só
+            // para a redefinição assistida, de cidadão e de empresa.
+            'expire' => 720,
             'throttle' => 60,
         ],
     ],

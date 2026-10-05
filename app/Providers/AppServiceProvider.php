@@ -59,14 +59,22 @@ class AppServiceProvider extends ServiceProvider
      * disso bastava ser `type = funcionario`, sem recurso nenhum para revogar.
      *
      * Quem atende no balcão é funcionário com o papel `employee`, e é ele que
-     * recebe o pedido de senha — então o papel entra no gate. Fica de fora a
-     * conta `type = funcionario` sem papel nenhum, que não deveria estar
-     * atendendo. 'senha-cidadao' permite conceder a quem tiver outro papel, sem
-     * precisar torná-lo administrador; ela é semeada por /setup-inicial, e por
-     * isso NÃO pode ser a única via — senão o deploy trancaria a equipe fora da
-     * tela até alguém acessar aquela URL.
+     * recebe o pedido de senha — então o papel entra no gate, ao lado de admin.
+     * Fica de fora a conta `type = funcionario` sem papel nenhum, que não
+     * deveria estar atendendo.
      *
-     * Revogar é tirar o papel ou a permissão da pessoa, pela tela de Equipe.
+     * Checa o PAPEL, e não uma permissão nomeada, porque permissão fina não é
+     * administrável neste sistema: `permissions` é escrita apenas pelo array
+     * chumbado em `RoleController::scriptConfiguration()`, exposto em
+     * `GET /setup-inicial`. Não há tela para ligar permissão a papel — a de
+     * Equipe só troca o papel da pessoa. Um ramo `hasPermission('senha-cidadao')`
+     * seria código morto: a seed daria essa permissão só ao `admin`, que já
+     * passa por `isAdmin()`.
+     *
+     * Consequência a registrar: só existem dois papéis, e os dois passam. Logo
+     * não há como ter um funcionário atendendo e impedido de gerar link, a não
+     * ser deixando-o sem papel — o que também lhe tira o resto. Controle por
+     * pessoa exigiria uma tela de papel × permissão, que não existe.
      */
     private function definePasswordLinkGate(): void
     {
@@ -75,9 +83,7 @@ class AppServiceProvider extends ServiceProvider
                 return false;
             }
 
-            return $user->isAdmin()
-                || $user->hasRole('employee')
-                || $user->hasPermission('senha-cidadao');
+            return $user->isAdmin() || $user->hasRole('employee');
         });
     }
 }
