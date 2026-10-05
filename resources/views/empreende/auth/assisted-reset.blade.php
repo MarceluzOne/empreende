@@ -86,9 +86,9 @@
   <div class="auth-side">
     <div class="auth-side-icon"><i class="fas fa-key"></i></div>
     <h2>Escolha a sua <span>senha.</span></h2>
-    <p>Confirme seu CPF para provarmos que este link chegou às mãos certas e defina a senha que você vai usar no portal.</p>
+    <p>Confirme o documento do cadastro para provarmos que este link chegou às mãos certas, e defina a senha que você vai usar no portal.</p>
     <div class="auth-side-features">
-      <div class="auth-side-feature"><i class="fas fa-id-card"></i> Confirmação pelo seu CPF</div>
+      <div class="auth-side-feature"><i class="fas fa-id-card"></i> Confirmação pelo CPF ou CNPJ</div>
       <div class="auth-side-feature"><i class="fas fa-clock"></i> Link válido por 24 horas</div>
       <div class="auth-side-feature"><i class="fas fa-rotate-left"></i> Depois de usado, o link expira</div>
     </div>
@@ -98,7 +98,7 @@
     <div class="auth-card">
       <div class="auth-card-header">
         <h1>Definir senha</h1>
-        <p>Informe o CPF da sua conta e escolha a senha que vai usar para entrar.</p>
+        <p>Informe o documento da sua conta e escolha a senha que vai usar para entrar.</p>
       </div>
 
       @if($errors->any())
@@ -113,10 +113,11 @@
         <input type="hidden" name="token" value="{{ $token }}">
 
         <div class="form-group">
-          <label for="cpf">CPF</label>
-          <input type="text" id="cpf" name="cpf" inputmode="numeric" maxlength="14" autocomplete="off"
+          <label for="cpf">CPF ou CNPJ do cadastro</label>
+          <input type="text" id="cpf" name="cpf" inputmode="numeric" maxlength="18" autocomplete="off"
             class="form-control {{ $errors->has('cpf') ? 'error' : '' }}"
             placeholder="000.000.000-00" required autofocus>
+          <small class="form-hint">CPF se a conta é sua; CNPJ se é conta de empresa.</small>
         </div>
 
         <div class="form-group">
@@ -156,13 +157,24 @@
 </div>
 
 <script>
-  // Máscara de CPF: 000.000.000-00
+  // Mascara de CPF ou CNPJ, pelo tamanho do que esta sendo digitado:
+  // ate 11 digitos -> 000.000.000-00; dai em diante -> 00.000.000/0000-00
   document.getElementById('cpf').addEventListener('input', function () {
-    var d = this.value.replace(/\D/g, '').slice(0, 11);
+    var d = this.value.replace(/\D/g, '').slice(0, 14);
+
+    if (d.length <= 11) {
+      this.value = d
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+        .replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
+      return;
+    }
+
     this.value = d
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
-      .replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
+      .replace(/^(\d{2})(\d)/, '$1.$2')
+      .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/\.(\d{3})(\d)/, '.$1/$2')
+      .replace(/(\d{4})(\d)/, '$1-$2');
   });
 
   document.querySelectorAll('.pw-toggle').forEach(function (btn) {

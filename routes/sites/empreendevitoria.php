@@ -145,6 +145,8 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->prefix('portal/funci
     Route::get('empresas', [CompanyController::class, 'index'])->name('companies.index');
     Route::get('empresas/{empresa}/editar', [CompanyController::class, 'editEmpresa'])->name('companies.empresa.edit');
     Route::put('empresas/{empresa}', [CompanyController::class, 'updateEmpresa'])->name('companies.empresa.update');
+    Route::post('empresas/{empresa}/link-senha', [CompanyController::class, 'passwordLink'])
+        ->middleware('can:gerar-link-senha')->name('companies.password-link');
     Route::patch('empresas/{empresa}/status', [CompanyController::class, 'toggleEmpresa'])->name('companies.empresa.toggle');
     Route::get('empresas/{uuid}', [CompanyController::class, 'show'])->name('companies.show');
 

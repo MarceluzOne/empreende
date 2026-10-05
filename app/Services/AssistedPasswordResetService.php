@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Exceptions\AssistedResetException;
+use App\Models\Empresa;
 use App\Models\User;
 use App\Support\Document;
 use App\Support\Email;
+use App\Support\Phone;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
@@ -87,8 +89,42 @@ class AssistedPasswordResetService
             throw AssistedResetException::invalidCpf();
         }
 
-        $account = $this->requireAccount($digits);
+        return $this->linkForAccount(
+            $this->requireAccount($digits),
+            $this->citizens->phonesFor($digits)->all()
+        );
+    }
 
+    /**
+     * Link para a conta de uma empresa, confirmada pelo CNPJ.
+     *
+     * Caminho mais curto que o do cidadão: `empresas.user_id` é FK real, não há
+     * cruzamento por documento a fazer, e `empresas.cnpj` é NOT NULL UNIQUE —
+     * então o documento que confirma a identidade sempre existe.
+     */
+    public function linkForEmpresa(Empresa $empresa): array
+    {
+        $account = $empresa->user;
+
+        if ($account === null || $account->type !== 'empresa') {
+            throw AssistedResetException::noAccount();
+        }
+
+        return $this->linkForAccount($account, $this->empresaPhones($empresa));
+    }
+
+    /**
+     * Núcleo comum: cria o token e monta o que a tela precisa exibir.
+     *
+     * Indiferente a como o chamador achou a conta — é o que permite cidadão
+     * (por CPF) e empresa (por CNPJ) compartilharem token, prazo, auditoria e
+     * a mesma tela pública, sem bifurcar nada.
+     *
+     * @param  array<int, array<string, mixed>> $phones
+     * @return array{url: string, expires_at: string, phones: array, name: string, email: ?string}
+     */
+    private function linkForAccount(User $account, array $phones): array
+    {
         $token = Password::broker()->createToken($account);
 
         AuditService::log('updated', $account, null, 'Gerou link de redefinição de senha para '.$account->name);
@@ -96,10 +132,28 @@ class AssistedPasswordResetService
         return [
             'url'        => route('password.assisted', ['token' => $token]),
             'expires_at' => Carbon::now()->addMinutes((int) config('auth.passwords.users.expire'))->format('d/m/Y H:i'),
-            'phones'     => $this->citizens->phonesFor($digits)->all(),
+            'phones'     => $phones,
             'name'       => $account->name,
             'email'      => Email::mask($account->email),
         ];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function empresaPhones(Empresa $empresa): array
+    {
+        $digits = Document::digits($empresa->telefone);
+
+        if (strlen($digits) < 10) {
+            return [];
+        }
+
+        return [[
+            'digits'    => $digits,
+            'formatted' => Phone::format($digits),
+            'sources'   => ['empresa'],
+        ]];
     }
 
     /**
@@ -179,13 +233,30 @@ class AssistedPasswordResetService
     }
 
     /**
-     * Na redefinição a busca é só por `users.cpf`. O desvio pelo currículo que
-     * a tela do funcionário usa aceitaria uma conta com o campo nulo — e aqui
-     * o CPF é justamente o que confirma a identidade de quem abriu o link.
+     * Conta que o documento digitado na tela pública confirma.
+     *
+     * Resolve pelo tamanho: 11 dígitos é CPF de cidadão, 14 é CNPJ de empresa.
+     * Os dois ramos não se cruzam — um CPF nunca alcança conta de empresa e
+     * vice-versa.
+     *
+     * Para cidadão a busca é só por `users.cpf`. O desvio pelo currículo que a
+     * tela do funcionário usa aceitaria uma conta com o campo nulo, e aqui o
+     * documento é justamente o que confirma quem abriu o link.
      */
-    private function accountForReset(string $cpf): ?User
+    private function accountForReset(string $documento): ?User
     {
-        $variants = Document::cpfVariants($cpf);
+        $digits = Document::digits($documento);
+
+        if (strlen($digits) === 14) {
+            // Pelas duas grafias: empresas.cnpj grava COM mascara, e o que a
+            // pessoa digita na tela chega aqui so em digitos.
+            $empresa = Empresa::whereIn('cnpj', Document::cnpjVariants($digits))->first();
+            $account = optional($empresa)->user;
+
+            return optional($account)->type === 'empresa' ? $account : null;
+        }
+
+        $variants = Document::cpfVariants($digits);
 
         return $variants === []
             ? null

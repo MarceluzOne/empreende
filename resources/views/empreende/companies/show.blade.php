@@ -143,5 +143,153 @@
                 </table>
             @endif
         </div>
+
+        {{-- Acesso ao portal: geração do link de senha da conta da empresa.
+             Mesmo fluxo do cidadão; o que confirma a identidade na tela pública
+             é o CNPJ em vez do CPF. Mais curto porque empresas.user_id é FK
+             real e empresas.cnpj é NOT NULL UNIQUE — não há documento faltando
+             nem cruzamento por grafia a fazer. --}}
+        @php
+            $conta      = optional($empresa)->user;
+            $temConta   = $conta !== null && $conta->type === 'empresa';
+            $linkGerado = session('reset_link');
+            $telefone   = App\Support\Phone::format(optional($empresa)->telefone);
+        @endphp
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-5">
+            <h3 class="text-sm font-black text-gray-700 uppercase tracking-wider mb-4">
+                <i class="fas fa-key text-amber-500 mr-1"></i> Acesso ao portal
+            </h3>
+
+            @if(session('reset_error'))
+                <div class="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-700">
+                    <i class="fas fa-circle-exclamation mr-1"></i> {{ session('reset_error') }}
+                </div>
+            @endif
+
+            @if(! $empresa)
+                <p class="text-sm text-gray-400 italic">
+                    Esta empresa aparece aqui por ter publicado vaga, mas não tem cadastro próprio no portal — não há
+                    conta nem senha.
+                </p>
+
+            @elseif(! $temConta)
+                <p class="text-sm text-gray-400 italic">
+                    Este cadastro de empresa não tem conta de acesso vinculada — não há senha a redefinir.
+                </p>
+
+            @else
+                <div class="text-sm text-gray-600 mb-4 space-y-1">
+                    <div>
+                        <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Login</span>
+                        <span class="ml-2 font-mono">{{ $conta->email }}</span>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Telefone no cadastro</span>
+                        @if($telefone)
+                            <span class="ml-2 font-mono">{{ $telefone }}</span>
+                        @else
+                            <span class="ml-2 text-gray-400 italic">nenhum</span>
+                            <a href="{{ route('companies.empresa.edit', $empresa) }}"
+                                class="ml-1 text-xs text-blue-600 font-bold underline">cadastrar</a>
+                        @endif
+                    </div>
+                </div>
+
+                @if(! $linkGerado)
+                    @can('gerar-link-senha')
+                        <p class="text-xs text-gray-500 mb-3">
+                            Confirme a identidade antes de gerar: peça o CNPJ e confira com o cadastro acima. A senha é
+                            escolhida por quem recebe o link — a equipe não fica sabendo qual é.
+                        </p>
+
+                        <button type="button" id="gerarLinkBtn"
+                            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition">
+                            <i class="fas fa-link"></i> Gerar link de redefinição de senha
+                        </button>
+                    @else
+                        <p class="text-xs text-gray-500">
+                            Você não tem permissão para gerar link de senha. Peça a um administrador.
+                        </p>
+                    @endcan
+                @else
+                    <div class="rounded-xl border border-green-100 bg-green-50 p-4">
+                        <p class="text-xs font-bold text-green-800 uppercase tracking-wider mb-2">
+                            <i class="fas fa-check-circle mr-1"></i> Link gerado — válido até {{ $linkGerado['expires_at'] }}
+                        </p>
+
+                        <div class="flex gap-2 mb-3">
+                            <input type="text" id="resetLinkInput" readonly value="{{ $linkGerado['url'] }}"
+                                class="flex-1 px-3 py-2 text-xs font-mono bg-white border border-green-200 rounded-lg text-gray-700">
+                            <button type="button" id="copiarLinkBtn"
+                                class="px-3 py-2 rounded-lg bg-white border border-green-200 text-green-700 text-xs font-bold hover:bg-green-100 transition">
+                                <i class="fas fa-copy"></i> Copiar
+                            </button>
+                        </div>
+
+                        <p class="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                            <i class="fas fa-triangle-exclamation mr-1"></i>
+                            Repasse só para quem você confirmou. O link pede o <strong>CNPJ</strong> da empresa para
+                            funcionar, vale uma única vez, e gerar um novo cancela este.
+                        </p>
+                    </div>
+                @endif
+            @endif
+        </div>
     </div>
+
+    @if(!empty($temConta) && empty($linkGerado) && auth()->user()->can('gerar-link-senha'))
+        <div id="confirmLinkModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+                <h5 class="text-lg font-black text-gray-800 mb-2">Gerar link de senha</h5>
+                <p class="text-sm text-gray-600 mb-1">
+                    Gerar um link de redefinição de senha para <strong>{{ $conta->name }}</strong>?
+                </p>
+                <p class="text-xs text-gray-500 mb-5">
+                    Qualquer link gerado antes para esta conta deixa de funcionar. A ação fica registrada na auditoria
+                    com o seu nome.
+                </p>
+                <div class="flex justify-end gap-2">
+                    <button type="button" id="cancelarLinkBtn"
+                        class="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold transition">
+                        Cancelar
+                    </button>
+                    <form method="POST" action="{{ route('companies.password-link', $empresa) }}">
+                        @csrf
+                        <button type="submit"
+                            class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition">
+                            Confirmar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <script>
+        (function () {
+            var abrir  = document.getElementById('gerarLinkBtn');
+            var modal  = document.getElementById('confirmLinkModal');
+            var fechar = document.getElementById('cancelarLinkBtn');
+
+            if (abrir && modal) {
+                abrir.addEventListener('click', function () { modal.classList.replace('hidden', 'flex'); });
+                fechar.addEventListener('click', function () { modal.classList.replace('flex', 'hidden'); });
+                modal.addEventListener('click', function (e) {
+                    if (e.target === modal) modal.classList.replace('flex', 'hidden');
+                });
+            }
+
+            var copiar = document.getElementById('copiarLinkBtn');
+            if (copiar) {
+                copiar.addEventListener('click', function () {
+                    var campo = document.getElementById('resetLinkInput');
+                    campo.select();
+                    campo.setSelectionRange(0, 99999);
+                    document.execCommand('copy');
+                    copiar.innerHTML = '<i class="fas fa-check"></i> Copiado';
+                });
+            }
+        })();
+    </script>
 @endsection

@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Rules\Cpf;
+use App\Rules\CpfOrCnpj;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules;
 
@@ -14,8 +14,9 @@ class AssistedPasswordResetRequest extends FormRequest
     }
 
     /**
-     * Normaliza o CPF para dígitos antes de validar — a pessoa digita com
-     * máscara, e é só por dígitos que o CPF casa com `users.cpf`.
+     * Normaliza o documento para dígitos antes de validar — quem preenche digita
+     * com máscara, e é só por dígitos que ele casa com `users.cpf` (cidadão) ou
+     * `empresas.cnpj` (empresa).
      */
     protected function prepareForValidation(): void
     {
@@ -25,15 +26,19 @@ class AssistedPasswordResetRequest extends FormRequest
     }
 
     /**
-     * Sem checar aqui se o CPF existe: a tela é pública, e uma mensagem do
-     * tipo "CPF não encontrado" a transformaria num verificador de cadastros.
+     * Aceita CPF (cidadão) e CNPJ (empresa). Um campo só, sem bifurcar a tela:
+     * o link não diz de quem é, e perguntar "você é pessoa ou empresa?" já
+     * entregaria parte da resposta.
+     *
+     * Sem checar aqui se o documento existe: a tela é pública, e uma mensagem
+     * do tipo "não encontrado" a transformaria num verificador de cadastros.
      * A recusa vem depois, genérica, do AssistedPasswordResetService.
      */
     public function rules(): array
     {
         return [
             'token'    => ['required', 'string'],
-            'cpf'      => ['required', 'string', new Cpf],
+            'cpf'      => ['required', 'string', new CpfOrCnpj],
             'password' => ['required', 'confirmed', Rules\Password::min(8)],
         ];
     }
@@ -42,7 +47,7 @@ class AssistedPasswordResetRequest extends FormRequest
     {
         return [
             'token.required'     => 'Link inválido. Peça um novo no atendimento.',
-            'cpf.required'       => 'Informe o CPF.',
+            'cpf.required'       => 'Informe o CPF ou o CNPJ do cadastro.',
             'password.required'  => 'A nova senha é obrigatória.',
             'password.confirmed' => 'A confirmação da senha não confere.',
         ];
