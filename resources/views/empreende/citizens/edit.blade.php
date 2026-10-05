@@ -45,6 +45,10 @@
                     <input type="text" name="phone" id="cidadao_phone" value="{{ old('phone', App\Support\Phone::format($phone)) }}"
                         class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm @error('phone') border-red-500 @enderror">
                     @error('phone') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    <p class="text-xs text-gray-400 mt-1">
+                        Deixar em branco mantém o telefone atual. A troca fica registrada na auditoria, com o número
+                        anterior.
+                    </p>
                 </div>
 
                 <div class="md:col-span-2">
