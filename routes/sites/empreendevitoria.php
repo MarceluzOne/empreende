@@ -53,11 +53,11 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/', [LandingController::class, 'index'])->name('home');
 Route::get('/agendamento/disponibilidade', [PublicAttendanceController::class, 'availability'])->name('public.attendance.availability');
-Route::post('/agendamento', [PublicAttendanceController::class, 'store'])->name('public.attendance.store');
+Route::post('/agendamento', [PublicAttendanceController::class, 'store'])->middleware('throttle:formulario-publico')->name('public.attendance.store');
 Route::get('/contato', [LandingController::class, 'contato'])->name('contato');
 Route::get('/cursos', [LandingController::class, 'cursos'])->name('cursos');
 Route::get('/eventos/convite/{event:share_token}', [PublicEventController::class, 'create'])->name('public.events.register');
-Route::post('/eventos/convite/{event:share_token}', [PublicEventController::class, 'store'])->name('public.events.register.store');
+Route::post('/eventos/convite/{event:share_token}', [PublicEventController::class, 'store'])->middleware('throttle:formulario-publico')->name('public.events.register.store');
 Route::get('/certificados', [PublicCertificateController::class, 'index'])->middleware('throttle:20,1')->name('public.certificates');
 Route::get('/certificados/{participant}/baixar', [PublicCertificateController::class, 'download'])->name('public.certificates.download');
 Route::get('/certificados/palestrante/{event}/baixar', [PublicCertificateController::class, 'downloadSpeaker'])->name('public.certificates.speaker');
@@ -68,7 +68,7 @@ Route::get('/empresas-locais', [LandingController::class, 'empresasLocais'])->na
 | Auth funcionário
 */
 Route::get('/entrar', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/entrar', [AuthController::class, 'login'])->name('login.post');
+Route::post('/entrar', [AuthController::class, 'login'])->middleware('throttle:login')->name('login.post');
 Route::post('/sair', [AuthController::class, 'logout'])->name('logout');
 
 /*
@@ -91,18 +91,18 @@ Route::get('/setup-inicial', [RoleController::class, 'scriptConfiguration']);
 | Auth usuário (candidatos)
 */
 Route::get('/entrar/usuario', [UsuarioAuthController::class, 'showLogin'])->name('usuario.login');
-Route::post('/entrar/usuario', [UsuarioAuthController::class, 'login'])->name('usuario.login.post');
+Route::post('/entrar/usuario', [UsuarioAuthController::class, 'login'])->middleware('throttle:login')->name('usuario.login.post');
 Route::get('/cadastro/usuario', [UsuarioAuthController::class, 'showRegister'])->name('usuario.register');
-Route::post('/cadastro/usuario', [UsuarioAuthController::class, 'register'])->name('usuario.register.post');
+Route::post('/cadastro/usuario', [UsuarioAuthController::class, 'register'])->middleware('throttle:cadastro')->name('usuario.register.post');
 Route::post('/sair/usuario', [UsuarioAuthController::class, 'logout'])->name('usuario.logout');
 
 /*
 | Auth empresa
 */
 Route::get('/entrar/empresa', [EmpresaAuthController::class, 'showLogin'])->name('empresa.login');
-Route::post('/entrar/empresa', [EmpresaAuthController::class, 'login'])->name('empresa.login.post');
+Route::post('/entrar/empresa', [EmpresaAuthController::class, 'login'])->middleware('throttle:login')->name('empresa.login.post');
 Route::get('/cadastro/empresa', [EmpresaAuthController::class, 'showRegister'])->name('empresa.register');
-Route::post('/cadastro/empresa', [EmpresaAuthController::class, 'register'])->name('empresa.register.post');
+Route::post('/cadastro/empresa', [EmpresaAuthController::class, 'register'])->middleware('throttle:cadastro')->name('empresa.register.post');
 Route::post('/sair/empresa', [EmpresaAuthController::class, 'logout'])->name('empresa.logout');
 
 /*
