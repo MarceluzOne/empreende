@@ -110,8 +110,10 @@
 
       <ul class="steps">
         <li><span class="num">1</span><div>Chame a equipe pelo WhatsApp ou vá até o atendimento presencial.</div></li>
-        <li><span class="num">2</span><div>Informe o seu CPF. O atendente confere se ele bate com o cadastro.</div></li>
-        <li><span class="num">3</span><div>Você recebe um link, válido por 24 horas, e escolhe a senha nova.</div></li>
+        <li><span class="num">2</span><div>Informe o seu CPF (ou o CNPJ, se a conta for de empresa). O atendente confere se ele bate com o cadastro.</div></li>
+        {{-- Prazo lido da config (auth.passwords.users.expire, em minutos)
+             para o texto não voltar a divergir do que o link realmente dura. --}}
+        <li><span class="num">3</span><div>Você recebe um link, válido por {{ intdiv((int) config('auth.passwords.users.expire'), 60) }} horas, e escolhe a senha nova.</div></li>
       </ul>
 
       @if($whatsapp)
@@ -129,7 +131,7 @@
 
       <div class="note">
         <i class="fas fa-shield-halved"></i>
-        <div>O link é enviado apenas para o telefone já cadastrado no seu nome. Se o seu número mudou, procure o atendimento presencial.</div>
+        <div>O link só é gerado depois que o atendente confere o seu documento. Ele serve uma única vez, e é você quem cria a senha nova — ninguém da equipe a conhece.</div>
       </div>
 
       <div class="auth-footer">
