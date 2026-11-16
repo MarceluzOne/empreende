@@ -398,10 +398,10 @@
                 data-benefits="{{ e(implode(', ', $v->benefits ?? [])) }}"
                 data-candidatou="1"
                 data-apply-url="{{ route('job-vacancies.apply', $v) }}"
-                data-empresa-telefone="{{ optional($v->user->empresa)->formatted_telefone ?? '' }}"
-                data-empresa-cidade="{{ $v->user->empresa->cidade ?? '' }}"
-                data-empresa-descricao="{{ e($v->user->empresa->descricao ?? '') }}"
-                data-empresa-email="{{ $v->user->email ?? '' }}"
+                data-empresa-telefone="{{ $contatosEmpresa[$v->id]['telefone'] ?? '' }}"
+                data-empresa-cidade="{{ $contatosEmpresa[$v->id]['cidade'] ?? '' }}"
+                data-empresa-descricao="{{ e($contatosEmpresa[$v->id]['descricao'] ?? '') }}"
+                data-empresa-email="{{ $contatosEmpresa[$v->id]['email'] ?? '' }}"
                 data-unapply-url="{{ route('job-vacancies.unapply', $v) }}"
                 data-status-label="{{ $candidatura->status_label }}"
                 data-status="{{ $candidatura->status }}">
@@ -498,10 +498,10 @@
               data-benefits="{{ e(implode(', ', $vaga->benefits ?? [])) }}"
               data-candidatou="{{ $jaCandidatou ? '1' : '0' }}"
               data-apply-url="{{ route('job-vacancies.apply', $vaga) }}"
-              data-empresa-telefone="{{ optional($vaga->user->empresa)->formatted_telefone ?? '' }}"
-              data-empresa-cidade="{{ $vaga->user->empresa->cidade ?? '' }}"
-              data-empresa-descricao="{{ e($vaga->user->empresa->descricao ?? '') }}"
-              data-empresa-email="{{ $vaga->user->email ?? '' }}">
+              data-empresa-telefone="{{ $contatosEmpresa[$vaga->id]['telefone'] ?? '' }}"
+              data-empresa-cidade="{{ $contatosEmpresa[$vaga->id]['cidade'] ?? '' }}"
+              data-empresa-descricao="{{ e($contatosEmpresa[$vaga->id]['descricao'] ?? '') }}"
+              data-empresa-email="{{ $contatosEmpresa[$vaga->id]['email'] ?? '' }}">
               <div class="card-badge badge-blue"><i class="fas fa-building"></i> {{ $vaga->company_name }}</div>
               <h3>{{ $vaga->position }}</h3>
               <div class="card-meta">
@@ -717,8 +717,10 @@
 
 {{-- Modal: Detalhe da Vaga --}}
 <div class="modal-backdrop" id="modal-detalhe-vaga">
-  <div class="modal" role="dialog" aria-modal="true" style="max-width:620px">
-    <div class="modal-header">
+  {{-- Só o corpo rola: a caixa vira coluna flex sem overflow próprio, senão
+       caixa e corpo mostravam duas barras de rolagem em vagas com texto longo. --}}
+  <div class="modal" role="dialog" aria-modal="true" style="max-width:620px;display:flex;flex-direction:column;overflow:hidden">
+    <div class="modal-header" style="flex-shrink:0">
       <div>
         <div class="modal-title" id="mdv-title"></div>
         <div style="font-size:13px;color:var(--muted);margin-top:3px" id="mdv-company"></div>
@@ -726,7 +728,7 @@
       <button class="modal-close" onclick="closeModal('modal-detalhe-vaga')" aria-label="Fechar">&times;</button>
     </div>
 
-    <div style="padding:24px 32px;overflow-y:auto;max-height:calc(90vh - 140px)">
+    <div style="padding:24px 32px;overflow-y:auto;flex:1;min-height:0">
 
       {{-- Status da candidatura (quando aplicável) --}}
       <div id="mdv-status-wrap" style="display:none;margin-bottom:14px"></div>
@@ -756,7 +758,7 @@
       <div style="font-size:12px;color:var(--muted)" id="mdv-cnpj"></div>
     </div>
 
-    <div style="padding:16px 32px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px">
+    <div style="padding:16px 32px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;flex-shrink:0">
       <button class="btn-cancel" onclick="closeModal('modal-detalhe-vaga')">Fechar</button>
       <div id="mdv-action"></div>
     </div>
