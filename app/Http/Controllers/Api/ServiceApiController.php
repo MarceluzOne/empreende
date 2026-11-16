@@ -35,7 +35,9 @@ class ServiceApiController extends Controller
             'whatsapp'       => 'required|string',
             'instagram'      => 'nullable|string|max:255',
             'optional_info'  => 'nullable|string|max:2000',
-            'business_image' => 'nullable|string',
+            // Data URI do recorte feito no navegador; o conteúdo real é
+            // conferido de novo em storeBase64Image().
+            'business_image' => ['nullable', 'string', ServiceProviderService::IMAGE_DATA_URI_RULE, 'max:7000000'],
         ], [
             // O projeto não tem lang/pt_BR/validation.php: sem estas mensagens
             // o formulário mostraria "validation.required" no toast.
@@ -46,6 +48,8 @@ class ServiceApiController extends Controller
             'cpf.required_if'        => 'Informe seu CPF.',
             'cnpj.required_if'       => 'Informe o CNPJ da empresa.',
             'whatsapp.required'      => 'Informe seu WhatsApp.',
+            'business_image.regex'   => 'Envie a foto em JPG, PNG ou WEBP.',
+            'business_image.max'     => 'A imagem deve ter no máximo 5MB.',
         ]);
 
         if ($validator->fails()) {
@@ -69,19 +73,23 @@ class ServiceApiController extends Controller
             if (!empty($serviceData['business_image'])) {
                 $path = $this->serviceProviderService->storeBase64Image($serviceData['business_image']);
 
-                if ($path) {
-                    $serviceData['business_image'] = $path;
-                } else {
-                    unset($serviceData['business_image']);
+                if (!$path) {
+                    return response()->json([
+                        'success' => false,
+                        'errors'  => ['business_image' => ['Não foi possível ler a imagem. Envie a foto em JPG, PNG ou WEBP.']],
+                    ], 422);
                 }
+
+                $serviceData['business_image'] = $path;
             }
 
-            $service = ServiceProvider::create($serviceData);
+            ServiceProvider::create($serviceData);
 
+            // Sem devolver o registro: a tela não usa, e ele expunha CPF/CNPJ
+            // e o caminho do arquivo gravado a quem chamasse a API.
             return response()->json([
                 'success' => true,
                 'message' => 'Cadastro recebido com sucesso e aguardando aprovação.',
-                'data' => $service,
             ], 201);
 
         } catch (\Exception $e) {
