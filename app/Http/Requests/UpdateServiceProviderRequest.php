@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\ServiceProviderService;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -30,7 +31,7 @@ class UpdateServiceProviderRequest extends FormRequest
             'instagram'      => 'nullable|string|max:255',
             'optional_info'  => 'nullable|string|max:2000',
             // Chega como data URI: o recorte 16:9 é feito no navegador.
-            'business_image' => ['nullable', 'string', 'regex:/^data:image\/(jpeg|jpg|png|webp);base64,/', 'max:7000000'],
+            'business_image' => ['nullable', 'string', ServiceProviderService::IMAGE_DATA_URI_RULE, 'max:7000000'],
         ];
     }
 

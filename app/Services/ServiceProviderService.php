@@ -9,23 +9,66 @@ use Illuminate\Support\Str;
 class ServiceProviderService
 {
     /**
+     * Cabeçalho aceito para o data URI da foto. Usado na validação das duas
+     * entradas (API pública e portal) para que nenhuma fique mais frouxa.
+     */
+    public const IMAGE_DATA_URI_RULE = 'regex:/^data:image\/(jpeg|jpg|png|webp);base64,/';
+
+    /** Tamanho máximo da imagem já decodificada. */
+    private const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+    /**
+     * Extensão gravada, pelo tipo REAL detectado no conteúdo — nunca pelo
+     * cabeçalho do data URI, que vem do cliente.
+     */
+    private const IMAGE_EXTENSIONS = [
+        'image/jpeg' => 'jpg',
+        'image/png'  => 'png',
+        'image/webp' => 'webp',
+    ];
+
+    /**
      * Salva uma imagem recebida como data URI — é assim que o recorte 16:9
      * feito no navegador (cropper.js) chega, tanto no cadastro público quanto
-     * na edição pelo portal. Devolve o caminho no disco ou null se o conteúdo
-     * não for um data URI de imagem.
+     * na edição pelo portal. Devolve o caminho no disco, ou null se o conteúdo
+     * não for de fato um JPG, PNG ou WEBP.
+     *
+     * A rota pública é anônima e grava em disco servido pela web: a extensão
+     * já veio do cabeçalho, e `data:image/php` virava um `.php` executável.
      */
     public function storeBase64Image(string $base64): ?string
     {
-        if (!preg_match('/^data:image\/(\w+);base64,/', $base64, $matches)) {
+        $binary = $this->decodeDataUri($base64);
+        $info   = $binary === null ? false : @getimagesizefromstring($binary);
+        $ext    = $info ? (self::IMAGE_EXTENSIONS[$info['mime']] ?? null) : null;
+
+        if ($ext === null) {
             return null;
         }
 
-        $ext  = strtolower($matches[1]) === 'jpeg' ? 'jpg' : strtolower($matches[1]);
         $path = 'service_images/'.Str::uuid().'.'.$ext;
-
-        Storage::disk('public')->put($path, base64_decode(substr($base64, strpos($base64, ',') + 1)));
+        Storage::disk('public')->put($path, $binary);
 
         return $path;
+    }
+
+    /**
+     * Conteúdo binário do data URI, ou null se o cabeçalho não for de imagem
+     * aceita, o base64 for inválido ou passar do limite.
+     */
+    private function decodeDataUri(string $dataUri): ?string
+    {
+        if (!preg_match('/^data:image\/(jpeg|jpg|png|webp);base64,/', $dataUri, $matches)) {
+            return null;
+        }
+
+        $binary = base64_decode(substr($dataUri, strlen($matches[0])), true);
+
+        if ($binary === false || $binary === '' || strlen($binary) > self::MAX_IMAGE_BYTES) {
+            return null;
+        }
+
+        return $binary;
     }
 
     public function store(array $data, $imageFile = null): ServiceProvider
