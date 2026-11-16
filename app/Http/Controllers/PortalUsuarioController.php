@@ -10,6 +10,7 @@ use App\Models\JobVacancy;
 use App\Models\ServiceProvider;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateServiceProviderRequest;
+use App\Services\EventService;
 use App\Services\JobSeekerService;
 use App\Services\ServiceProviderService;
 use App\Services\UserService;
@@ -49,12 +50,7 @@ class PortalUsuarioController extends Controller
             ->latest()
             ->get();
 
-        $eventosDisponiveis = Event::where('status', 'active')
-            ->whereNotIn('id', $meusEventos->pluck('event_id'))
-            ->with('speaker')
-            ->latest()
-            ->take(6)
-            ->get();
+        $eventosDisponiveis = app(EventService::class)->availableForPortal($meusEventos->pluck('event_id'));
 
         $minhasCandidaturas = $perfil
             ? JobApplication::where('job_seeker_id', $perfil->id)
@@ -266,6 +262,12 @@ class PortalUsuarioController extends Controller
 
     public function inscreverEvento(Request $request, Event $event)
     {
+        // A listagem já esconde estes, mas o POST chega por id e não pode
+        // depender dela -- mesma regra da inscrição pública.
+        if ($event->registrationsClosed() || $event->isPrivate()) {
+            return back()->with('error', 'Este evento não está mais recebendo inscrições.');
+        }
+
         if ($event->isFull()) {
             return back()->with('error', 'As vagas para este evento estão esgotadas.');
         }
@@ -296,6 +298,11 @@ class PortalUsuarioController extends Controller
 
     public function cancelarEvento(Event $event)
     {
+        // Cancelar apaga a inscrição e, com ela, a presença e o certificado.
+        if ($event->isCompleted()) {
+            return back()->with('error', 'Não é possível cancelar a inscrição de um evento já concluído.');
+        }
+
         $this->findParticipant($event)->delete();
 
         return redirect()->route('portal.usuario')->with('success', 'Inscrição cancelada.');

@@ -42,5 +42,48 @@ class AppServiceProvider extends ServiceProvider
                 // Silencia erros se o banco não estiver pronto
             }
         }
+
+        $this->definePasswordLinkGate();
+    }
+
+    /**
+     * Quem pode gerar link de senha e ativar conta de cidadão.
+     *
+     * Definido em CÓDIGO, de propósito, e não como permissão na tabela. Os
+     * outros gates nascem de `permissions`, semeada por `GET /setup-inicial`;
+     * um `can:` apontando para permissão nova responderia 403 para todos até
+     * alguém acessar aquela URL em produção — um deploy que trancaria a equipe
+     * fora da tela. Assim o gate vale no primeiro request depois do upload.
+     *
+     * Gerar o link é, na prática, poder entrar na conta de um cidadão. Antes
+     * disso bastava ser `type = funcionario`, sem recurso nenhum para revogar.
+     *
+     * Quem atende no balcão é funcionário com o papel `employee`, e é ele que
+     * recebe o pedido de senha — então o papel entra no gate, ao lado de admin.
+     * Fica de fora a conta `type = funcionario` sem papel nenhum, que não
+     * deveria estar atendendo.
+     *
+     * Checa o PAPEL, e não uma permissão nomeada, porque permissão fina não é
+     * administrável neste sistema: `permissions` é escrita apenas pelo array
+     * chumbado em `RoleController::scriptConfiguration()`, exposto em
+     * `GET /setup-inicial`. Não há tela para ligar permissão a papel — a de
+     * Equipe só troca o papel da pessoa. Um ramo `hasPermission('senha-cidadao')`
+     * seria código morto: a seed daria essa permissão só ao `admin`, que já
+     * passa por `isAdmin()`.
+     *
+     * Consequência a registrar: só existem dois papéis, e os dois passam. Logo
+     * não há como ter um funcionário atendendo e impedido de gerar link, a não
+     * ser deixando-o sem papel — o que também lhe tira o resto. Controle por
+     * pessoa exigiria uma tela de papel × permissão, que não existe.
+     */
+    private function definePasswordLinkGate(): void
+    {
+        Gate::define('gerar-link-senha', function ($user) {
+            if (! $user->isFuncionario()) {
+                return false;
+            }
+
+            return $user->isAdmin() || $user->hasRole('employee');
+        });
     }
 }

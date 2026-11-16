@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\AssistedResetException;
 use App\Models\Empresa;
 use App\Models\JobVacancy;
+use App\Services\AssistedPasswordResetService;
 use App\Services\AuditService;
 use App\Services\CompanyService;
 use Illuminate\Http\Request;
@@ -19,6 +21,20 @@ class CompanyController extends Controller
             'companies' => $this->service->list($request->input('cnpj')),
             'search'    => $request->input('cnpj'),
         ]);
+    }
+
+    /**
+     * Gera o link de redefinição de senha da conta da empresa, para o atendente
+     * repassar. Mesmo fluxo do cidadão, só muda o documento que confirma a
+     * identidade na tela pública: CNPJ em vez de CPF.
+     */
+    public function passwordLink(Empresa $empresa, AssistedPasswordResetService $reset)
+    {
+        try {
+            return back()->with('reset_link', $reset->linkForEmpresa($empresa));
+        } catch (AssistedResetException $e) {
+            return back()->with('reset_error', $e->getMessage());
+        }
     }
 
     public function show(string $uuid)

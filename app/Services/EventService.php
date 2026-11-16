@@ -6,6 +6,8 @@ use App\Models\Booking;
 use App\Models\Event;
 use App\Models\EventParticipant;
 use Carbon\Carbon;
+use Closure;
+use Illuminate\Support\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -119,6 +121,68 @@ class EventService
             'cpf'      => !empty($data['cpf']) ? preg_replace('/[^0-9]/', '', $data['cpf']) : null,
             'whatsapp' => $data['whatsapp'] ?? null,
         ]);
+    }
+
+    /**
+     * Eventos públicos com inscrição aberta — portal, /cursos e API.
+     *
+     * `status = 'active'` sozinho não basta: o evento também se conclui pela
+     * data (Event::isCompleted()), sem ninguém mudar o status, e ficava listado
+     * com "Inscrições abertas" depois de acabar. O filtro final é, por isso,
+     * `registrationsClosed()` em PHP — a mesma regra do backoffice e da
+     * inscrição pública. Evento privado nunca entra: só se chega a ele pelo
+     * link de convite.
+     *
+     * @param  Closure|null $scope restrições extras na consulta (busca, período)
+     * @return Collection<int, Event>
+     */
+    public function publicOpen(?Closure $scope = null): Collection
+    {
+        return Event::where('visibility', 'public')
+            ->where('status', 'active')
+            ->when($scope, $scope)
+            ->with('speaker')
+            ->orderBy('date')
+            ->orderBy('start_time')
+            ->get()
+            ->reject(fn (Event $event) => $event->registrationsClosed())
+            ->values();
+    }
+
+    /**
+     * Eventos públicos concluídos, do mais recente para o mais antigo.
+     *
+     * Inclui os que se concluíram pela data com status ainda 'active' e exclui
+     * os reabertos pelo admin — de novo via Event::isCompleted(). Só um evento
+     * cuja primeira data já chegou pode ter terminado, daí o corte em SQL.
+     *
+     * @return Collection<int, Event>
+     */
+    public function publicCompleted(int $limit, ?Closure $scope = null): Collection
+    {
+        return Event::where('visibility', 'public')
+            ->whereIn('status', ['active', 'completed'])
+            ->where('date', '<=', Carbon::today())
+            ->when($scope, $scope)
+            ->with('speaker')
+            ->orderByDesc('date')
+            ->get()
+            ->filter(fn (Event $event) => $event->isCompleted())
+            ->take($limit)
+            ->values();
+    }
+
+    /**
+     * Eventos em que o usuário do portal ainda pode se inscrever.
+     *
+     * @param  iterable<int, string> $excludeIds eventos em que a pessoa já está inscrita
+     * @return Collection<int, Event>
+     */
+    public function availableForPortal(iterable $excludeIds, int $limit = 6): Collection
+    {
+        $ids = collect($excludeIds)->all();
+
+        return $this->publicOpen(fn ($q) => $q->whereNotIn('id', $ids))->take($limit)->values();
     }
 
     public function delete(Event $event): void

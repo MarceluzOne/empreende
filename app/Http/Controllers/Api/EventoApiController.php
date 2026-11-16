@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Services\EventService;
 use Carbon\Carbon;
+use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -19,46 +21,15 @@ class EventoApiController extends Controller
         0=>'Dom',1=>'Seg',2=>'Ter',3=>'Qua',4=>'Qui',5=>'Sex',6=>'Sáb',
     ];
 
+    public function __construct(private EventService $events) {}
+
     public function index(Request $request): JsonResponse
     {
         $today  = Carbon::today();
         $tab    = $request->input('tab', 'proximos');
         $search = trim($request->input('search', ''));
 
-        $query = Event::with(['speaker', 'participants'])
-            ->when($search, function ($q) use ($search) {
-                $q->where(function ($q) use ($search) {
-                    $q->where('title', 'like', "%{$search}%")
-                      ->orWhereHas('speaker', fn($q) => $q->where('name', 'like', "%{$search}%"));
-                });
-            });
-
-        switch ($tab) {
-            case 'semana':
-                $query->where('status', 'active')
-                      ->whereBetween('date', [$today, $today->copy()->endOfWeek()]);
-                break;
-
-            case 'mes':
-                $query->where('status', 'active')
-                      ->whereYear('date', $today->year)
-                      ->whereMonth('date', $today->month);
-                break;
-
-            case 'realizados':
-                $query->where('status', 'completed')
-                      ->orderByDesc('date')
-                      ->limit(12);
-                break;
-
-            default: // proximos — mostra todos os ativos
-                $query->where('status', 'active')
-                      ->orderBy('date')
-                      ->orderBy('start_time');
-                break;
-        }
-
-        $events = $query->get();
+        $events = $this->eventsFor($tab, $search, $today)->load('participants');
         $colors = ['blue', 'green', 'purple'];
 
         $data = $events->map(function (Event $e) use ($colors) {
@@ -102,5 +73,35 @@ class EventoApiController extends Controller
             'featured' => $featured,
             'total'   => $data->count(),
         ]);
+    }
+
+    /**
+     * Eventos da aba pedida. Só públicos, e o estado real vem do EventService
+     * (concluído pela data conta como concluído) — filtrar pela coluna
+     * `status` listava como próximos eventos que já tinham acabado.
+     */
+    private function eventsFor(string $tab, string $search, Carbon $today)
+    {
+        $busca = function ($q) use ($search) {
+            $q->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhereHas('speaker', fn ($q) => $q->where('name', 'like', "%{$search}%"));
+            });
+        };
+
+        $scope = fn (?Closure $periodo = null) => function ($q) use ($search, $busca, $periodo) {
+            $q->when($search, $busca)->when($periodo, $periodo);
+        };
+
+        switch ($tab) {
+            case 'semana':
+                return $this->events->publicOpen($scope(fn ($q) => $q->whereBetween('date', [$today, $today->copy()->endOfWeek()])));
+            case 'mes':
+                return $this->events->publicOpen($scope(fn ($q) => $q->whereYear('date', $today->year)->whereMonth('date', $today->month)));
+            case 'realizados':
+                return $this->events->publicCompleted(12, $scope());
+            default: // proximos — todos com inscrição aberta
+                return $this->events->publicOpen($scope());
+        }
     }
 }

@@ -75,22 +75,6 @@
             @endif
         </div>
 
-        {{-- Conta de acesso no portal --}}
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-5">
-            <h3 class="text-sm font-black text-gray-700 uppercase tracking-wider mb-4">
-                <i class="fas fa-key text-indigo-500 mr-1"></i> Conta de acesso
-            </h3>
-
-            @if($conta)
-                <div class="text-sm">
-                    <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Login</span>
-                    <span class="font-mono">{{ $conta->email }}</span>
-                </div>
-            @else
-                <p class="text-sm text-gray-400 italic">Esta pessoa ainda não criou conta no portal.</p>
-            @endif
-        </div>
-
         {{-- Histórico de atendimentos --}}
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100">
@@ -144,5 +128,221 @@
                 </table>
             @endif
         </div>
+
+        {{-- Acesso ao portal: geração do link de redefinição de senha --}}
+        @php
+            // O que trava a geração é só o que impediria a pessoa de usar o
+            // link: um CPF incompleto ou uma conta sem CPF gravado, porque é o
+            // CPF que ela digita para provar que o link é dela.
+            //
+            // Telefone NÃO é pré-requisito. Quem confirma a identidade é o
+            // atendente, conferindo o CPF e os dados do cadastro na tela; os
+            // números abaixo são apoio para essa conferência e para o envio.
+            $cpfValido   = $cpf !== null && strlen($cpf) === 11;
+            $temConta    = (bool) $account;
+            $contaComCpf = $temConta && $account->cpf !== null;
+            $podeGerar   = $cpfValido && $contaComCpf;
+            $linkGerado  = session('reset_link');
+        @endphp
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-5">
+            <h3 class="text-sm font-black text-gray-700 uppercase tracking-wider mb-4">
+                <i class="fas fa-key text-amber-500 mr-1"></i> Acesso ao portal
+            </h3>
+
+            @if(session('reset_error'))
+                <div class="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-700">
+                    <i class="fas fa-circle-exclamation mr-1"></i> {{ session('reset_error') }}
+                </div>
+            @endif
+
+            @if(! $cpfValido)
+                <div class="px-4 py-3 rounded-xl bg-amber-50 border border-amber-100 text-sm text-amber-800">
+                    O CPF deste cadastro está incompleto ({{ $cpf_formatted }}) — sem os 11 dígitos não há como casar os
+                    registros nem confirmar a identidade na tela de redefinição. Corrija o CPF no cadastro de origem
+                    antes de gerar o link.
+                </div>
+
+            @elseif(! $temConta)
+                {{-- Quem foi cadastrado no balcao nao tem conta: nao e "perdeu
+                     a senha", e nunca houve senha. O atendente cria a conta
+                     aqui e entrega o mesmo link, para a pessoa definir a dela.
+                     A senha nasce aleatoria e ninguem a conhece. --}}
+                @php $emailsConhecidos = $known_emails ?? []; @endphp
+
+                <p class="text-sm text-gray-600 mb-1">
+                    Esta pessoa <strong>ainda não tem conta no portal</strong> — não é senha perdida, é conta que nunca
+                    existiu. Isso acontece com quem foi cadastrado no atendimento.
+                </p>
+                <p class="text-xs text-gray-500 mb-4">
+                    Ativar cria a conta e gera o link para ela mesma definir a primeira senha. Confirme a identidade
+                    antes: peça o CPF e confira com o cadastro acima.
+                </p>
+
+                @cannot('gerar-link-senha')
+                    <p class="text-xs text-gray-500">
+                        Você não tem permissão para ativar conta de cidadão. Peça a um administrador.
+                    </p>
+                @endcannot
+
+                @can('gerar-link-senha')
+                <form method="POST" action="{{ route('citizens.account.activate', $uuid) }}"
+                    class="flex flex-wrap gap-2 items-start">
+                    @csrf
+
+                    @if($emailsConhecidos === [])
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                E-mail da pessoa *
+                            </label>
+                            <input type="email" name="email" value="{{ old('email') }}" required
+                                placeholder="nome@exemplo.com"
+                                class="px-3 py-2 rounded-xl border text-sm w-72 outline-none focus:ring-2 focus:ring-amber-400 {{ $errors->has('email') ? 'border-red-400' : 'border-gray-200' }}">
+                            @error('email')
+                                <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                            @enderror
+                            <p class="text-xs text-gray-400 mt-1 max-w-xs">
+                                Não há e-mail em nenhum registro deste CPF, e o e-mail é o login da conta.
+                            </p>
+                        </div>
+                    @else
+                        <div class="text-sm text-gray-600 mr-2">
+                            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Login será</span>
+                            <span class="font-mono">{{ $emailsConhecidos[0] }}</span>
+                        </div>
+                    @endif
+
+                    <button type="submit"
+                        class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition">
+                        <i class="fas fa-user-plus mr-1"></i> Ativar conta e gerar link
+                    </button>
+                </form>
+                @endcan
+
+            @elseif(! $contaComCpf)
+                <div class="px-4 py-3 rounded-xl bg-amber-50 border border-amber-100 text-sm text-amber-800">
+                    A conta <strong>{{ $account->name }}</strong> existe, mas está sem CPF gravado — e é o CPF que
+                    confirma a identidade na tela de redefinição.
+                    @can('gerar-link-senha')
+                        <a href="{{ route('account-cpf.index', ['busca' => $account->email]) }}" class="font-bold underline">Informe o CPF da conta</a>
+                        antes de gerar o link.
+                    @endcan
+                </div>
+
+            @else
+                <div class="text-sm text-gray-600 mb-4 space-y-1">
+                    <div>
+                        <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Conta</span>
+                        <span class="ml-2 font-mono">{{ $account->email }}</span>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Telefones no cadastro</span>
+                        @if($phones->isEmpty())
+                            <span class="ml-2 text-gray-400 italic">nenhum</span>
+                        @else
+                            @foreach($phones as $phone)
+                                <span class="ml-2 font-mono">{{ $phone['formatted'] }}</span>
+                                <span class="text-xs text-gray-400">({{ implode(' · ', $phone['sources']) }})</span>
+                            @endforeach
+                        @endif
+                    </div>
+                </div>
+
+                @if(! $linkGerado)
+                    @can('gerar-link-senha')
+                        <p class="text-xs text-gray-500 mb-3">
+                            Confirme a identidade antes de gerar: peça o CPF e confira com o cadastro acima. A senha é
+                            escolhida pela própria pessoa — a equipe não fica sabendo qual é.
+                        </p>
+
+                        <button type="button" id="gerarLinkBtn"
+                            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition">
+                            <i class="fas fa-link"></i> Gerar link de redefinição de senha
+                        </button>
+                    @else
+                        <p class="text-xs text-gray-500">
+                            Você não tem permissão para gerar link de senha. Peça a um administrador.
+                        </p>
+                    @endcan
+                @else
+                    <div class="rounded-xl border border-green-100 bg-green-50 p-4">
+                        <p class="text-xs font-bold text-green-800 uppercase tracking-wider mb-2">
+                            <i class="fas fa-check-circle mr-1"></i> Link gerado — válido até {{ $linkGerado['expires_at'] }}
+                        </p>
+
+                        <div class="flex gap-2 mb-3">
+                            <input type="text" id="resetLinkInput" readonly value="{{ $linkGerado['url'] }}"
+                                class="flex-1 px-3 py-2 text-xs font-mono bg-white border border-green-200 rounded-lg text-gray-700">
+                            <button type="button" id="copiarLinkBtn"
+                                class="px-3 py-2 rounded-lg bg-white border border-green-200 text-green-700 text-xs font-bold hover:bg-green-100 transition">
+                                <i class="fas fa-copy"></i> Copiar
+                            </button>
+                        </div>
+
+                        <p class="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                            <i class="fas fa-triangle-exclamation mr-1"></i>
+                            Repasse só para a pessoa de quem você confirmou a identidade. O link pede o CPF da conta
+                            para funcionar, vale uma única vez, e gerar um novo cancela este.
+                        </p>
+                    </div>
+                @endif
+            @endif
+        </div>
     </div>
+
+    {{-- Confirmação antes de gerar: o link novo invalida qualquer link anterior --}}
+    @if(!empty($podeGerar) && empty($linkGerado) && auth()->user()->can('gerar-link-senha'))
+        <div id="confirmLinkModal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+                <h5 class="text-lg font-black text-gray-800 mb-2">Gerar link de senha</h5>
+                <p class="text-sm text-gray-600 mb-1">
+                    Gerar um link de redefinição de senha para <strong>{{ $name }}</strong>?
+                </p>
+                <p class="text-xs text-gray-500 mb-5">
+                    Qualquer link gerado antes para esta pessoa deixa de funcionar. A ação fica registrada na auditoria
+                    com o seu nome.
+                </p>
+                <div class="flex justify-end gap-2">
+                    <button type="button" id="cancelarLinkBtn"
+                        class="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold transition">
+                        Cancelar
+                    </button>
+                    <form method="POST" action="{{ route('citizens.password-link', $uuid) }}">
+                        @csrf
+                        <button type="submit"
+                            class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold transition">
+                            Confirmar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <script>
+        (function () {
+            var abrir  = document.getElementById('gerarLinkBtn');
+            var modal  = document.getElementById('confirmLinkModal');
+            var fechar = document.getElementById('cancelarLinkBtn');
+
+            if (abrir && modal) {
+                abrir.addEventListener('click', function () { modal.classList.replace('hidden', 'flex'); });
+                fechar.addEventListener('click', function () { modal.classList.replace('flex', 'hidden'); });
+                modal.addEventListener('click', function (e) {
+                    if (e.target === modal) modal.classList.replace('flex', 'hidden');
+                });
+            }
+
+            var copiar = document.getElementById('copiarLinkBtn');
+            if (copiar) {
+                copiar.addEventListener('click', function () {
+                    var campo = document.getElementById('resetLinkInput');
+                    campo.select();
+                    campo.setSelectionRange(0, 99999);
+                    document.execCommand('copy');
+                    copiar.innerHTML = '<i class="fas fa-check"></i> Copiado';
+                });
+            }
+        })();
+    </script>
 @endsection

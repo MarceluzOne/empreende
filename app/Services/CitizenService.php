@@ -3,9 +3,12 @@
 namespace App\Services;
 
 use App\Models\Attendance;
+use App\Models\EventParticipant;
 use App\Models\JobSeeker;
+use App\Models\ServiceProvider;
 use App\Models\User;
 use App\Support\Document;
+use App\Support\Phone;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -21,18 +24,26 @@ use Ramsey\Uuid\Uuid;
 class CitizenService
 {
     /**
-     * Lista consolidada e paginada de cidadãos, opcionalmente filtrada por
-     * nome ou CPF (ambos aceitam busca parcial).
+     * Lista consolidada e paginada de cidadãos.
+     *
+     * @param array{busca?: ?string, conta?: ?string} $filters
+     *        busca → nome, CPF ou e-mail da conta (todos parciais)
+     *        conta → 'com' | 'sem', para achar quem pode ou não acessar o portal
      */
-    public function list(?string $search = null, int $perPage = 15): LengthAwarePaginator
+    public function list(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        $term   = trim((string) $search);
-        $people = $this->build();
+        $term  = trim((string) ($filters['busca'] ?? ''));
+        $conta = $filters['conta'] ?? null;
 
-        $collection = collect($people);
+        $collection = collect($this->build());
 
         if ($term !== '') {
             $collection = $collection->filter(fn ($e) => $this->matches($e, $term));
+        }
+
+        if ($conta === 'com' || $conta === 'sem') {
+            $esperado   = $conta === 'com';
+            $collection = $collection->filter(fn ($e) => $e['has_account'] === $esperado);
         }
 
         $collection = $collection
@@ -54,15 +65,17 @@ class CitizenService
         if (!$entry) {
             return [
                 'uuid'          => $uuid,
-                'cpf'           => '',
+                'cpf'           => null,
                 'cpf_formatted' => null,
                 'cnpjs'         => collect(),
                 'name'          => null,
                 'phone'         => null,
                 'email'         => null,
                 'candidato'     => null,
-                'conta'         => null,
                 'attendances'   => collect(),
+                'account'       => null,
+                'phones'        => collect(),
+                'known_emails'  => [],
             ];
         }
 
@@ -83,7 +96,7 @@ class CitizenService
             ->map(fn ($c) => $this->formatDocument($c))
             ->values();
 
-        $conta = $this->account($digits);
+        $account = $this->accountFor($digits);
 
         return [
             'uuid'          => $entry['uuid'],
@@ -91,23 +104,58 @@ class CitizenService
             'cpf_formatted' => $entry['cpf_formatted'],
             'cnpjs'         => $cnpjs,
             'name'          => $entry['name'] ?? $candidato->name ?? optional($attendances->first())->customer_name,
-            'phone'         => $candidato->phone ?? optional($attendances->first())->customer_phone,
-            'email'         => $candidato->email ?? optional($conta)->email,
+            // A conta entra na cadeia do telefone porque quem só tem conta no
+            // portal não aparece nas outras origens — e é justamente quem a
+            // tela de edição precisa conseguir completar.
+            'phone'         => $candidato->phone
+                ?? optional($attendances->first())->customer_phone
+                ?? optional($account)->phone,
+            'email'         => $candidato->email ?? optional($account)->email,
             'candidato'     => $candidato,
-            'conta'         => $conta,
             'attendances'   => $attendances,
+            'account'       => $account,
+            'phones'        => $this->phonesFor($digits),
+            'known_emails'  => $this->emailsFor($digits),
         ];
     }
 
     /**
-     * Conta de acesso da pessoa, quando existe. Procura pelas duas grafias
-     * porque nem toda origem gravou o CPF apenas com dígitos.
+     * Quantas contas do portal estão sem CPF e por isso ficam fora da listagem.
+     *
+     * A listagem é indexada pelo CPF — o UUID da URL deriva dele —, então uma
+     * conta sem CPF não tem identidade para virar linha. Em vez de esconder o
+     * fato, a tela mostra o número e o caminho para resolver (o backfill).
+     *
+     * Conta só as que o desvio pelo currículo também não alcança: essas já
+     * aparecem, marcadas com `account_without_cpf`.
      */
-    public function account(string $cpf): ?User
+    public function accountsWithoutCpfCount(): int
     {
-        $variants = Document::cpfVariants($cpf);
+        $comCurriculo = JobSeeker::whereNotNull('user_id')
+            ->whereNotNull('cpf')
+            ->pluck('user_id')
+            ->unique()
+            ->all();
 
-        return $variants === [] ? null : User::whereIn('cpf', $variants)->first();
+        return User::where('type', 'usuario')
+            ->whereNull('cpf')
+            ->when($comCurriculo !== [], fn ($q) => $q->whereNotIn('id', $comCurriculo))
+            ->count();
+    }
+
+    /**
+     * CPF do cidadão a partir do UUID da listagem, ou null se o UUID não
+     * corresponder a ninguém.
+     *
+     * Deriva do mapa consolidado, e não de uma varredura só do currículo e dos
+     * atendimentos: é o que mantém o UUID resolvível quando a pessoa entra no
+     * mapa por outra origem — por exemplo quem só tem conta no portal.
+     */
+    public function cpfForUuid(string $uuid): ?string
+    {
+        $entry = collect($this->build())->first(fn ($e) => $e['uuid'] === $uuid);
+
+        return $entry['cpf'] ?? null;
     }
 
     /**
@@ -120,24 +168,130 @@ class CitizenService
     }
 
     /**
-     * Caminho inverso: o CPF por trás do UUID da URL. Como o UUID é um hash e
-     * não se reverte, varre os documentos conhecidos — mas só a coluna do CPF,
-     * sem montar o cadastro consolidado inteiro.
+     * Conta do portal desta pessoa.
+     *
+     * Procura primeiro por `users.cpf`, que é o vínculo direto. O currículo é
+     * a segunda tentativa e existe para um caso específico: contas criadas
+     * antes da coluna `cpf` continuam com o campo nulo, e sem esse desvio a
+     * tela diria "não tem conta" quando na verdade tem — só falta o backfill.
+     *
+     * O desvio pelo currículo exige `type = 'usuario'` nas DUAS pontas, e isso
+     * não é zelo: `JobSeekerService::store()` grava `user_id = Auth::id()`, de
+     * modo que todo currículo cadastrado no balcão aponta para a conta do
+     * ATENDENTE. Sem o filtro, esta função devolveria a conta do funcionário
+     * como se fosse a do cidadão — e gerar um link de senha ali destruiria o
+     * token dele, já que `password_reset_tokens` guarda um token por e-mail.
      */
-    public function cpfForUuid(string $uuid): ?string
+    public function accountFor(string $cpfDigits): ?User
     {
-        $documents = JobSeeker::whereNotNull('cpf')->pluck('cpf')
-            ->merge(Attendance::whereNotNull('customer_cpf')->pluck('customer_cpf'));
+        $variants = Document::cpfVariants($cpfDigits);
 
-        foreach ($documents as $document) {
-            $digits = $this->onlyDigits($document);
+        if ($variants === []) {
+            return null;
+        }
 
-            if ($digits !== '' && $this->uuidForCpf($digits) === $uuid) {
-                return $digits;
+        $byCpf = User::whereIn('cpf', $variants)->where('type', 'usuario')->first();
+
+        if ($byCpf) {
+            return $byCpf;
+        }
+
+        $byCurriculo = optional(
+            JobSeeker::whereIn('cpf', $variants)->whereNotNull('user_id')->first()
+        )->user;
+
+        return optional($byCurriculo)->type === 'usuario' ? $byCurriculo : null;
+    }
+
+    /**
+     * Telefones conhecidos deste CPF, sem repetição, com as origens em que
+     * cada número aparece.
+     *
+     * Servem de apoio ao atendimento: ajudam a conferir com quem se está
+     * falando e por onde mandar o link. Não são pré-requisito para gerar o
+     * link — quem confirma a identidade é o atendente, conferindo o CPF e os
+     * dados do cadastro na tela.
+     *
+     * @return Collection<int, array{digits: string, formatted: ?string, sources: array<int, string>}>
+     */
+    public function phonesFor(string $cpfDigits): Collection
+    {
+        $variants = Document::cpfVariants($cpfDigits);
+
+        if ($variants === []) {
+            return collect();
+        }
+
+        $found = [];
+
+        foreach ($this->phoneSources($variants) as $source => $numbers) {
+            foreach ($numbers as $number) {
+                $digits = $this->onlyDigits($number);
+
+                if (strlen($digits) < 10) {
+                    continue;
+                }
+
+                $found[$digits]['digits']    = $digits;
+                $found[$digits]['formatted'] = Phone::format($digits);
+                $found[$digits]['sources'][] = $source;
             }
         }
 
-        return null;
+        return collect($found)->map(function (array $phone) {
+            $phone['sources'] = array_values(array_unique($phone['sources']));
+
+            return $phone;
+        })->values();
+    }
+
+    /**
+     * E-mails conhecidos deste CPF, sem repetição e já validados.
+     *
+     * Irmão de phonesFor(): varre as origens que gravam e-mail. Serve à ativação
+     * de conta no atendimento — `users.email` é NOT NULL UNIQUE, então sem um
+     * e-mail não há conta, e a tela só precisa perguntar quando não há nenhum.
+     *
+     * `attendances` não entra porque não tem coluna de e-mail: quem veio só de
+     * atendimento é exatamente o caso em que o atendente tem de perguntar.
+     *
+     * @return array<int, string>
+     */
+    public function emailsFor(string $cpfDigits): array
+    {
+        $variants = Document::cpfVariants($cpfDigits);
+
+        if ($variants === []) {
+            return [];
+        }
+
+        return collect([
+            JobSeeker::whereIn('cpf', $variants)->pluck('email'),
+            EventParticipant::whereIn('cpf', $variants)->pluck('email'),
+            ServiceProvider::whereIn('cpf', $variants)->pluck('email'),
+        ])->flatten()
+            ->map(fn ($e) => trim((string) $e))
+            ->filter(fn ($e) => $e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Telefone de cada origem que grava um, rotulada em português para a tela.
+     *
+     * @param array<int, string> $variants
+     * @return array<string, array<int, string|null>>
+     */
+    private function phoneSources(array $variants): array
+    {
+        return [
+            'conta'       => User::whereIn('cpf', $variants)->pluck('phone')->all(),
+            'currículo'   => JobSeeker::whereIn('cpf', $variants)->pluck('phone')->all(),
+            'atendimento' => Attendance::whereIn('customer_cpf', $variants)->pluck('customer_phone')->all(),
+            'evento'      => EventParticipant::whereIn('cpf', $variants)->pluck('whatsapp')->all(),
+            'prestador'   => ServiceProvider::whereIn('cpf', $variants)->pluck('whatsapp')->all(),
+        ];
     }
 
     /**
@@ -183,7 +337,89 @@ class CitizenService
             $people[$cpf] = $entry;
         }
 
+        $this->addAccounts($people);
+
         return $people;
+    }
+
+    /**
+     * Terceira origem: as contas do portal.
+     *
+     * Sem ela a tela e cega para quem se cadastrou sozinho pelo site e nunca
+     * fez curriculo nem foi atendido -- e e exatamente essa pessoa que perde a
+     * senha e precisa ser encontrada aqui.
+     *
+     * Duas passadas porque ha dois jeitos de uma conta existir:
+     *  - com CPF proprio, o caso normal desde 2026-08-06;
+     *  - sem CPF, nas contas anteriores a coluna. Essas so sao alcancaveis
+     *    pelo curriculo, e e o mesmo desvio que accountFor() faz -- se a
+     *    listagem nao fizesse, diria "sem conta" para quem a tela de detalhe
+     *    mostra com conta.
+     *
+     * O filtro type='usuario' e obrigatorio nas duas: job_seekers.user_id
+     * guarda o id do ATENDENTE quando o curriculo foi cadastrado no balcao
+     * (JobSeekerService::store()), nao o do cidadao.
+     *
+     * @param array<string, array<string, mixed>> $people
+     */
+    private function addAccounts(array &$people): void
+    {
+        $contas = User::where('type', 'usuario')
+            ->whereNotNull('cpf')
+            ->get(['id', 'name', 'email', 'cpf', 'created_at']);
+
+        foreach ($contas as $conta) {
+            $cpf = $this->onlyDigits($conta->cpf);
+            if ($cpf === '') {
+                continue;
+            }
+            $entry = $this->ensure($people, $cpf);
+            // O nome do curriculo e do atendimento vem antes: foi digitado por
+            // um atendente, e tende a estar mais correto que o do autocadastro.
+            $entry['name']               = $entry['name'] ?: $conta->name;
+            $entry['has_account']        = true;
+            $entry['account_email']      = $conta->email;
+            $entry['account_created_at'] = $conta->created_at;
+            $entry['user_id']            = $entry['user_id'] ?: $conta->id;
+            $people[$cpf] = $entry;
+        }
+
+        $this->flagAccountsWithoutCpf($people);
+    }
+
+    /**
+     * Marca as entradas cuja conta existe mas esta sem CPF gravado, chegando
+     * nelas pelo curriculo. O aviso na linha poupa o atendente de abrir o
+     * cadastro para descobrir que o link nao sai sem o backfill.
+     *
+     * @param array<string, array<string, mixed>> $people
+     */
+    private function flagAccountsWithoutCpf(array &$people): void
+    {
+        $porCurriculo = JobSeeker::whereNotNull('cpf')
+            ->whereNotNull('user_id')
+            ->pluck('user_id', 'cpf');
+
+        if ($porCurriculo->isEmpty()) {
+            return;
+        }
+
+        $semCpf = User::whereIn('id', $porCurriculo->values()->unique()->all())
+            ->where('type', 'usuario')
+            ->whereNull('cpf')
+            ->pluck('email', 'id');
+
+        foreach ($porCurriculo as $documento => $userId) {
+            $cpf = $this->onlyDigits($documento);
+
+            if ($cpf === '' || !isset($people[$cpf]) || !$semCpf->has($userId)) {
+                continue;
+            }
+
+            $people[$cpf]['has_account']         = true;
+            $people[$cpf]['account_without_cpf'] = true;
+            $people[$cpf]['account_email']       = $semCpf->get($userId);
+        }
     }
 
     /**
@@ -203,6 +439,10 @@ class CitizenService
             'user_id'            => null,
             'attendance_count'   => 0,
             'last_attendance_at' => null,
+            'has_account'         => false,
+            'account_without_cpf' => false,
+            'account_email'       => null,
+            'account_created_at'  => null,
         ];
     }
 
@@ -216,13 +456,20 @@ class CitizenService
             $items->count(),
             $perPage,
             $page,
-            ['path' => LengthAwarePaginator::resolveCurrentPath()]
+            [
+                'path'  => LengthAwarePaginator::resolveCurrentPath(),
+                // Sem isto a pagina 2 perde busca e filtro.
+                'query' => request()->except('page'),
+            ]
         );
     }
 
     /**
-     * Casa o termo buscado com o CPF (comparado só por dígitos, para ignorar a
-     * máscara) ou com o nome (sem acento e em caixa baixa).
+     * Casa o termo buscado com o CPF (só por dígitos, para ignorar a máscara),
+     * com o nome ou com o e-mail da conta — todos sem acento e em caixa baixa.
+     *
+     * O e-mail entra porque no balcão a pessoa lembra do login com mais
+     * frequência do que do próprio CPF decorado.
      *
      * @param array<string, mixed> $entry
      */
@@ -234,8 +481,15 @@ class CitizenService
             return true;
         }
 
-        return $entry['name'] !== null
-            && str_contains($this->normalize($entry['name']), $this->normalize($term));
+        $normalizado = $this->normalize($term);
+
+        foreach ([$entry['name'], $entry['account_email']] as $campo) {
+            if ($campo !== null && str_contains($this->normalize($campo), $normalizado)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function normalize(string $value): string

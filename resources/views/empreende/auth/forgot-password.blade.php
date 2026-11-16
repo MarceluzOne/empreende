@@ -1,3 +1,11 @@
+{{--
+  Orientação, não formulário.
+
+  A redefinição por e-mail nunca foi ligada, e uma tela que aceitava o endereço
+  e respondia "enviamos o link" deixava a pessoa esperando algo que não vinha.
+  Aqui ela é direcionada ao atendimento, onde um funcionário confere a
+  identidade e gera o link (ver AssistedPasswordResetService).
+--}}
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -13,9 +21,10 @@
   :root{
     --brand:#0763A0;--brand-deep:#044a7a;--brand-soft:#e8f1f9;
     --yellow:#ffc52d;--ink:#0c1822;--ink-soft:#38475a;--muted:#6c7a8a;
+    --wa:#25d366;--wa-deep:#1ebe5d;
     --paper:#ffffff;--cream:#f3f6fa;--line:rgba(12,24,34,.08);
     --shadow-sm:0 1px 2px rgba(12,24,34,.06),0 2px 8px rgba(12,24,34,.04);
-    --shadow-md:0 8px 28px rgba(12,24,34,.10);--radius:14px;
+    --radius:14px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Lato',system-ui,sans-serif;color:var(--ink);background:var(--cream);min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
@@ -28,43 +37,41 @@
   .back-link:hover{background:var(--brand-soft);color:var(--brand)}
 
   .auth-wrap{flex:1;display:flex;align-items:stretch;min-height:calc(100vh - 65px)}
-  .auth-side{width:420px;min-width:380px;background:linear-gradient(145deg,var(--brand-deep) 0%,var(--brand) 100%);color:#fff;display:flex;flex-direction:column;justify-content:center;padding:60px 48px;position:relative;overflow:hidden}
-  .auth-side::before{content:"";position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
-  .auth-side-icon{width:72px;height:72px;border-radius:20px;background:rgba(255,255,255,.15);backdrop-filter:blur(6px);display:grid;place-items:center;margin-bottom:28px;font-size:32px}
+  .auth-side{width:420px;min-width:380px;background:linear-gradient(145deg,var(--brand-deep) 0%,var(--brand) 100%);color:#fff;display:flex;flex-direction:column;justify-content:center;padding:60px 48px}
+  .auth-side-icon{width:72px;height:72px;border-radius:20px;background:rgba(255,255,255,.15);display:grid;place-items:center;margin-bottom:28px;font-size:32px}
   .auth-side h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:28px;font-weight:800;line-height:1.2;margin-bottom:12px}
   .auth-side h2 span{color:var(--yellow)}
-  .auth-side p{font-size:15px;opacity:.8;line-height:1.6;margin-bottom:32px}
+  .auth-side p{font-size:15px;opacity:.85;line-height:1.6;margin-bottom:32px}
   .auth-side-features{display:flex;flex-direction:column;gap:14px}
   .auth-side-feature{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:700}
   .auth-side-feature i{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.15);display:grid;place-items:center;font-size:13px;flex-shrink:0}
 
   .auth-main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 32px}
-  .auth-card{width:100%;max-width:440px}
-  .auth-card-header{margin-bottom:32px}
-  .auth-card-header h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:26px;font-weight:800;color:var(--ink);margin-bottom:6px}
-  .auth-card-header p{font-size:15px;color:var(--muted)}
+  .auth-card{width:100%;max-width:460px}
+  .auth-card-header{margin-bottom:26px}
+  .auth-card-header h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:26px;font-weight:800;margin-bottom:8px}
+  .auth-card-header p{font-size:15px;color:var(--ink-soft);line-height:1.6}
 
-  .form-group{margin-bottom:20px}
-  .form-group label{display:block;font-size:13px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
-  .form-control{width:100%;padding:12px 16px;border:1.5px solid var(--line);border-radius:var(--radius);font-family:'Lato',sans-serif;font-size:15px;color:var(--ink);background:var(--paper);transition:border-color .15s,box-shadow .15s;outline:none}
-  .form-control:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(7,99,160,.12)}
-  .form-control.error{border-color:#e53e3e}
+  .steps{list-style:none;margin:0 0 26px;padding:0;display:flex;flex-direction:column;gap:14px}
+  .steps li{display:flex;gap:12px;align-items:flex-start;font-size:14.5px;color:var(--ink-soft);line-height:1.5}
+  .steps .num{width:26px;height:26px;border-radius:50%;background:var(--brand-soft);color:var(--brand);font-weight:800;font-size:13px;display:grid;place-items:center;flex-shrink:0;margin-top:1px}
 
-  .btn-primary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px 24px;background:var(--brand);color:#fff;border:none;border-radius:999px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;transition:background .2s,transform .15s,box-shadow .2s;box-shadow:0 4px 14px rgba(7,99,160,.3)}
-  .btn-primary:hover{background:var(--brand-deep);transform:translateY(-1px);box-shadow:0 6px 20px rgba(7,99,160,.35)}
+  .btn-wa{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px 24px;background:var(--wa);color:#fff;border:none;border-radius:999px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;transition:background .2s,transform .15s;box-shadow:0 4px 14px rgba(37,211,102,.32)}
+  .btn-wa:hover{background:var(--wa-deep);transform:translateY(-1px)}
+  .btn-wa i{font-size:19px}
 
-  .alert-error{background:#fff5f5;border:1px solid #fed7d7;color:#c53030;padding:12px 16px;border-radius:var(--radius);margin-bottom:20px;font-size:14px;display:flex;align-items:flex-start;gap:8px}
-  .alert-success{background:#f0fff4;border:1px solid #9ae6b4;color:#276749;padding:16px;border-radius:var(--radius);margin-bottom:20px;font-size:14px;display:flex;align-items:flex-start;gap:10px}
-  .alert-success i{font-size:18px;margin-top:1px;flex-shrink:0}
+  .presencial{margin-top:22px;padding:16px 18px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);font-size:14px;color:var(--ink-soft);line-height:1.6}
+  .presencial strong{display:flex;align-items:center;gap:8px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;color:var(--ink);margin-bottom:6px}
+  .presencial strong i{color:var(--brand)}
 
-  .auth-footer{margin-top:28px;text-align:center;font-size:14px;color:var(--muted)}
+  .note{margin-top:18px;font-size:13px;color:var(--muted);line-height:1.6;display:flex;gap:8px;align-items:flex-start}
+  .note i{margin-top:2px;flex-shrink:0}
+
+  .auth-footer{margin-top:26px;text-align:center;font-size:14px;color:var(--muted)}
   .auth-footer a{color:var(--brand);font-weight:700}
   .auth-footer a:hover{text-decoration:underline}
 
-  @media(max-width:820px){
-    .auth-side{display:none}
-    .auth-main{padding:32px 20px}
-  }
+  @media(max-width:820px){.auth-side{display:none}.auth-main{padding:32px 20px}}
 </style>
 </head>
 <body>
@@ -84,14 +91,13 @@
 
 <div class="auth-wrap">
   <div class="auth-side">
-    <div class="auth-side-icon"><i class="fas fa-lock-open"></i></div>
-    <h2>Recupere o acesso <span>à sua conta.</span></h2>
-    <p>Sem problemas. Informe o e-mail cadastrado e enviaremos um link seguro para você criar uma nova senha.</p>
+    <div class="auth-side-icon"><i class="fas fa-headset"></i></div>
+    <h2>A equipe destrava <span>o seu acesso.</span></h2>
+    <p>Por segurança, a senha do portal é redefinida com a ajuda de um atendente — que confirma quem você é antes de liberar o link.</p>
     <div class="auth-side-features">
-      <div class="auth-side-feature"><i class="fas fa-envelope"></i> Link enviado para seu e-mail</div>
-      <div class="auth-side-feature"><i class="fas fa-shield-alt"></i> Processo seguro e criptografado</div>
-      <div class="auth-side-feature"><i class="fas fa-clock"></i> Link válido por 60 minutos</div>
-      <div class="auth-side-feature"><i class="fas fa-users"></i> Válido para candidatos, empresas e funcionários</div>
+      <div class="auth-side-feature"><i class="fab fa-whatsapp"></i> Pelo WhatsApp da Sala do Empreendedor</div>
+      <div class="auth-side-feature"><i class="fas fa-building"></i> Ou presencialmente, no atendimento</div>
+      <div class="auth-side-feature"><i class="fas fa-user-shield"></i> Ninguém da equipe vê a sua senha</div>
     </div>
   </div>
 
@@ -99,40 +105,32 @@
     <div class="auth-card">
       <div class="auth-card-header">
         <h1>Esqueci minha senha</h1>
-        <p>Informe o e-mail da sua conta e enviaremos as instruções de recuperação.</p>
+        <p>A redefinição é feita pelo atendimento do Empreende Vitória. Fale com a equipe e você recebe um link para criar uma senha nova.</p>
       </div>
 
-      @if(session('status'))
-        <div class="alert-success">
-          <i class="fas fa-check-circle"></i>
-          <div>
-            <strong style="display:block;margin-bottom:2px">Link enviado com sucesso!</strong>
-            {{ session('status') }}
-          </div>
-        </div>
+      <ul class="steps">
+        <li><span class="num">1</span><div>Chame a equipe pelo WhatsApp ou vá até o atendimento presencial.</div></li>
+        <li><span class="num">2</span><div>Informe o seu CPF. O atendente confere se ele bate com o cadastro.</div></li>
+        <li><span class="num">3</span><div>Você recebe um link, válido por 24 horas, e escolhe a senha nova.</div></li>
+      </ul>
+
+      @if($whatsapp)
+        <a class="btn-wa" target="_blank" rel="noopener noreferrer"
+           href="https://wa.me/{{ $whatsapp }}?text={{ rawurlencode('Olá! Perdi a senha da minha conta no portal Empreende Vitória e gostaria de redefinir.') }}">
+          <i class="fab fa-whatsapp"></i> Falar com o atendimento
+        </a>
       @endif
 
-      @if($errors->any())
-        <div class="alert-error">
-          <i class="fas fa-exclamation-circle" style="margin-top:2px;flex-shrink:0"></i>
-          <div>@foreach($errors->all() as $error)<div>{{ $error }}</div>@endforeach</div>
-        </div>
-      @endif
+      <div class="presencial">
+        <strong><i class="fas fa-map-marker-alt"></i> Atendimento presencial</strong>
+        Rua Rui Barbosa, nº 26 — Centro Comercial, Vitória de Santo Antão<br>
+        Segunda a sexta, das 8h às 14h.
+      </div>
 
-      <form action="{{ route('password.email') }}" method="POST">
-        @csrf
-
-        <div class="form-group">
-          <label for="email">E-mail</label>
-          <input type="email" id="email" name="email" value="{{ old('email') }}"
-            class="form-control {{ $errors->has('email') ? 'error' : '' }}"
-            placeholder="seu@email.com" required autofocus>
-        </div>
-
-        <button type="submit" class="btn-primary">
-          <i class="fas fa-paper-plane"></i> Enviar link de recuperação
-        </button>
-      </form>
+      <div class="note">
+        <i class="fas fa-shield-halved"></i>
+        <div>O link é enviado apenas para o telefone já cadastrado no seu nome. Se o seu número mudou, procure o atendimento presencial.</div>
+      </div>
 
       <div class="auth-footer">
         Lembrou a senha? <a href="{{ route('login') }}">Entrar agora</a>

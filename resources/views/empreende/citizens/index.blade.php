@@ -8,26 +8,52 @@
         <div class="mb-6">
             <h2 class="text-2xl font-black text-gray-800 uppercase tracking-tighter">Cidadãos</h2>
             <p class="text-gray-500 italic text-sm">
-                Pessoas conhecidas pelo CPF — candidatos cadastrados e quem já passou por atendimento.
+                Pessoas conhecidas pelo CPF — candidatos, quem passou por atendimento e quem tem conta no portal.
             </p>
         </div>
 
-        {{-- Busca por CPF --}}
-        <form method="GET" action="{{ route('citizens.index') }}" class="mb-5 flex gap-2">
+        {{-- Busca e filtro de conta --}}
+        <form method="GET" action="{{ route('citizens.index') }}" class="mb-5 flex flex-wrap gap-2">
             <input type="text" name="busca" value="{{ $search }}"
-                class="flex-1 px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-600 transition text-sm"
-                placeholder="Buscar por nome ou CPF (pode ser parcial)...">
+                class="flex-1 min-w-[16rem] px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-600 transition text-sm"
+                placeholder="Buscar por nome, CPF ou e-mail (pode ser parcial)...">
+
+            <select name="conta"
+                class="px-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-600 transition text-sm">
+                <option value="">Com e sem conta</option>
+                <option value="com" @selected($conta === 'com')>Só com conta no portal</option>
+                <option value="sem" @selected($conta === 'sem')>Só sem conta</option>
+            </select>
+
             <button type="submit"
                 class="bg-blue-600 text-white px-5 py-3 rounded-xl font-bold text-sm hover:bg-blue-700 transition">
                 <i class="fas fa-search mr-1"></i> Buscar
             </button>
-            @if($search)
+            @if($search || $conta)
                 <a href="{{ route('citizens.index') }}"
                     class="bg-gray-100 text-gray-600 px-5 py-3 rounded-xl font-bold text-sm hover:bg-gray-200 transition">
                     Limpar
                 </a>
             @endif
         </form>
+
+        {{-- Contas sem CPF: a listagem e indexada pelo CPF, entao elas nao tem
+             como virar linha aqui. Mostrar o numero em vez de omitir o fato. --}}
+        @if($contasSemCpf > 0)
+            <div class="mb-5 px-4 py-3 rounded-xl bg-amber-50 border border-amber-100 text-sm text-amber-800">
+                <i class="fas fa-circle-info mr-1"></i>
+                {{ $contasSemCpf }} {{ $contasSemCpf === 1 ? 'conta do portal está' : 'contas do portal estão' }}
+                sem CPF gravado e não {{ $contasSemCpf === 1 ? 'aparece' : 'aparecem' }} nesta lista.
+                @can('gerar-link-senha')
+                    <a href="{{ route('account-cpf.index') }}" class="font-bold underline">Ver contas sem CPF</a>
+                    para informar o CPF de quem procurar o atendimento.
+                @endcan
+                @if(auth()->user()->isAdmin())
+                    Para preencher em lote pelo currículo e pelas inscrições em eventos, use o
+                    <a href="{{ route('cpf.backfill') }}" class="font-bold underline">backfill de CPF</a>.
+                @endif
+            </div>
+        @endif
 
         {{-- Tabela --}}
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -65,6 +91,17 @@
                                             <i class="fas fa-briefcase"></i> {{ $citizen->attendance_count }} atend.
                                         </span>
                                     @endif
+                                    @if($citizen->account_without_cpf)
+                                        <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700"
+                                            title="A conta existe mas está sem CPF gravado — o link de senha não sai até rodar o backfill.">
+                                            <i class="fas fa-circle-exclamation"></i> Conta sem CPF
+                                        </span>
+                                    @elseif($citizen->has_account)
+                                        <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-700"
+                                            title="{{ $citizen->account_email }}">
+                                            <i class="fas fa-circle-user"></i> Conta
+                                        </span>
+                                    @endif
                                 </div>
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-500">
@@ -86,8 +123,8 @@
                     @empty
                         <tr>
                             <td colspan="5" class="px-6 py-12 text-center text-gray-400 text-sm">
-                                @if($search)
-                                    Nenhum cidadão encontrado para "<span class="font-semibold">{{ $search }}</span>".
+                                @if($search || $conta)
+                                    Nenhum cidadão encontrado para esta busca.
                                 @else
                                     Nenhum cidadão cadastrado ainda.
                                 @endif
@@ -100,7 +137,7 @@
 
         @if($citizens->hasPages())
             <div class="mt-4">
-                {{ $citizens->appends(['busca' => $search])->links() }}
+                {{ $citizens->links() }}
             </div>
         @endif
     </div>

@@ -45,6 +45,10 @@
                     <input type="text" name="phone" id="cidadao_phone" value="{{ old('phone', App\Support\Phone::format($phone)) }}"
                         class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm @error('phone') border-red-500 @enderror">
                     @error('phone') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    <p class="text-xs text-gray-400 mt-1">
+                        Deixar em branco mantém o telefone atual. A troca fica registrada na auditoria, com o número
+                        anterior.
+                    </p>
                 </div>
 
                 <div class="md:col-span-2">
@@ -52,7 +56,7 @@
                     <input type="email" name="email" value="{{ old('email', $email) }}"
                         class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm @error('email') border-red-500 @enderror">
                     @error('email') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                    @if($conta)
+                    @if($account)
                         <p class="text-xs text-gray-400 mt-1">
                             Este e-mail também é o login da conta de acesso. Deixando em branco, o login atual é mantido.
                         </p>
@@ -66,7 +70,7 @@
                     <ul class="list-disc pl-4 space-y-0.5">
                         <li>Currículo de candidato: {{ $candidato ? 'sim' : 'não possui' }}</li>
                         <li>Atendimentos registrados: {{ $attendances->count() }}</li>
-                        <li>Conta de acesso: {{ $conta ? $conta->email : 'não possui' }}</li>
+                        <li>Conta de acesso: {{ $account ? $account->email : 'não possui' }}</li>
                     </ul>
                     <p class="mt-2">
                         Trocar o CPF reagrupa a pessoa em todos eles — use apenas para corrigir um documento digitado errado.
@@ -91,10 +95,10 @@
                 </h3>
             </div>
 
-            @if($conta)
+            @if($account)
                 <div class="p-6 text-sm text-gray-600">
                     <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Login</span>
-                    <span class="font-mono font-bold text-gray-800">{{ $conta->email }}</span>
+                    <span class="font-mono font-bold text-gray-800">{{ $account->email }}</span>
 
                     {{-- A senha nunca é definida aqui: quem a escolhe é o próprio
                          cidadão, pelo link que o atendimento gera na tela de

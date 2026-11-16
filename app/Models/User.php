@@ -3,7 +3,6 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Notifications\ResetPasswordNotification;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -23,6 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'cpf',
+        'phone',
         'password',
         'type',
     ];
@@ -62,6 +62,13 @@ class User extends Authenticatable
     }
 
     public function isAdmin(): bool { return $this->roles->contains('name', 'admin'); }
+
+    /**
+     * Papel atribuído a esta conta. Mesma leitura do isAdmin() — pela relação
+     * já carregada, sem ir ao banco de novo.
+     */
+    public function hasRole(string $role): bool { return $this->roles->contains('name', $role); }
+
     public function isFuncionario(): bool { return $this->type === 'funcionario'; }
     public function isUsuario(): bool { return $this->type === 'usuario'; }
     public function isEmpresa(): bool { return $this->type === 'empresa'; }
@@ -74,8 +81,4 @@ class User extends Authenticatable
         })->exists();
     }
 
-    public function sendPasswordResetNotification($token): void
-    {
-        $this->notify(new ResetPasswordNotification($token));
-    }
 }

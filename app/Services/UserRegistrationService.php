@@ -179,8 +179,11 @@ class UserRegistrationService
      *
      * As demais origens são casadas pelo CPF em tempo de consulta no portal,
      * então não precisam de vínculo gravado.
+     *
+     * Público porque o CPF informado depois do cadastro (AccountCpfService)
+     * precisa do mesmo vínculo.
      */
-    private function linkExistingRecords(User $user): void
+    public function linkExistingRecords(User $user): void
     {
         $variants = Document::cpfVariants($user->cpf);
 

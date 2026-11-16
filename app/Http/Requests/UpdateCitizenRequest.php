@@ -6,7 +6,7 @@ use App\Models\User;
 use App\Rules\Cpf;
 use App\Rules\CpfDisponivel;
 use App\Services\CitizenService;
-use App\Support\Document;
+use App\Services\CitizenUpdateService;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -61,6 +61,10 @@ class UpdateCitizenRequest extends FormRequest
     /**
      * O e-mail vira login da conta do cidadão, então não pode colidir com o de
      * outra conta.
+     *
+     * "Outra" é decidida pela conta do cidadão, e não por `users.cpf`: conta
+     * antiga fica com o CPF nulo e é achada pelo currículo — comparar CPFs
+     * acusaria o próprio e-mail da pessoa como sendo de outra conta.
      */
     private function emailDisponivel(): Closure
     {
@@ -71,7 +75,9 @@ class UpdateCitizenRequest extends FormRequest
                 return;
             }
 
-            if (Document::digits($user->cpf) !== $this->cpfAtual()) {
+            $propria = app(CitizenUpdateService::class)->accountForCitizen($this->cpfAtual());
+
+            if ($propria === null || ! $propria->is($user)) {
                 $fail('Este e-mail já está em uso por outra conta.');
             }
         };

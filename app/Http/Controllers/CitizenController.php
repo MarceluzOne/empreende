@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\AssistedResetException;
+use App\Http\Requests\ActivateCitizenAccountRequest;
 use App\Http\Requests\UpdateCitizenRequest;
+use App\Services\AssistedPasswordResetService;
+use App\Services\CitizenAccountActivationService;
 use App\Services\CitizenService;
 use App\Services\CitizenUpdateService;
 use Illuminate\Http\Request;
@@ -17,11 +21,16 @@ class CitizenController extends Controller
     public function index(Request $request)
     {
         // `cpf` é o nome antigo do campo, mantido para não quebrar links salvos.
-        $search = $request->input('busca', $request->input('cpf'));
+        $filters = [
+            'busca' => $request->input('busca', $request->input('cpf')),
+            'conta' => $request->input('conta'),
+        ];
 
         return view('citizens.index', [
-            'citizens' => $this->service->list($search),
-            'search'   => $search,
+            'citizens'      => $this->service->list($filters),
+            'search'        => $filters['busca'],
+            'conta'         => $filters['conta'],
+            'contasSemCpf'  => $this->service->accountsWithoutCpfCount(),
         ]);
     }
 
@@ -29,7 +38,7 @@ class CitizenController extends Controller
     {
         $citizen = $this->service->detail($uuid);
 
-        abort_if(!$citizen['candidato'] && $citizen['attendances']->isEmpty(), 404);
+        abort_if($this->desconhecido($citizen), 404);
 
         return view('citizens.show', $citizen);
     }
@@ -38,7 +47,7 @@ class CitizenController extends Controller
     {
         $citizen = $this->service->detail($uuid);
 
-        abort_if(!$citizen['candidato'] && $citizen['attendances']->isEmpty(), 404);
+        abort_if($this->desconhecido($citizen), 404);
 
         return view('citizens.edit', $citizen);
     }
@@ -52,5 +61,49 @@ class CitizenController extends Controller
 
         return redirect()->route('citizens.show', $this->service->uuidFor($novoCpf))
             ->with('success', 'Dados do cidadão atualizados.');
+    }
+
+    /**
+     * Gera o link de redefinição de senha para o atendente repassar.
+     * As recusas são de negócio (sem conta, CPF incompleto, conta sem CPF) e
+     * voltam como aviso na própria tela.
+     */
+    public function passwordLink(string $uuid, AssistedPasswordResetService $reset)
+    {
+        try {
+            return back()->with('reset_link', $reset->linkForCitizen($uuid));
+        } catch (AssistedResetException $e) {
+            return back()->with('reset_error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Cria a conta de quem foi cadastrado no balcão e nunca teve uma, e já
+     * devolve o link para a pessoa definir a primeira senha.
+     */
+    public function activateAccount(
+        string $uuid,
+        ActivateCitizenAccountRequest $request,
+        CitizenAccountActivationService $activation
+    ) {
+        try {
+            return back()->with('reset_link', $activation->activate($uuid, $request->input('email')));
+        } catch (AssistedResetException $e) {
+            return back()->with('reset_error', $e->getMessage());
+        }
+    }
+
+    /**
+     * Ter só conta no portal já faz da pessoa um cidadão desta tela: é
+     * justamente quem se cadastrou sozinho pelo site e nunca apareceu no
+     * balcão que precisa ser alcançado aqui.
+     *
+     * @param array<string, mixed> $citizen
+     */
+    private function desconhecido(array $citizen): bool
+    {
+        return !$citizen['candidato']
+            && $citizen['attendances']->isEmpty()
+            && !$citizen['account'];
     }
 }

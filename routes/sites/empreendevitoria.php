@@ -17,6 +17,8 @@
 |
 */
 
+use App\Http\Controllers\AccountCpfController;
+use App\Http\Controllers\AssistedPasswordResetController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\Auth\EmpresaAuthController;
@@ -33,6 +35,7 @@ use App\Http\Controllers\JobSeekerController;
 use App\Http\Controllers\JobVacancyController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\PortalAccountCpfController;
 use App\Http\Controllers\PortalEmpresaController;
 use App\Http\Controllers\PortalUsuarioController;
 use App\Http\Controllers\ProfileController;
@@ -71,10 +74,13 @@ Route::post('/sair', [AuthController::class, 'logout'])->name('logout');
 /*
 | Reset de senha
 */
+// A redefinicao nao sai por e-mail: /esqueci-senha so orienta a procurar o
+// atendimento, e o link de verdade e gerado por um funcionario em Cidadaos.
 Route::get('/esqueci-senha', [PasswordResetController::class, 'showForgotForm'])->name('password.request');
-Route::post('/esqueci-senha', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
-Route::get('/redefinir-senha/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
-Route::post('/redefinir-senha', [PasswordResetController::class, 'reset'])->name('password.update');
+Route::get('/redefinir-senha/atendimento/{token}', [AssistedPasswordResetController::class, 'show'])
+    ->middleware('throttle:30,1')->name('password.assisted');
+Route::post('/redefinir-senha/atendimento', [AssistedPasswordResetController::class, 'update'])
+    ->middleware('throttle:5,1')->name('password.assisted.update');
 
 /*
 | Setup (migrations via rota — ambiente FTP sem artisan)
@@ -128,6 +134,18 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->prefix('portal/funci
     // Cidadãos: lista consolidada por CPF (candidatos + atendidos)
     Route::get('cidadaos', [CitizenController::class, 'index'])->name('citizens.index');
     Route::get('cidadaos/{uuid}/editar', [CitizenController::class, 'edit'])->name('citizens.edit');
+    // Gerar link de senha e ativar conta sao, na pratica, poder entrar na conta
+    // de um cidadao -- nao bastam a 'auth' + tipo de conta do grupo.
+    Route::post('cidadaos/{uuid}/link-senha', [CitizenController::class, 'passwordLink'])
+        ->middleware('can:gerar-link-senha')->name('citizens.password-link');
+    Route::post('cidadaos/{uuid}/ativar-conta', [CitizenController::class, 'activateAccount'])
+        ->middleware('can:gerar-link-senha')->name('citizens.account.activate');
+    // Contas do portal sem CPF: gravar o CPF e o passo que libera o link de
+    // senha, entao exige a mesma permissao.
+    Route::get('contas-sem-cpf', [AccountCpfController::class, 'index'])
+        ->middleware('can:gerar-link-senha')->name('account-cpf.index');
+    Route::post('contas-sem-cpf/{user}', [AccountCpfController::class, 'store'])
+        ->middleware('can:gerar-link-senha')->name('account-cpf.store');
     Route::put('cidadaos/{uuid}', [CitizenController::class, 'update'])->name('citizens.update');
     Route::get('cidadaos/{uuid}', [CitizenController::class, 'show'])->name('citizens.show');
 
@@ -135,6 +153,8 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->prefix('portal/funci
     Route::get('empresas', [CompanyController::class, 'index'])->name('companies.index');
     Route::get('empresas/{empresa}/editar', [CompanyController::class, 'editEmpresa'])->name('companies.empresa.edit');
     Route::put('empresas/{empresa}', [CompanyController::class, 'updateEmpresa'])->name('companies.empresa.update');
+    Route::post('empresas/{empresa}/link-senha', [CompanyController::class, 'passwordLink'])
+        ->middleware('can:gerar-link-senha')->name('companies.password-link');
     Route::patch('empresas/{empresa}/status', [CompanyController::class, 'toggleEmpresa'])->name('companies.empresa.toggle');
     Route::get('empresas/{uuid}', [CompanyController::class, 'show'])->name('companies.show');
 
@@ -175,7 +195,12 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->prefix('portal/funci
 | Portal do Usuário (candidato/cidadão)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'check.user.type:usuario'])->group(function () {
+Route::middleware(['auth', 'check.user.type:usuario', 'account.cpf'])->group(function () {
+    // Contas anteriores a agosto/2026 nao tem CPF; o middleware account.cpf
+    // manda para ca antes de qualquer outra tela do portal.
+    Route::get('/portal/usuario/cpf', [PortalAccountCpfController::class, 'show'])->name('portal.usuario.cpf');
+    Route::post('/portal/usuario/cpf', [PortalAccountCpfController::class, 'store'])->name('portal.usuario.cpf.store');
+
     Route::get('/portal/usuario', [PortalUsuarioController::class, 'index'])->name('portal.usuario');
 
     // CRUD de currículo
