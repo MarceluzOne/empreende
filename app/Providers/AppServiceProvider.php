@@ -50,10 +50,10 @@ class AppServiceProvider extends ServiceProvider
      * Quem pode gerar link de senha e ativar conta de cidadão.
      *
      * Definido em CÓDIGO, de propósito, e não como permissão na tabela. Os
-     * outros gates nascem de `permissions`, semeada por `GET /setup-inicial`;
-     * um `can:` apontando para permissão nova responderia 403 para todos até
-     * alguém acessar aquela URL em produção — um deploy que trancaria a equipe
-     * fora da tela. Assim o gate vale no primeiro request depois do upload.
+     * outros gates nascem de `permissions`, que em produção só muda por SQL à
+     * mão; um `can:` apontando para permissão nova responderia 403 para todos
+     * até alguém rodar esse SQL — um deploy que trancaria a equipe fora da
+     * tela. Assim o gate vale no primeiro request depois do upload.
      *
      * Gerar o link é, na prática, poder entrar na conta de um cidadão. Antes
      * disso bastava ser `type = funcionario`, sem recurso nenhum para revogar.
@@ -65,8 +65,8 @@ class AppServiceProvider extends ServiceProvider
      *
      * Checa o PAPEL, e não uma permissão nomeada, porque permissão fina não é
      * administrável neste sistema: `permissions` é escrita apenas pelo array
-     * chumbado em `RoleController::scriptConfiguration()`, exposto em
-     * `GET /setup-inicial`. Não há tela para ligar permissão a papel — a de
+     * chumbado em `Database\Seeders\RolesAndPermissionsSeeder` (só local; em
+     * produção, por SQL à mão). Não há tela para ligar permissão a papel — a de
      * Equipe só troca o papel da pessoa. Um ramo `hasPermission('senha-cidadao')`
      * seria código morto: a seed daria essa permissão só ao `admin`, que já
      * passa por `isAdmin()`.

@@ -133,7 +133,9 @@ Partial reutilizável: `resources/views/empreende/partials/confirm-modal.blade.p
 - Migrations em `database/migrations/` existem **só para versionamento e para o ambiente local**.
 - Em produção o schema é alterado **à mão no phpMyAdmin**, com um script em
   `database/AAAA_MM_DD_descricao.sql` que diz o que conferir antes e depois de rodar.
-- `GET /setup-inicial` **não roda migrate**: só semeia papéis e permissões.
+- Papéis e permissões: `RolesAndPermissionsSeeder` (`php artisan db:seed`) só no ambiente
+  local. Em produção já existem; permissão nova entra por script SQL em `database/`.
+  A antiga rota pública `/setup-inicial` foi removida — não recriar rota de setup.
 - O SQL vai para o banco **antes** dos arquivos que dependem dele — código novo com coluna
   velha dá 500.
 

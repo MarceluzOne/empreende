@@ -14,8 +14,7 @@ use Throwable;
  * não protege ninguém — toda conta anterior à coluna fica com o campo nulo.
  *
  * ROTA TEMPORÁRIA — remover de routes/sites/empreendevitoria.php junto com
- * este controller e a view assim que o backfill estiver rodado em produção,
- * no mesmo espírito da /setup-inicial.
+ * este controller e a view assim que o backfill estiver rodado em produção.
  */
 class CpfBackfillController extends Controller
 {

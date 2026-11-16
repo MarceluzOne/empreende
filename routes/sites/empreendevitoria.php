@@ -42,7 +42,6 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicAttendanceController;
 use App\Http\Controllers\PublicCertificateController;
 use App\Http\Controllers\PublicEventController;
-use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ServiceProviderController;
 use App\Http\Controllers\SpeakerController;
 use App\Http\Controllers\UserController;
@@ -81,11 +80,6 @@ Route::get('/redefinir-senha/atendimento/{token}', [AssistedPasswordResetControl
     ->middleware('throttle:30,1')->name('password.assisted');
 Route::post('/redefinir-senha/atendimento', [AssistedPasswordResetController::class, 'update'])
     ->middleware('throttle:5,1')->name('password.assisted.update');
-
-/*
-| Setup (migrations via rota — ambiente FTP sem artisan)
-*/
-Route::get('/setup-inicial', [RoleController::class, 'scriptConfiguration']);
 
 /*
 | Auth usuário (candidatos)

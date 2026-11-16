@@ -16,8 +16,8 @@ use Illuminate\Support\Facades\Schema;
  * Só dígitos, sem máscara: é assim que AssistedPasswordResetService e
  * CitizenService::phonesFor() comparam os números das várias origens.
  *
- * Guardada por hasColumn porque em produção não roda migration (ver a rota
- * /setup-inicial): lá o ALTER TABLE é aplicado à mão e esta migration serve
+ * Guardada por hasColumn porque em produção não roda migration (ver
+ * CLAUDE.md, "Banco de dados"): lá o ALTER TABLE é aplicado à mão e esta migration serve
  * para o ambiente local e para deixar o passo registrado.
  *
  * Por Schema::table(), e não por um ALTER TABLE cru com `AFTER cpf`: a suíte
