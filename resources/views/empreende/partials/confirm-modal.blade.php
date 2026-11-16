@@ -16,6 +16,9 @@
 
     A mensagem também pode ser uma função: devolva null quando aquele envio não
     precisar de confirmação (ex.: o campo sensível não mudou).
+
+    Vários formulários podem usar o mesmo modal (ex.: uma linha por registro):
+    o Confirmar envia só o formulário que abriu o modal.
 --}}
 @php
     $tone    = $tone    ?? 'red';
@@ -54,6 +57,12 @@
     @push('scripts')
         <script>
             window.ConfirmModal = {
+                // Formulário que abriu cada modal e aguarda o Confirmar, por id.
+                pending: {},
+
+                // Modais cujo botão Confirmar já tem ouvinte — um só por modal.
+                bound: {},
+
                 open(id, message) {
                     if (message) {
                         document.getElementById(id + '-message').textContent = message;
@@ -62,6 +71,7 @@
                 },
 
                 close(id) {
+                    delete ConfirmModal.pending[id];
                     document.getElementById(id).style.display = 'none';
                 },
 
@@ -70,18 +80,17 @@
                  *
                  * `message` pode ser texto ou função; devolvendo null, o envio
                  * passa direto — é como cada tela decide quando perguntar.
+                 *
+                 * O Confirmar envia apenas o formulário que abriu o modal. Antes,
+                 * cada guard() pendurava um ouvinte próprio no mesmo botão, e com
+                 * vários formulários num modal só, confirmar um enviava todos.
                  */
                 guard(form, id, message) {
-                    let confirmado = false;
-
-                    document.getElementById(id + '-confirm').addEventListener('click', function () {
-                        confirmado = true;
-                        ConfirmModal.close(id);
-                        form.requestSubmit ? form.requestSubmit() : form.submit();
-                    });
+                    ConfirmModal.bindConfirm(id);
 
                     form.addEventListener('submit', function (event) {
-                        if (confirmado) {
+                        if (form.dataset.confirmado === '1') {
+                            delete form.dataset.confirmado;
                             return;
                         }
 
@@ -92,7 +101,27 @@
                         }
 
                         event.preventDefault();
+                        ConfirmModal.pending[id] = form;
                         ConfirmModal.open(id, texto);
+                    });
+                },
+
+                bindConfirm(id) {
+                    if (ConfirmModal.bound[id]) {
+                        return;
+                    }
+                    ConfirmModal.bound[id] = true;
+
+                    document.getElementById(id + '-confirm').addEventListener('click', function () {
+                        const form = ConfirmModal.pending[id];
+                        ConfirmModal.close(id);
+
+                        if (!form) {
+                            return;
+                        }
+
+                        form.dataset.confirmado = '1';
+                        form.requestSubmit ? form.requestSubmit() : form.submit();
                     });
                 }
             };
@@ -101,7 +130,7 @@
                 const cancelar = event.target.closest('[data-confirm-cancel]');
 
                 if (cancelar) {
-                    cancelar.closest('[data-confirm-modal]').style.display = 'none';
+                    ConfirmModal.close(cancelar.closest('[data-confirm-modal]').id);
                 }
             });
         </script>
