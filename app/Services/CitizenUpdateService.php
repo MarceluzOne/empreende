@@ -34,16 +34,18 @@ class CitizenUpdateService
      */
     public function update(string $cpf, array $data): string
     {
-        $variants = Document::cpfVariants($cpf);
+        $atual    = Document::digits($cpf);
         $novoCpf  = Document::digits($data['cpf']);
         $phone    = Document::digits($data['phone'] ?? '') ?: null;
         $email    = trim((string) ($data['email'] ?? '')) ?: null;
         $name     = $data['name'];
 
-        DB::transaction(function () use ($variants, $novoCpf, $name, $phone, $email) {
-            $this->updateCandidato($variants, $novoCpf, $name, $phone, $email);
-            $this->updateAttendances($variants, $novoCpf, $name);
-            $this->updateAccount($variants, $novoCpf, $name, $phone, $email);
+        DB::transaction(function () use ($atual, $novoCpf, $name, $phone, $email) {
+            $account = $this->accountForCitizen($atual);
+
+            $this->updateCandidato($atual, $novoCpf, $name, $phone, $email);
+            $this->updateAttendances($atual, $novoCpf, $name);
+            $this->updateAccount($account, $novoCpf, $name, $phone, $email);
         });
 
         return $novoCpf;
@@ -65,12 +67,10 @@ class CitizenUpdateService
             return;
         }
 
-        $variants = Document::cpfVariants($antigo);
+        DB::transaction(function () use ($antigo, $novo) {
+            $this->whereCpf(Attendance::query(), 'customer_cpf', $antigo)->update(['customer_cpf' => $novo]);
 
-        DB::transaction(function () use ($variants, $novo) {
-            Attendance::whereIn('customer_cpf', $variants)->update(['customer_cpf' => $novo]);
-
-            $user = User::whereIn('cpf', $variants)->first();
+            $user = $this->whereCpf(User::query(), 'cpf', $antigo)->first();
 
             if ($user === null) {
                 return;
@@ -84,11 +84,60 @@ class CitizenUpdateService
     }
 
     /**
-     * @param array<int, string> $variants
+     * Conta de acesso do cidadão cujo CPF atual é `$cpf`.
+     *
+     * Pelo `users.cpf` primeiro. Sem ele, pelo currículo: contas anteriores à
+     * coluna `cpf` ficam com o campo nulo, e é justamente nelas que a equipe
+     * vem corrigir os dados. O desvio exige `type = 'usuario'` porque currículo
+     * de balcão aponta para a conta do ATENDENTE (ver CitizenService::accountFor).
+     *
+     * Público porque a validação do e-mail precisa saber qual conta é a do
+     * próprio cidadão, para não acusar o e-mail dele como "de outra conta".
      */
-    private function updateCandidato(array $variants, string $cpf, string $name, ?string $phone, ?string $email): void
+    public function accountForCitizen(string $cpf): ?User
     {
-        $seeker = $variants === [] ? null : JobSeeker::whereIn('cpf', $variants)->first();
+        $digits = Document::digits($cpf);
+
+        if ($digits === '') {
+            return null;
+        }
+
+        $byCpf = $this->whereCpf(User::query(), 'cpf', $digits)->first();
+
+        if ($byCpf !== null) {
+            return $byCpf;
+        }
+
+        $userId = $this->whereCpf(JobSeeker::query(), 'cpf', $digits)->whereNotNull('user_id')->value('user_id');
+
+        return $userId === null ? null : User::where('id', $userId)->where('type', 'usuario')->first();
+    }
+
+    /**
+     * Filtra pelo CPF em qualquer grafia — inclusive incompleto.
+     *
+     * Um CPF completo cabe nas duas formas de `cpfVariants()`. Um incompleto
+     * (cadastro antigo, "556.122.92") não tem máscara previsível, então é
+     * comparado só pelos dígitos. É o caso que mais precisa desta tela: é
+     * para corrigir um documento assim que a equipe abre a edição.
+     */
+    private function whereCpf($query, string $column, string $digits)
+    {
+        $variants = Document::cpfVariants($digits);
+
+        if ($variants !== []) {
+            return $query->whereIn($column, $variants);
+        }
+
+        return $query->whereRaw(
+            "REPLACE(REPLACE(REPLACE({$column}, '.', ''), '-', ''), ' ', '') = ?",
+            [$digits]
+        );
+    }
+
+    private function updateCandidato(string $atual, string $cpf, string $name, ?string $phone, ?string $email): void
+    {
+        $seeker = $atual === '' ? null : $this->whereCpf(JobSeeker::query(), 'cpf', $atual)->first();
 
         if ($seeker === null) {
             return;
@@ -131,15 +180,14 @@ class CitizenUpdateService
      * atendimentos daquele CPF para um valor só, destruindo o histórico sem
      * caminho de volta.
      *
-     * @param array<int, string> $variants
      */
-    private function updateAttendances(array $variants, string $cpf, string $name): void
+    private function updateAttendances(string $atual, string $cpf, string $name): void
     {
-        if ($variants === []) {
+        if ($atual === '') {
             return;
         }
 
-        Attendance::whereIn('customer_cpf', $variants)->update([
+        $this->whereCpf(Attendance::query(), 'customer_cpf', $atual)->update([
             'customer_cpf'  => $cpf,
             'customer_name' => $name,
         ]);
@@ -153,12 +201,11 @@ class CitizenUpdateService
      * `users.phone`: é o único lugar onde cabe o telefone de quem só tem conta
      * no portal, sem currículo e sem atendimento.
      *
-     * @param array<int, string> $variants
+     * A conta vem resolvida de antes, porque o currículo (por onde ela pode ter
+     * sido achada) já está com o CPF novo quando chega a vez dela.
      */
-    private function updateAccount(array $variants, string $cpf, string $name, ?string $phone, ?string $email): void
+    private function updateAccount(?User $user, string $cpf, string $name, ?string $phone, ?string $email): void
     {
-        $user = $variants === [] ? null : User::whereIn('cpf', $variants)->first();
-
         if ($user === null) {
             return;
         }
