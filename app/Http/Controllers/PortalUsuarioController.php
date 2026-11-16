@@ -12,6 +12,7 @@ use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateServiceProviderRequest;
 use App\Services\EventService;
 use App\Services\JobSeekerService;
+use App\Services\JobVacancyService;
 use App\Services\ServiceProviderService;
 use App\Services\UserService;
 use App\Support\Document;
@@ -54,7 +55,7 @@ class PortalUsuarioController extends Controller
 
         $minhasCandidaturas = $perfil
             ? JobApplication::where('job_seeker_id', $perfil->id)
-                ->with('vacancy.user.empresa')
+                ->with('vacancy')
                 ->latest()
                 ->get()
             : collect();
@@ -70,9 +71,12 @@ class PortalUsuarioController extends Controller
         $vagas = JobVacancy::where('status', 'active')
             ->whereNotIn('id', $vagasCandidadasIds)
             ->when($areaFiltro, fn($q) => $q->where('interest_area', $areaFiltro))
-            ->with('user.empresa')
             ->latest()
             ->get();
+
+        // Contato da empresa pelo CNPJ da vaga, não por quem a cadastrou.
+        $contatosEmpresa = app(JobVacancyService::class)
+            ->companyContacts($vagas->concat($minhasCandidaturas->pluck('vacancy')));
 
         // Cadastros feitos na página pública de Serviços, reconhecidos pelo
         // CPF informado lá ou pelo e-mail da conta.
@@ -82,6 +86,7 @@ class PortalUsuarioController extends Controller
             'meusEventos'        => $meusEventos,
             'eventosDisponiveis' => $eventosDisponiveis,
             'vagas'              => $vagas,
+            'contatosEmpresa'    => $contatosEmpresa,
             'perfil'             => $perfil,
             'minhasCandidaturas' => $minhasCandidaturas,
             'vagasCandidadasIds' => $vagasCandidadasIds,
