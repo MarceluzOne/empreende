@@ -61,6 +61,13 @@ class CompanyService
             ->sortByDesc('created_at')
             ->values();
 
+        // Candidaturas carregadas só depois do filtro por CNPJ, para não puxar
+        // as de todas as vagas do sistema. Alimentam o modal "Visualizar".
+        $vacancies->load([
+            'applications' => fn ($q) => $q->latest(),
+            'applications.seeker',
+        ]);
+
         return [
             'uuid'           => $entry['uuid'],
             'cnpj_formatted' => $entry['cnpj_formatted'],
