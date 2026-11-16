@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Models\ServiceProvider;
+use App\Services\EventService;
 use App\Support\BusinessDay;
 use Carbon\Carbon;
 
 class LandingController extends Controller
 {
+    public function __construct(private EventService $events) {}
+
     public function index()
     {
         return view('landing', [
@@ -46,29 +49,12 @@ class LandingController extends Controller
     {
         $today = Carbon::today();
 
-        $upcoming = Event::with('speaker')
-            ->where('visibility', 'public')
-            ->where('status', 'active')
-            ->where('date', '>=', $today)
-            ->orderBy('date')
-            ->orderBy('start_time')
-            ->get();
+        $upcoming = $this->events->publicOpen();
 
         $thisWeek = $upcoming->filter(fn($e) => $e->date->lte($today->copy()->endOfWeek()));
         $thisMonth = $upcoming->filter(fn($e) => $e->date->month === $today->month && $e->date->year === $today->year);
 
-        $completed = Event::with('speaker')
-            ->where('visibility', 'public')
-            ->where(function ($q) use ($today) {
-                $q->where('status', 'completed')
-                  ->orWhere(function ($q2) use ($today) {
-                      $q2->where('status', 'active')
-                         ->where('date', '<', $today);
-                  });
-            })
-            ->orderByDesc('date')
-            ->limit(9)
-            ->get();
+        $completed = $this->events->publicCompleted(9);
 
         $featured = $upcoming->first();
 
