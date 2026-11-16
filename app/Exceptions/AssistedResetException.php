@@ -35,7 +35,7 @@ class AssistedResetException extends RuntimeException
     {
         return new self(
             'A conta desta pessoa existe, mas está sem CPF gravado — e é o CPF que confirma a identidade na tela de redefinição. '
-            .'Rode o backfill de CPF antes de gerar o link.'
+            .'Informe o CPF da conta em Cidadãos > Contas sem CPF antes de gerar o link.'
         );
     }
 

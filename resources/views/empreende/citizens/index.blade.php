@@ -44,10 +44,13 @@
                 <i class="fas fa-circle-info mr-1"></i>
                 {{ $contasSemCpf }} {{ $contasSemCpf === 1 ? 'conta do portal está' : 'contas do portal estão' }}
                 sem CPF gravado e não {{ $contasSemCpf === 1 ? 'aparece' : 'aparecem' }} nesta lista.
+                @can('gerar-link-senha')
+                    <a href="{{ route('account-cpf.index') }}" class="font-bold underline">Ver contas sem CPF</a>
+                    para informar o CPF de quem procurar o atendimento.
+                @endcan
                 @if(auth()->user()->isAdmin())
-                    <a href="{{ route('cpf.backfill') }}" class="font-bold underline">Preencher o CPF dessas contas</a>.
-                @else
-                    Peça a um administrador para rodar o backfill de CPF.
+                    Para preencher em lote pelo currículo e pelas inscrições em eventos, use o
+                    <a href="{{ route('cpf.backfill') }}" class="font-bold underline">backfill de CPF</a>.
                 @endif
             </div>
         @endif

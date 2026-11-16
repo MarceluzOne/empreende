@@ -17,6 +17,7 @@
 |
 */
 
+use App\Http\Controllers\AccountCpfController;
 use App\Http\Controllers\AssistedPasswordResetController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\AuditController;
@@ -34,6 +35,7 @@ use App\Http\Controllers\JobSeekerController;
 use App\Http\Controllers\JobVacancyController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\PortalAccountCpfController;
 use App\Http\Controllers\PortalEmpresaController;
 use App\Http\Controllers\PortalUsuarioController;
 use App\Http\Controllers\ProfileController;
@@ -138,6 +140,12 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->prefix('portal/funci
         ->middleware('can:gerar-link-senha')->name('citizens.password-link');
     Route::post('cidadaos/{uuid}/ativar-conta', [CitizenController::class, 'activateAccount'])
         ->middleware('can:gerar-link-senha')->name('citizens.account.activate');
+    // Contas do portal sem CPF: gravar o CPF e o passo que libera o link de
+    // senha, entao exige a mesma permissao.
+    Route::get('contas-sem-cpf', [AccountCpfController::class, 'index'])
+        ->middleware('can:gerar-link-senha')->name('account-cpf.index');
+    Route::post('contas-sem-cpf/{user}', [AccountCpfController::class, 'store'])
+        ->middleware('can:gerar-link-senha')->name('account-cpf.store');
     Route::put('cidadaos/{uuid}', [CitizenController::class, 'update'])->name('citizens.update');
     Route::get('cidadaos/{uuid}', [CitizenController::class, 'show'])->name('citizens.show');
 
@@ -187,7 +195,12 @@ Route::middleware(['auth', 'check.user.type:funcionario'])->prefix('portal/funci
 | Portal do Usuário (candidato/cidadão)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'check.user.type:usuario'])->group(function () {
+Route::middleware(['auth', 'check.user.type:usuario', 'account.cpf'])->group(function () {
+    // Contas anteriores a agosto/2026 nao tem CPF; o middleware account.cpf
+    // manda para ca antes de qualquer outra tela do portal.
+    Route::get('/portal/usuario/cpf', [PortalAccountCpfController::class, 'show'])->name('portal.usuario.cpf');
+    Route::post('/portal/usuario/cpf', [PortalAccountCpfController::class, 'store'])->name('portal.usuario.cpf.store');
+
     Route::get('/portal/usuario', [PortalUsuarioController::class, 'index'])->name('portal.usuario');
 
     // CRUD de currículo

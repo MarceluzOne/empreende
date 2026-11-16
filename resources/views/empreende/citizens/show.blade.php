@@ -223,11 +223,10 @@
                 <div class="px-4 py-3 rounded-xl bg-amber-50 border border-amber-100 text-sm text-amber-800">
                     A conta <strong>{{ $account->name }}</strong> existe, mas está sem CPF gravado — e é o CPF que
                     confirma a identidade na tela de redefinição.
-                    @if(auth()->user()->isAdmin())
-                        <a href="{{ route('cpf.backfill') }}" class="font-bold underline">Rode o backfill de CPF</a> antes de gerar o link.
-                    @else
-                        Peça a um administrador para rodar o backfill de CPF.
-                    @endif
+                    @can('gerar-link-senha')
+                        <a href="{{ route('account-cpf.index', ['busca' => $account->email]) }}" class="font-bold underline">Informe o CPF da conta</a>
+                        antes de gerar o link.
+                    @endcan
                 </div>
 
             @else

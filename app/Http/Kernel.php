@@ -45,5 +45,6 @@ class Kernel extends HttpKernel
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'check.user.type' => \App\Http\Middleware\CheckUserType::class,
+        'account.cpf' => \App\Http\Middleware\EnsureAccountHasCpf::class,
     ];
 }
